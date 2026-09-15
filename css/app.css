@@ -373,3 +373,9 @@ body.landing-on #screen-duel .page { max-width: none; padding: 0; min-height: 10
 
 /* R2-P2-9 / Zusatz 23: „Überspringen“ während der Stift-Kalibrierung (Karte selbst lässt Zeiger durch) */
 .overlay.clear .calib-skip { pointer-events: auto; margin-top: 6px; background: rgba(14,24,48,.6); color: #FFFBEF; border-color: rgba(255,251,239,.6); box-shadow: none; }
+
+/* Iteration 2 (R2-P3-16): Teilen-/Poster-Vorschau — Glanz nur als schimmernder Rand, nie über Zeichnung oder Beschriftung */
+.share-wrap { padding: 7px; border-radius: 20px; background: linear-gradient(110deg, rgba(255,200,87,.28) 0%, rgba(255,200,87,.28) 38%, rgba(255,251,239,.95) 50%, rgba(255,200,87,.28) 62%, rgba(255,200,87,.28) 100%); background-size: 320% 100%; animation: cardfloat 5.2s ease-in-out infinite, rimglint 2.3s linear infinite; }
+.share-wrap::after { content: none; animation: none; }
+.share-wrap .share-img { display: block; position: relative; background: #F7F1E3; }
+@keyframes rimglint { from { background-position: 100% 0; } to { background-position: 0% 0; } }

@@ -252,6 +252,8 @@ export async function yesterdayCard(app, sum) {
     ctx.fillStyle = hide ? '#FFF6D8' : col; ctx.textAlign = 'center'; ctx.fillText(label, x + tw / 2, y + th - Math.round(capH * 0.32)); ctx.textAlign = 'left';
     tiles.push({ id: r.id, hidden: hide, x, y, w: tw, h: th, box, cap: { x: x + tw / 2 - fit.w / 2, y: y + th - capH, w: fit.w, h: capH }, label });
   });
+  ctx.fillStyle = PENCIL; ctx.font = '600 54px Caveat'; ctx.textAlign = 'left'; ctx.fillText(t('tagline', {}, ui), 72, H - 46);
+  ctx.textAlign = 'right'; ctx.font = '700 28px Nunito'; ctx.fillText('kalemo.demo.osai.solutions', W - 72, H - 54); ctx.textAlign = 'left';
   const blob = await toBlob(c);
   return { blob, canvas: c, tiles, quote, quoteRect, text: `Kalemo #${sum.number} · ${quote || t('yesterday', {}, ui)}` };
 }
