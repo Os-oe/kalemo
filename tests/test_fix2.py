@@ -696,6 +696,36 @@ with server(8792) as base, sync_playwright() as p:
         finally:
             c.close()
 
+    # ---------- Aufgabe 12 (R2-P3-13): Teilen im In-App-Browser + Satzzeichen im Hinweis ----------
+    def t12_inapp():
+        c = b.new_context(**{**PHONE, 'user_agent': UA_IG}); c.add_init_script(CLIP_SPY)
+        pg = c.new_page(); errs = []
+        pg.on('pageerror', lambda e: errs.append(str(e)))
+        try:
+            pg.goto(base + '/?test=1&scene=card'); pg.wait_for_selector('#sheet img.share-img', timeout=40000)
+            m = pg.evaluate('''() => ({ download: !!document.querySelector('#sheet a[download]'), press: document.querySelector('#sheet .share-press')?.textContent || null,
+              primary: document.querySelector('#sheet .btn.primary')?.textContent || null })''')
+            S.check('In-App-Teilen: „Lange auf das Bild drücken" als Hauptaktion, kein Download-Knopf, primär „Im Browser öffnen"', not m['download'] and m['press'] and 'Lange auf das Bild' in m['press'] and m['primary'] == 'Im Browser öffnen', m)
+            pg.click('#sheet [data-act=openbrowser]'); pg.wait_for_timeout(300)
+            how = pg.is_visible('#sheet .share-browser-how'); clip = pg.evaluate('() => window.__clip || null')
+            S.check('„Im Browser öffnen" kopiert den Link und erklärt den Weg über ⋯', how and clip and clip.startswith('http'), (how, clip))
+            pg.click('#sheet [data-act=close]')
+            pg.evaluate('() => window.__home()')
+            dot = pg.evaluate("() => getComputedStyle(document.querySelector('#inapp strong'), '::after').content")
+            S.check('Hinweis-Zeile Start: „Für die Kamera im Browser öffnen." endet mit Satzzeichen', dot == '"."', dot)
+            S.check('In-App-Teilen: keine Seitenfehler', not errs, errs[:2])
+        finally:
+            c.close()
+        c, pg, errs = fresh(b, **PHONE)
+        try:
+            pg.goto(base + '/?test=1&scene=card'); pg.wait_for_selector('#sheet img.share-img', timeout=40000)
+            S.check('Normaler Handy-Browser: „Bild speichern" bleibt', pg.query_selector('#sheet a[download]') is not None)
+        finally:
+            c.close()
+
+    if on('t12'):
+        S.run('12 In-App-Teilen', t12_inapp)
+
     if on('t11'):
         S.run('11 Hilfe-Karte', t11_help)
 
