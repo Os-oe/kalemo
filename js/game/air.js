@@ -29,7 +29,7 @@ export class Air {
     this.counter = new ArticleCounter();
     this.state = 'off'; // off | loading | ready | running | failed
     this.frames = 0; this.handFrames = 0; this.poseFrames = 0; this.lastLm = null; this.fpsLog = [];
-    this.listeners = { article: null, handcheck: null, real: null };
+    this.listeners = { article: null, handcheck: null, real: null, calib: null };
     this.delegate = null; this.lowFpsSince = null; this.lowFpsWarned = false;
     this._frame = this._frame.bind(this);
   }
@@ -141,8 +141,9 @@ export class Air {
     const out = { t, hand: !!lm };
     if (lm) { this.handFrames++; const f = fingers(lm); out.fingers = f; if (isPenPose(f)) this.poseFrames++; }
     if (this.listeners.handcheck) this.listeners.handcheck(!!lm, t);
+    if (this.listeners.calib) this.listeners.calib(lm, t); // Zusatz 23: Stift-Kalibrierung sammelt Frames
     if (this.listeners.article) { const a = this.counter.update(lm, t); out.article = a; this.listeners.article(a); }
-    const drawing = st.enabled && this.app.mode === 'air' && !this.listeners.article;
+    const drawing = st.enabled && this.app.mode === 'air' && !this.listeners.article && !this.listeners.calib;
     const ev = this.pen.update(lm, t, map);
     // Messung „Lücke Finger ↔ Linie": roher Fingerspitzen-Punkt im gezeigten Frame vs. gefilterter Stiftpunkt
     if (lm) {

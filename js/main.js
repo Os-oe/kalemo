@@ -149,9 +149,13 @@ function openSettings() {
   const row = (k, label, on) => `<label class="toggle"><input type="checkbox" data-k="${k}" ${on ? 'checked' : ''}><span>${escapeHtml(label)}</span></label>`;
   sheet.innerHTML = `<div class="sheet-card" role="dialog"><h3>${escapeHtml(t('settings'))}</h3>
     ${row('sound', t('unmute'), !s.muted)}${row('music', t('music'), s.music)}${row('pinch', t('pinch'), s.pinch)}${row('air', t('airToggle'), s.air)}
+    ${app.air?.cameraOn ? `<button class="btn" data-act="calib">${escapeHtml(t('calibAgain'))}</button>` : ''}
     <button class="btn primary" data-act="close">${escapeHtml(t('close'))}</button></div>`;
   sheet.hidden = false;
-  sheet.onclick = (e) => { if (e.target === sheet || e.target.closest('[data-act=close]')) { sheet.hidden = true; sheet.innerHTML = ''; } };
+  sheet.onclick = (e) => {
+    if (e.target.closest('[data-act=calib]')) { sheet.hidden = true; sheet.innerHTML = ''; app.calibratePen({ ask: false }); return; }
+    if (e.target === sheet || e.target.closest('[data-act=close]')) { sheet.hidden = true; sheet.innerHTML = ''; }
+  };
   sheet.onchange = (e) => {
     const k = e.target.dataset.k, v = e.target.checked;
     if (k === 'sound') app.settings = saveSettings({ muted: !v });

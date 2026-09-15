@@ -40,7 +40,11 @@ export function installFlow(app) {
     }
     air.start(); setMode('air');
     app.settings = saveSettings({ air: true, airDenied: false });
-    if (handCheck) { if (!app.round.active) app.stage.clear(); await app.handCheck(); }
+    if (handCheck) {
+      if (!app.round.active) app.stage.clear();
+      const seen = await app.handCheck();
+      if (seen && !app.settings.penCalib) await app.calibratePen(); // Zusatz 23: einmalig anbieten, überspringbar
+    }
     else hideCard();
     return true;
   };
@@ -79,6 +83,35 @@ export function installFlow(app) {
     app.hooks.handCheckSkip = finish;
     setTimeout(() => { if (!done) { done = true; air.listeners.handcheck = null; hideCard(); resolve(false); } }, 20000);
   });
+
+  /**
+   * Stift-Kalibrierung (Zusatz 23): 5 s „Zeigefinger hoch", 5 s „Daumen + Zeigefinger zusammen" → misst Erkennungs-Anteil,
+   * Fingerspitzen-Zittern und Wackler je Geste (core/calib.js) und stellt die robustere ein. Einstellungen können überschreiben.
+   */
+  app.calibratePen = async ({ phaseMs = 5000, ask = true } = {}) => {
+    const air = app.air; if (!air) return null;
+    if (ask) {
+      const k = await choice(`<div class="calib-ill">${handSvg(POSES.draw, { size: 84, accent: '#FFC857' })}</div><h3>${escapeHtml(t('calibT'))}</h3><p>${escapeHtml(t('calibB'))}</p>`,
+        [['go', t('calibGo'), 'primary'], ['skip', t('skip'), 'ghost']], 'calib');
+      if (k !== 'go') { app.settings = saveSettings({ penCalib: { skipped: true, at: app.today() } }); app.calibPhase = 'skipped'; return null; }
+    }
+    const { chooseGesture } = await import('../core/calib.js');
+    const frames = { index: [], pinch: [] }; let phase = 'index';
+    air.listeners.calib = (lm, tt) => frames[phase].push({ lm, t: tt });
+    for (const [ph, key] of [['index', 'calibIndex'], ['pinch', 'calibPinch']]) {
+      phase = ph; app.calibPhase = ph;
+      const card = showCard(`<div class="hc-ring calib-ring${ph === 'pinch' ? ' pinch' : ''}">${handSvg(POSES.draw, { size: 90, ink: '#FFFBEF', fill: 'rgba(255,251,239,.08)', accent: '#FFC857' })}</div><h3>${escapeHtml(t(key))}</h3><div class="progress"><i style="width:0%"></i></div>`, 'clear');
+      const t0 = performance.now(), bar = card.querySelector('.progress i');
+      await new Promise((res) => { const step = () => { const k = Math.min(1, (performance.now() - t0) / phaseMs); if (bar) bar.style.width = Math.round(k * 100) + '%'; if (k < 1 && app.calibPhase === ph) requestAnimationFrame(step); else res(); }; requestAnimationFrame(step); });
+    }
+    air.listeners.calib = null;
+    const res = chooseGesture(frames.index, frames.pinch, { w: air.video?.videoWidth || 640, h: air.video?.videoHeight || 480 });
+    app.settings = saveSettings({ pinch: res.choice === 'pinch', penCalib: { choice: res.choice, at: app.today(), index: res.index, pinch: res.pinch } });
+    air.pen.pinch = res.choice === 'pinch'; app.lastCalib = res; app.calibPhase = 'done';
+    showCard(`<h3>${escapeHtml(t(res.choice === 'pinch' ? 'calibResPinch' : 'calibResIndex'))}</h3>`, 'clear'); app.sfx?.play('articleOk');
+    await sleep(1400); hideCard();
+    return res;
+  };
 
   /** Angebot → Vorab-Karte → Abfrage → Hand-Check. skipAsk: Frage wurde schon beantwortet (Tagesende-Kachel) */
   app.offerAir = async ({ skipAsk = false } = {}) => {

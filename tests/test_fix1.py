@@ -887,5 +887,55 @@ with server() as base, sync_playwright() as p:
     if section('p22'):
         S.run('Zusatz 22 Schwache Wörter', p22)
 
+    # ---------- Zusatz 23: Stift-Kalibrierung im Luft-Modus ----------
+    def p23():
+        import random
+        from hands import hand, seq, POINT, OPEN
+
+        def pinch_pose(cx, cy):
+            pts = hand(cx, cy, index=True, thumb=True)
+            pts[4] = [pts[8][0] + 0.004, pts[8][1] + 0.004, 0.0]  # Daumenspitze an der Zeigefingerspitze
+            return pts
+        rnd = random.Random(7)
+        steady = lambda n, t0, pose: seq(pose, n, t0, move=lambda i: (0.5 + rnd.gauss(0, 0.001), 0.5 + rnd.gauss(0, 0.001)))
+        shaky = lambda n, t0: [{'lm': (POINT if (i // 3) % 2 == 0 else OPEN)(0.5 + rnd.gauss(0, 0.02), 0.5 + rnd.gauss(0, 0.02)), 't': t0 + i * 33.3} for i in range(n)]
+        c = b.new_context(viewport={'width': 1280, 'height': 800}, locale='de-DE'); pg = c.new_page(); errs = []
+        pg.on('pageerror', lambda e: errs.append(str(e)))
+        pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000)
+        pure = pg.evaluate('''async ([a, b2, cc, d]) => { const m = await import('/js/core/calib.js'); return [m.chooseGesture(a, b2).choice, m.chooseGesture(cc, d).choice, m.gestureStability(a, 'index')]; }''',
+                           [steady(40, 0, POINT), steady(40, 2000, POINT), shaky(40, 0), steady(40, 2000, pinch_pose)])
+        S.check('Messung: ruhiger Zeigefinger → Zeigefinger; wackliger Zeigefinger + stabiles Zwicken → Zwicken', pure[0] == 'index' and pure[1] == 'pinch' and pure[2]['pose'] > 0.9, pure)
+
+        def run(index_frames, pinch_frames, expect):
+            pg.evaluate('async () => { const a = window.__kalemo; await a.getAir(); a.show("round"); a.calibPhase = null; a.calibratePen({ phaseMs: 1500 }); return 1; }')
+            pg.click('#round-overlay .calib-card [data-k="go"]', timeout=5000)
+            wait_state(pg, 's.calibPhase === "index"', 5000)
+            pg.evaluate('([f]) => window.__feedLandmarks(f, { fresh: false })', [index_frames])
+            wait_state(pg, 's.calibPhase === "pinch"', 5000)
+            pg.evaluate('([f]) => window.__feedLandmarks(f, { fresh: false })', [pinch_frames])
+            st = wait_state(pg, 's.calibPhase === "done"', 5000)
+            pin = pg.evaluate('() => window.__kalemo.air.pen.pinch')
+            return st, pin
+        st, pin = run(steady(40, 0, POINT), steady(40, 2000, POINT), 'index')
+        S.check('Flow: 2 Phasen mit Karte + Fortschritt → Zeigefinger eingestellt (Einstellungen + Stift-Automat)', st['settings']['penCalib']['choice'] == 'index' and st['settings']['pinch'] is False and pin is False, st['settings']['penCalib'])
+        st, pin = run(shaky(40, 0), steady(40, 2000, pinch_pose), 'pinch')
+        S.check('Flow: wackliger Zeigefinger + stabiles Zwicken → Zwicken eingestellt', st['settings']['penCalib']['choice'] == 'pinch' and st['settings']['pinch'] is True and pin is True, st['settings']['penCalib'])
+        pg.wait_for_timeout(1600)
+        # Einstellungen überschreiben die Wahl
+        pg.evaluate('() => { window.__kalemo.show("start"); document.querySelector("#btn-settings").click(); return 1; }')
+        pg.click('#sheet input[data-k="pinch"]')
+        s2 = pg.evaluate('() => window.__state().settings')
+        S.check('Einstellungen können die Kalibrierung überschreiben (Zwicken aus)', s2['pinch'] is False and pg.evaluate('() => window.__kalemo.air.pen.pinch') is False, s2['pinch'])
+        pg.click('#sheet [data-act=close]')
+        # Überspringen
+        pg.evaluate('async () => { const a = window.__kalemo; a.show("round"); a.calibratePen({ phaseMs: 1500 }); return 1; }')
+        pg.click('#round-overlay .calib-card [data-k="skip"]', timeout=5000)
+        st = wait_state(pg, 's.calibPhase === "skipped"', 5000)
+        S.check('Optional: „Überspringen" beendet ohne Messung', st['settings']['penCalib'].get('skipped') is True)
+        S.check('Zusatz 23: keine Seitenfehler', not errs, errs[:2])
+        c.close()
+    if section('p23'):
+        S.run('Zusatz 23 Stift-Kalibrierung', p23)
+
     b.close()
 S.finish()

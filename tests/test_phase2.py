@@ -178,6 +178,10 @@ with server() as base, sync_playwright() as p:
         S.check('Onboarding: Hand-Check erscheint nach Kamera-Freigabe + Modell-Laden', True)
         pg.wait_for_selector('.clear-card.ok', timeout=30000)
         S.check('Hand-Check wird grün (Hand im Fake-Kamera-Video erkannt)', True)
+        # Iteration 1, Zusatz 23: Stift-Kalibrierung (10 s) mit dem Fake-Kamera-Video durchlaufen
+        pg.click('.calib-card [data-k="go"]', timeout=10000)
+        stc = wait_state(pg, 's.settings.penCalib && s.settings.penCalib.choice', 25000)
+        S.check('Stift-Kalibrierung: Zeigefinger-Video → Zeigefinger gewählt (Pose-Anteil gemessen)', stc['settings']['penCalib']['choice'] == 'index' and stc['settings']['penCalib']['index']['pose'] > 0.5 and stc['settings']['pinch'] is False, stc['settings']['penCalib'])
         st = wait_state(pg, f's.round && s.round.target === {json.dumps(plan["slots"][0]["id"])}', 20000)
         S.check('Übungsrunde startet im Luft-Modus', st['mode'] == 'air', st['mode'])
         pg.wait_for_timeout(4000)
