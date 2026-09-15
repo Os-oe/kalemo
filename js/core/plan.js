@@ -2,7 +2,13 @@
 // Slots: [neu, neu, Wiederholung(Tag−2), neu, Mehrzahl(Wort von Tag−7)]
 // Vor Launch+2 / +7 ziehen die modularen Indizes automatisch Wörter vom Ende der Pool-Reihenfolge.
 
-export const LAUNCH = '2026-09-15'; // Tagesskizze #1 = Deploy-Tag
+/**
+ * EINZIGER Anker der Tagesskizze (Nachtrag 1.1): Tag #1. Tagesnummer, Teilen-Karte, Duell-/Serien-Daten und der
+ * kuratierte Launch-Plan leiten sich hiervon ab. BEIM LAUNCH auf den tatsächlichen Post-Tag setzen + redeployen.
+ * Vor dem Anker gilt Inhalt + Nummer von Tag #1.
+ */
+export const LAUNCH_DATE = '2026-09-15';
+export const LAUNCH = LAUNCH_DATE; // Alias (ältere Werkzeuge)
 const SEED = 0x4b414c45; // "KALE"
 
 export function berlinDate(ms = Date.now()) {
@@ -20,7 +26,7 @@ export function msToBerlinMidnight(ms = Date.now()) {
   return Math.max(0, left);
 }
 const dayNum = (iso) => { const [y, m, d] = iso.split('-').map(Number); return Math.round(Date.UTC(y, m - 1, d) / 86400000); };
-export const dayIndex = (iso) => dayNum(iso) - dayNum(LAUNCH);
+export const dayIndex = (iso) => Math.max(0, dayNum(iso) - dayNum(LAUNCH_DATE)); // vor dem Anker = Tag #1
 export const addDays = (iso, n) => new Date((dayNum(iso) + n) * 86400000).toISOString().slice(0, 10);
 export const dayNumber = (iso) => Math.max(1, dayIndex(iso) + 1);
 
@@ -40,10 +46,11 @@ export function poolOrder(pool) {
 const mod = (a, n) => ((a % n) + n) % n;
 
 /**
- * Launch-Tage #1–#7 fest kuratiert (Iteration 1, Review P2-7): leicht + ikonisch, Tag #1 beginnt mit der Katze.
- * Nur Wörter mit Top-3 ≥ 90 % im accuracy-report (Luft-Simulation), kein Sandwich. Artikel-Schritt + Mehrzahl
- * frühestens ab Tag #3 (Tag #1/#2: 5 Einzelwörter, DE-Lernende sehen den Artikel direkt in Farbe).
- * Wiederholung = neues Wort von Tag−2 (Tag #2: von Tag #1), Mehrzahl = frühes Wort der Launch-Woche.
+ * Launch-Tage #1–#14 fest kuratiert (Iteration 1, Review P2-7 + Nachtrag 1.1): leicht + ikonisch, Tag #1 beginnt mit
+ * der Katze. Nur Wörter mit Top-3 ≥ 90 % UND Top-1 ≥ 80 % im accuracy-report (Luft-Simulation), keine als mehrdeutig
+ * markierten Wörter, kein Sandwich. Artikel-Schritt + Mehrzahl frühestens ab Tag #3 (Tag #1/#2: 5 Einzelwörter,
+ * DE-Lernende sehen den Artikel direkt in Farbe). Wiederholung = neues Wort von Tag−2 (Tag #2: von Tag #1),
+ * Mehrzahl = frühes Launch-Wort. 14 Tage = Puffer, falls der Launch-Post später kommt.
  */
 export const CURATED = [
   [['cat', 'new'], ['house', 'new'], ['sun', 'new'], ['tree', 'new'], ['fish', 'new']],
@@ -53,6 +60,13 @@ export const CURATED = [
   [['bicycle', 'new'], ['owl', 'new'], ['book', 'review'], ['snowman', 'new'], ['cat', 'plural', 2]],
   [['carrot', 'new'], ['guitar', 'new'], ['umbrella', 'review'], ['airplane', 'new'], ['star', 'plural', 3]],
   [['cake', 'new'], ['giraffe', 'new'], ['owl', 'review'], ['crown', 'new'], ['flower', 'plural', 2]],
+  [['lion', 'new'], ['pineapple', 'new'], ['guitar', 'review'], ['key', 'new'], ['car', 'plural', 3]],
+  [['butterfly', 'new'], ['mountain', 'new'], ['giraffe', 'review'], ['teapot', 'new'], ['house', 'plural', 2]],
+  [['penguin', 'new'], ['bus', 'new'], ['lion', 'review'], ['camel', 'new'], ['book', 'plural', 3]],
+  [['zebra', 'new'], ['snowflake', 'new'], ['mountain', 'review'], ['sheep', 'new'], ['cup', 'plural', 2]],
+  [['hedgehog', 'new'], ['tent', 'new'], ['penguin', 'review'], ['sailboat', 'new'], ['umbrella', 'plural', 2]],
+  [['octopus', 'new'], ['cactus', 'new'], ['zebra', 'review'], ['squirrel', 'new'], ['snail', 'plural', 3]],
+  [['bee', 'new'], ['sweater', 'new'], ['tent', 'review'], ['lighthouse', 'new'], ['owl', 'plural', 2]],
 ];
 const CURATED_NEW = CURATED.map((day) => day.filter(([, k]) => k === 'new').map(([id]) => id));
 const CURATED_IDS = new Set(CURATED_NEW.flat());

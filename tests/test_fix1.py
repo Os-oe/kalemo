@@ -445,23 +445,27 @@ with server() as base, sync_playwright() as p:
         p2 = c.new_page(); p2.goto(base + '/?test=1'); p2.wait_for_function('() => window.__plan')
         again = p2.evaluate('(ds) => ds.map(d => window.__plan(d))', dates); p2.close()
         S.check('Tagesplan deterministisch (60 Tage ab Launch, zweiter Tab identisch)', plans == again)
-        first7 = plans[:7]
-        S.check('Tag #1 beginnt mit der Katze · Tage #1–#7 kuratiert', first7[0]['number'] == 1 and first7[0]['slots'][0]['id'] == 'cat' and all(p.get('curated') for p in first7) and not plans[7].get('curated'), [s['id'] for s in first7[0]['slots']])
+        first7 = plans[:14]  # Nachtrag 1.1: kuratiert #1–#14
+        S.check('Tag #1 beginnt mit der Katze · Tage #1–#14 kuratiert · Tag #15 deterministisch', first7[0]['number'] == 1 and first7[0]['slots'][0]['id'] == 'cat' and all(p.get('curated') for p in first7) and not plans[14].get('curated') and plans[59]['number'] == 60, [s['id'] for s in first7[0]['slots']])
         ids7 = {s['id'] for p in first7 for s in p['slots']}
-        low = [(i, rep[i]['air']['top3']) for i in ids7 if rep[i]['air']['top3'] < 0.85]
-        S.check('Keine Wörter mit Top-3 < 85 % (accuracy-report) in #1–#7, kein Sandwich', not low and 'sandwich' not in ids7, (low, sorted(ids7)))
+        low = [(i, rep[i]['air']['top3'], rep[i]['air']['top1']) for i in ids7 if rep[i]['air']['top3'] < 0.9 or rep[i]['air']['top1'] < 0.8]
+        amb = [i for i in ids7 if WORDS[i]['ambiguous']]
+        S.check('Launch-Tage: nur Top-3 ≥ 90 % + Top-1 ≥ 80 % (accuracy-report), nichts Mehrdeutiges, kein Sandwich', not low and not amb and 'sandwich' not in ids7, (low, amb, len(ids7)))
+        anchor = pg.evaluate('''async () => { const p = await import('/js/core/plan.js'); const w = window.__kalemo.words; const a = p.planFor('2026-09-01', w), b = p.planFor('2026-09-14', w), c = p.planFor(p.LAUNCH_DATE, w);
+          return { launch: p.LAUNCH_DATE, same: JSON.stringify(a.slots) === JSON.stringify(c.slots) && JSON.stringify(b.slots) === JSON.stringify(c.slots), nums: [a.number, b.number, c.number] }; }''')
+        S.check('Ein Anker LAUNCH_DATE; Datum vor dem Anker → Inhalt + Nummer von Tag #1', anchor['launch'] == '2026-09-15' and anchor['same'] and anchor['nums'] == [1, 1, 1], anchor)
         early_ok = all(s.get('article') is False and s['kind'] != 'plural' for p in first7[:2] for s in p['slots'])
         later_ok = all(s.get('article', True) is not False for p in first7[2:] for s in p['slots']) and all(p['slots'][4]['kind'] == 'plural' for p in first7[2:])
-        S.check('Artikel-Schritt + Mehrzahl frühestens ab Tag #3', early_ok and later_ok, [[s['kind'] + ('' if s.get('article', True) else '/noArt') for s in p['slots']] for p in first7[:3]])
+        S.check('Artikel-Schritt + Mehrzahl frühestens ab Tag #3 (bis #14 durchgehend ab #3)', early_ok and later_ok, [[s['kind'] + ('' if s.get('article', True) else '/noArt') for s in p['slots']] for p in first7[:3]])
         uniq = all(len({s['id'] for s in p['slots']}) == 5 for p in plans)
         new_of = lambda p: [s['id'] for s in p['slots'] if s['kind'] == 'new']
         rev_ok = all(p['slots'][2]['kind'] == 'review' and p['slots'][2]['id'] in new_of(plans[i - 2]) for i, p in enumerate(plans) if i >= 7)
         plu_ok = all(p['slots'][4]['kind'] == 'plural' and p['slots'][4]['n'] in (2, 3) for p in plans[7:])
         S.check('Ab Tag #8 deterministischer Plan: neu/neu/Wdh(Tag−2)/neu/Mehrzahl, keine Dopplung', uniq and rev_ok and plu_ok, (uniq, rev_ok, plu_ok))
         cur_new = {s['id'] for p in first7 for s in p['slots'] if s['kind'] == 'new'}
-        rep_new = [s['id'] for p in plans[7:45] for s in p['slots'] if s['kind'] == 'new' and s['id'] in cur_new]
+        rep_new = [s['id'] for p in plans[14:48] for s in p['slots'] if s['kind'] == 'new' and s['id'] in cur_new]
         S.check('Launch-Wörter kommen im ersten Umlauf nicht erneut als „neu"', not rep_new, rep_new)
-        S.check('Tag #8: Mehrzahl aus der Launch-Woche (Tag−7)', plans[7]['slots'][4]['id'] in new_of(plans[0]), plans[7]['slots'][4])
+        S.check('Tag #15: Wiederholung von Tag #13, Mehrzahl aus Tag #8 (Tag−7)', plans[14]['slots'][2]['id'] in new_of(plans[12]) and plans[14]['slots'][4]['id'] in new_of(plans[7]), (plans[14]['slots'][2], plans[14]['slots'][4]))
         # DE-Lernende am Tag #1: kein Artikel-Schritt, Wort mit Artikel + Artikel-Farbe
         pg.evaluate('() => window.__settings({native: "tr", learn: "de", airOffered: true, chosenPair: true})')
         pg.evaluate('() => window.__setDate("2026-09-15")')
