@@ -180,6 +180,14 @@ body[data-mode="air"] .round-top { background: linear-gradient(rgba(10,16,32,.55
 .btn.answer.right { background: #BBF7D0; border-color: var(--das-t); }
 .btn.answer.picked { opacity: .55; }
 .times { font-weight: 800; color: var(--pencil); }
+.duel-clock { display: flex; align-items: baseline; justify-content: center; gap: 16px; margin: -4px 0 10px; font-weight: 800; color: var(--pencil); }
+.duel-clock .you b { font-family: var(--hand); font-size: 1.8rem; color: var(--ink); font-variant-numeric: tabular-nums; }
+.duel-clock span { display: inline-flex; align-items: baseline; gap: 4px; }
+.duel-result.win { color: var(--das-t); }
+.duel-score { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0 0 6px; font-weight: 800; color: var(--pencil); }
+.duel-score b { font-family: var(--hand); font-size: 3rem; line-height: 1; color: var(--ink); }
+.duel-score i { font-style: normal; font-family: var(--hand); font-size: 2.4rem; color: var(--ink); }
+.duel-score.small b { font-size: 2.2rem; } .duel-score.small i { font-size: 1.8rem; }
 .link-art { width: min(220px, 62%); aspect-ratio: 4 / 3; display: block; margin: 0 auto 2px; background: #FFFDF7; border-radius: 14px; box-shadow: var(--shadow); }
 .link-say { font-family: var(--hand); font-weight: 700; font-size: 1.6rem; line-height: 1.1; margin: 6px 0 8px; }
 .link-box { background: #FFFDF7; border: 2px dashed var(--pencil); border-radius: 12px; padding: 10px; word-break: break-all; font-size: .8rem; text-align: left; max-height: 7.5em; overflow: auto; }

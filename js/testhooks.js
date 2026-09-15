@@ -108,7 +108,7 @@ export function install(app) {
   window.__choose = (k) => { app.hooks.choose?.(k); return true; };
   window.__mode = (m) => { if (m === 'air') return window.__enableAir(); app.setMode(m === 'airsim' ? 'air' : m); return app.mode; };
   window.__settings = (patch) => { Object.assign(app.settings, patch); localStorage.setItem('kalemo.settings', JSON.stringify(app.settings)); app.applyTexts?.(); return app.settings; };
-  window.__answer = (id) => { app.hooks.answer?.(id); return true; };
+  window.__answer = (id, o) => { app.hooks.answer?.(id, o); return true; };
   window.__pairGo = () => { app.hooks.pairGo?.(); return true; };
   window.__home = () => { app.goHome(); return true; };
   window.__next = () => { const b = document.querySelector('#round-overlay [data-act=next]'); if (b) b.click(); return !!b; };

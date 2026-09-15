@@ -257,5 +257,82 @@ with server() as base, sync_playwright() as p:
     if section('p2_2'):
         S.run('P2-2 Start-Kachel', p2_2)
 
+    # ---------- P2-3: Duell fair + spannend ----------
+    V1_LIVE = 'AdUCyAEGEwDwAqYDiAIAIB84CSqLARJHDSdjD0sWGwojHhUoBRYfKAJgIhIiIBQUJAEoAyHBAZMCaQ2dAWJwAxF9RAFYawWYAQIeMocCggGFAR0CFC2CAUKBARgCDhakAzlaE3U'
+    MK_LINK = '''async ([st, senderMs, score, cls]) => { const c = await import('/js/core/codec.js'); let t = 0;
+      const strokes = st.map(([xs, ys]) => { const ts = xs.map((_, i) => t + i * 70); t += xs.length * 70 + 500; return [xs.map(x => x + 20), ys.map(y => y + 20), ts]; });
+      return { code: c.encode({ classIdx: window.__kalemo.clf.classNames.indexOf(cls), senderMs, strokes, score }), dur: t }; }'''
+
+    def p2_3():
+        c = b.new_context(viewport={'width': 1280, 'height': 800}); pg = c.new_page(); errs = []
+        pg.on('pageerror', lambda e: errs.append(str(e)))
+        pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000)
+        r = pg.evaluate('''async ([fix, v1]) => { const c = await import('/js/core/codec.js'); const R = await import('/js/core/raster.js'); const names = window.__kalemo.clf.classNames;
+          const lens = []; let same = 0, total = 0;
+          for (const [id, list] of Object.entries(fix)) for (const [k, d] of list.entries()) {
+            const rng = R.makeRng(11 + k * 7 + id.length); const air = R.jitter(d, 2, rng).map(([xs, ys]) => [xs.map(x => x * 2.6 + 180), ys.map(y => y * 2.6 + 90)]);
+            let t = 1000; const strokes = air.map(([xs, ys]) => { const ts = xs.map((_, i) => t + i * 33); t += xs.length * 33 + 280; return [xs, ys, ts]; });
+            const idx = names.indexOf(window.__kalemo.byId.get(id).cls); const score = [(k * 7) % 13, (id.length * 3) % 11];
+            const code = c.encode({ classIdx: idx, senderMs: 7300, strokes, score }); lens.push(('https://kalemo.demo.osai.solutions/#d=' + code).length);
+            const dec = c.decode(code); total++; if (dec.version === 2 && dec.classIdx === idx && dec.score[0] === score[0] && dec.score[1] === score[1] && JSON.stringify(dec.strokes) === JSON.stringify(c.quantize(strokes).map(([x, y]) => [x, y]))) same++;
+          }
+          lens.sort((a, b) => a - b); const old = c.decode(v1);
+          return { same, total, p90: lens[Math.floor(lens.length * 0.9)], v1: { version: old.version, score: old.score, cls: names[old.classIdx], n: old.strokes.length } }; }''', [FIX, V1_LIVE])
+        S.check('Duell-Code v2: Roundtrip identisch inkl. Stand, URL p90 < 300', r['same'] == r['total'] and r['p90'] < 300, r)
+        S.check('Alte v1-Links (live erzeugt) bleiben lesbar, Stand 0:0', r['v1']['version'] == 1 and r['v1']['score'] == [0, 0] and r['v1']['n'] > 0, r['v1'])
+        o = pg.evaluate('''async () => { const m = await import('/js/core/duelscore.js'); const f = (ok, y, th, s) => { const x = m.duelOutcome({ ok, youMs: y, themMs: th, score: s }); return [x.key, x.you, x.them]; };
+          return [f(true, 2000, 9000, [0, 0]), f(true, 8500, 9000, [2, 1]), f(true, 9800, 9000, [0, 0]), f(true, 15000, 9000, [0, 3]), f(false, 1000, 9000, [1, 1])]; }''')
+        S.check('Wertung: schneller · knapp gewonnen · knapp verloren · langsamer · falsch (Stand wird fortgeschrieben)', o == [['faster', 1, 0], ['closeWin', 2, 2], ['closeLose', 0, 1], ['slower', 3, 1], ['wrong', 1, 2]], o)
+        link = pg.evaluate(MK_LINK, [FIX['cat'][0], 9000, [0, 0], 'cat'])
+        # Empfänger: frischer Kontext
+        c2 = b.new_context(viewport={'width': 1280, 'height': 800}, locale='de-DE'); p2 = c2.new_page(); e2 = []
+        p2.on('pageerror', lambda e: e2.append(str(e)))
+        p2.goto(base + '/?test=1#d=' + link['code'])
+        p2.wait_for_selector('#duel-body [data-act=go]', timeout=30000)
+        p2.click('#duel-body [data-act=go]')
+        t_go = p2.evaluate('() => performance.now()')
+        st = wait_state(p2, 's.duelState && s.duelState.phase === "options"', 15000)
+        after = st['duelState']['shownAt'] - t_go
+        S.check(f'Antworten nach ~3 s eingeblendet, Wiedergabe läuft weiter (Replay {link["dur"] / 1000:.1f} s)', 2500 <= after <= 5000 and st['duelState']['replaying'] and len(st['duelState']['options']) == 4 and 'cat' in st['duelState']['options'], (round(after), st['duelState']['replaying']))
+        p2.wait_for_timeout(700)
+        clock = p2.text_content('#round-overlay .duel-clock') or ''
+        S.check('Stoppuhr läuft ab Einblendung + Absender-Zeit sichtbar', 'Absender: 9,0 s' in clock and not clock.startswith('0,0'), clock)
+        p2.click('.answer[data-id="cat"]', force=True)
+        st = wait_state(p2, 's.duelState && s.duelState.phase === "reveal"', 10000)
+        p2.wait_for_selector('#round-overlay .duel-result', timeout=5000)
+        title = p2.text_content('#round-overlay .duel-result'); ds = st['duelState']
+        S.check('Klares Ergebnis „Du warst schneller!" + Stand 1:0 (Zeit ab Einblendung)', ds['outcome'] == 'faster' and ds['youMs'] < 3000 and ds['score'] == {'you': 1, 'them': 0} and 'schneller' in title and ds['replaying'] is False, (title, ds['youMs'], ds['score']))
+        p2.click('#round-overlay [data-act=back]')
+        st = wait_state(p2, 's.screen === "duel" && s.duelPicks && s.duelPicks.length === 3', 10000)
+        wid = st['duelPicks'][0]
+        p2.click(f'.word-pick[data-id="{wid}"]', force=True)
+        wait_state(p2, f's.round && s.round.target === {json.dumps(wid)}', 20000)
+        p2.evaluate('(st) => window.__feedStrokes(st, {timing: "real", ptMs: 10, gapMs: 150})', FIX[wid][0])
+        st = wait_state(p2, f's.lastDuel && s.lastDuel.id === {json.dumps(wid)}', 30000)
+        dec = p2.evaluate('async (code) => { const c = await import("/js/core/codec.js"); return c.decode(code).score; }', st['lastDuel']['code'])
+        S.check('Rückspiel-Link trägt den Stand (1:0 aus Sicht des neuen Absenders), URL < 300', dec == [1, 0] and st['lastDuel']['length'] < 300 and pg is not None, (dec, st['lastDuel']['length']))
+        # zurück beim ersten Absender: sieht „Rückspiel — Stand 0:1"
+        p3 = c.new_page(); p3.goto(st['lastDuel']['url'].replace('/#d=', '/?test=1#d='))
+        p3.wait_for_selector('#duel-body [data-act=go]', timeout=30000); p3.click('#duel-body [data-l="de"][data-k="native"]'); p3.click('#duel-body [data-act=go]')
+        wait_state(p3, 's.duelState && s.duelState.phase === "replay"', 30000)
+        sub = p3.text_content('#word-sub') or ''
+        S.check('Rückspiel beim ursprünglichen Absender: „Rückspiel — Stand 0:1"', 'Stand 0:1' in sub, sub)
+        # Knapp: Antwort per Hook mit fester Zeit
+        wait_state(p3, 's.duelState && s.duelState.phase === "options"', 15000)
+        p3.evaluate('(id) => window.__answer(id, { ms: (window.__state().duelState ? 0 : 0) + 99999 })', 'x-wrong-id')
+        st3 = wait_state(p3, 's.duelState && s.duelState.phase === "reveal"', 10000)
+        S.check('Falsch geraten → Punkt an den Absender (Stand 2:0 aus dessen Sicht)', st3['duelState']['outcome'] == 'wrong' and st3['duelState']['score'] == {'you': 0, 'them': 2}, st3['duelState']['score'])
+        link2 = pg.evaluate(MK_LINK, [FIX['sun'][0], 1000, [0, 0], 'sun'])
+        p4 = c2.new_page(); p4.goto(base + '/?test=1#d=' + link2['code'])
+        wait_state(p4, 's.duelState && s.duelState.phase === "options"', 20000)
+        p4.evaluate('() => window.__answer("sun", { ms: 1600 })')
+        st4 = wait_state(p4, 's.duelState && s.duelState.phase === "reveal"', 10000)
+        p4.wait_for_selector('#round-overlay .duel-result', timeout=5000)
+        S.check('„Knapp!" bei ≤ 1 s Abstand', st4['duelState']['outcome'] == 'closeLose' and 'Knapp' in (p4.text_content('#round-overlay .duel-result') or ''), st4['duelState']['outcome'])
+        S.check('P2-3: keine Seitenfehler', not errs and not e2, (errs[:2], e2[:2]))
+        c2.close(); c.close()
+    if section('p2_3'):
+        S.run('P2-3 Duell', p2_3)
+
     b.close()
 S.finish()

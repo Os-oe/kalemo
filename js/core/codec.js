@@ -1,9 +1,10 @@
 // Striche-Code für das Luft-Duell (ohne Server, nur im #-Hash):
 // normieren 0..255 → Ramer-Douglas-Peucker ε≈3 → Delta → Zigzag-Varint → base64url. Deflate bringt nichts (gemessen).
 // Format v1: [ver][classIdx][senderDs][nStrokes] je Strich [nPts][gap20ms][dur20ms] Punkte als Deltas … [checksum]
+// Format v2 (Iteration 1, Duell-Stand): [ver][classIdx][senderDs][scoreSender][scoreReceiver][nStrokes] … — v1-Links bleiben lesbar (Stand 0:0)
 import { normalize, rdp } from './raster.js';
 
-export const VERSION = 1;
+export const VERSION = 2;
 const zz = (v) => (v << 1) ^ (v >> 31);
 const unzz = (u) => (u >>> 1) ^ -(u & 1);
 function pushVar(arr, v) { v >>>= 0; while (v >= 0x80) { arr.push((v & 0x7f) | 0x80); v >>>= 7; } arr.push(v); }
@@ -30,10 +31,11 @@ export function quantize(strokes, eps = 3) {
  * encode({classIdx, senderMs, strokes:[xs,ys,ts]}) → base64url
  * Timing: Pause vor jedem Strich + Strichdauer (20-ms-Raster, max ~5 s je Wert).
  */
-export function encode({ classIdx, senderMs = 0, strokes }) {
+export function encode({ classIdx, senderMs = 0, strokes, score = [0, 0] }) {
   const q = quantize(strokes);
   const a = [];
-  pushVar(a, VERSION); pushVar(a, classIdx); pushVar(a, Math.round(Math.min(senderMs, 60000) / 100)); pushVar(a, q.length);
+  pushVar(a, VERSION); pushVar(a, classIdx); pushVar(a, Math.round(Math.min(senderMs, 60000) / 100));
+  pushVar(a, Math.min(999, score[0] | 0)); pushVar(a, Math.min(999, score[1] | 0)); pushVar(a, q.length);
   let px = 0, py = 0, prevEnd = null;
   const orig = strokes.filter((s) => s[0].length);
   q.forEach(([xs, ys], si) => {
@@ -57,8 +59,11 @@ export function decode(code) {
   if (sum !== buf[buf.length - 1]) throw new Error('checksum');
   const pos = { i: 0 }, body = buf.subarray(0, buf.length - 1);
   const version = readVar(body, pos);
-  if (version !== VERSION) throw new Error('version');
-  const classIdx = readVar(body, pos), senderMs = readVar(body, pos) * 100, n = readVar(body, pos);
+  if (version !== 1 && version !== 2) throw new Error('version');
+  const classIdx = readVar(body, pos), senderMs = readVar(body, pos) * 100;
+  const score = version >= 2 ? [readVar(body, pos), readVar(body, pos)] : [0, 0];
+  if (score[0] > 999 || score[1] > 999) throw new Error('score');
+  const n = readVar(body, pos);
   if (n > 200) throw new Error('strokes');
   const strokes = [], timing = []; let px = 0, py = 0;
   for (let s = 0; s < n; s++) {
@@ -69,7 +74,7 @@ export function decode(code) {
     strokes.push([xs, ys]); timing.push({ gap, dur });
   }
   if (pos.i !== body.length) throw new Error('trailing');
-  return { version, classIdx, senderMs, strokes, timing };
+  return { version, classIdx, senderMs, score, strokes, timing };
 }
 
 /** Strich-Timing [{gap, dur}] aus Strichen mit Zeitstempeln */
