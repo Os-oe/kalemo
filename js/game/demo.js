@@ -13,7 +13,7 @@ export async function runDemo(app) {
   Object.assign(app.settings, { native: Q.get('native') || 'de', learn: Q.get('learn') || (scene === 'article' ? 'de' : 'tr'), airOffered: true, chosenPair: true, onboarded: true });
   app.applyTexts();
   document.body.classList.add('demo');
-  await app.clfPromise;
+  app.warm?.(); await app.ensureClf();
   const others = await app.others();
   const fx = document.createElement('canvas'); fx.className = 'fx demo-layer'; fx.setAttribute('aria-hidden', 'true');
   document.getElementById('stage').appendChild(fx);

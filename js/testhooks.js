@@ -49,7 +49,7 @@ export async function scene(app, name) {
       loop(); break;
     }
     case 'help': { // Iteration 1: Hilfe-Karte „So malen es andere — jetzt du!" über laufender Runde
-      setPair('de', 'tr'); await app.clfPromise; roundBase(Q('word') || 'bicycle');
+      setPair('de', 'tr'); await app.ensureClf(); roundBase(Q('word') || 'bicycle');
       app.round.draw({ id: Q('word') || 'bicycle' });
       await app.round.feed(pick('bicycle').slice(0, 1), { timing: 'instant' });
       app.round.help(app.round.active);
@@ -59,7 +59,7 @@ export async function scene(app, name) {
     case 'offer': setPair('de', 'tr'); roundBase('cat'); app.choice(`<h3>${app.t('airOfferT')}</h3><p>${app.t('airOfferB')}</p>`, [['yes', app.t('airYes'), 'primary'], ['no', app.t('airNo'), 'ghost']]); loop(); break;
     case 'precam': setPair('de', 'tr'); roundBase('cat'); app.settings.airOffered = false; app.offerAir(); setTimeout(() => $('.overlay [data-k="yes"]')?.click(), 50); loop(); break;
     case 'dayend': case 'card': case 'ycard': {
-      setPair('de', 'tr'); await app.clfPromise;
+      setPair('de', 'tr'); await app.ensureClf();
       const plan = planFor('2026-09-20', app.words);
       const sum = { number: 5, date: '2026-09-20', hits: 4, points: 377, scored: true, learn: 'tr', native: 'de',
         results: plan.slots.map((s, i) => ({ id: s.id, kind: s.kind, n: s.n, parts: s.kind === 'plural' ? s.n : undefined, result: i === 3 ? 'timeout' : 'hit', hitAt: 3000 + i * 1900, points: i === 3 ? 0 : 80, strokes: (others[s.id] || others.cat)[1 % (others[s.id] || others.cat).length].strokes })),
@@ -79,7 +79,7 @@ export async function scene(app, name) {
     }
     case 'duel': setPair('de', 'tr'); app.duel.create(); break;
     case 'duelopts': {
-      setPair('de', 'tr'); app.settings.chosenPair = true; await app.clfPromise;
+      setPair('de', 'tr'); app.settings.chosenPair = true; await app.ensureClf();
       const { encode } = await import('./core/codec.js');
       let tt = 0; const strokes = pick('cat').map(([xs, ys]) => { const ts = xs.map((_, i) => tt + i * 8); tt += xs.length * 8 + 60; return [xs, ys, ts]; });
       app.duel.receive(encode({ classIdx: app.clf.classNames.indexOf('cat'), senderMs: 9000, strokes }));
@@ -93,7 +93,7 @@ export function install(app) {
   window.__feedStrokes = async (strokes, opts = {}) => { await app.round.feed(strokes, opts); return true; };
   window.__setDate = (iso) => { app.dateOverride = iso; app.onDateChange?.(); return app.today(); };
   window.__plan = (iso) => planFor(iso || app.today(), app.words);
-  window.__startDaily = async (opts = {}) => { await app.clfPromise; playDaily(app, opts); return true; };
+  window.__startDaily = async (opts = {}) => { app.warm(); await app.ensureClf(); playDaily(app, opts); return true; };
   /** frames: [{lm:[[x,y,z]×21]|null, t}] → Trace (Stift/Artikel), optional in laufende Runde (inRound) */
   window.__feedLandmarks = async (frames, { article = false, fresh = true, pinch = false } = {}) => {
     const air = await app.getAir();

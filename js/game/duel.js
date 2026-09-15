@@ -51,7 +51,7 @@ export function installDuel(app) {
         if (e.target.closest('[data-act=home]')) { app.goHome(); return; }
         if (!b) return;
         app.sfx?.play('tap');
-        await app.clfPromise;
+        await app.ensureClf();
         const w = app.byId.get(b.dataset.id);
         app.show('round'); app.renderToggle(); app.ui.slots(0, 0, []);
         app.round.showWord(w); app.voice?.word(w.id, learn);
@@ -69,8 +69,9 @@ export function installDuel(app) {
       const cls = (await classes())[d.classIdx]; const w = app.words.find((x) => x.cls === cls) || app.wordsAll?.find((x) => x.cls === cls);
       if (!w) { app.ui.toast(t('duelBroken'), 4000); return false; }
       app.incoming = { d, w };
+      app.warm?.(); // Duell-Link = klare Spiel-Absicht → Mal-KI parallel zur Sprachwahl laden
       if (!app.settings.chosenPair) { await pairIntro(); }
-      await app.clfPromise;
+      await app.ensureClf();
       return replay(d, w);
     },
   };

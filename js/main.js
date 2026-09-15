@@ -141,21 +141,29 @@ async function boot() {
   app.stage = new Stage($('#stage'));
   app.round = new RoundController(app);
   installAudio(app); installAttract(app); app.attract.start();
-  app.voice.preloadWords(planFor(app.today(), words).slots.map((s) => s.id), ['de', 'en', 'tr']); // Audio der 5 Tageswörter
+  // Review P3-13: Startseite leicht — Mal-KI (tfjs + DoodleNet ≈ 1,4 MB) und Runden-Audio erst bei Spiel-Absicht
+  app.ensureClf = () => (app.clfPromise ||= createClassifier({ words, backend: Q.get('backend') || undefined })
+    .then((c) => { app.clf = c; app.fpsGuard?.(); return c; })
+    .catch((e) => { app.log.push('clf ' + e.message); app.clfPromise = null; throw e; }));
+  app.warm = () => {
+    app.ensureClf().catch(() => {});
+    if (!app._warmAudio) { app._warmAudio = true; app.audio.loadManifest(); app.voice.preloadWords(planFor(app.today(), words).slots.map((s) => s.id), ['de', 'en', 'tr']); }
+  };
   installFlow(app); installPlural(app); installDayEnd(app); installDuel(app); installDict(app);
   window.addEventListener('pointerdown', () => { if (app.screen !== 'round') setTimeout(() => app.music?.play(), 50); }, { once: true });
   app.setMode('screen');
   applyTexts();
   if (inAppBrowser() && !app.settings.inAppDismissed) $('#inapp').hidden = false;
   $('#inapp-close').addEventListener('click', () => { $('#inapp').hidden = true; app.settings = saveSettings({ inAppDismissed: true }); app.sfx?.play('tap'); });
-  app.clfPromise = createClassifier({ words, backend: Q.get('backend') || undefined }).then((c) => (app.clf = c)).catch((e) => { app.log.push('clf ' + e.message); throw e; });
-  app.ensureClf = () => app.clfPromise;
+  // Absicht erkennen (Zeiger drüber, Finger drauf, Tastatur-Fokus) → Mal-KI + Tages-Audio vorladen
+  for (const id of ['btn-daily', 'btn-duel', 'today-share', 'today-challenge', 'btn-yesterday']) for (const ev of ['pointerenter', 'pointerdown', 'focus', 'touchstart']) $('#' + id).addEventListener(ev, () => app.warm(), { once: true, passive: true });
+  if (app.TEST && Q.get('lazy') !== '1') app.warm(); // Test-Suiten erwarten die KI sofort; ?lazy=1 prüft den leichten Start
   $('#btn-daily').addEventListener('click', async () => {
-    app.sfx?.play('tap');
+    app.sfx?.play('tap'); app.warm();
     const btn = $('#btn-daily'), label = $('#daily-label');
-    if (!app.clf) { btn.disabled = true; btn.classList.add('loading'); label.textContent = t('offlineModel'); }
-    try { await app.clfPromise; } catch { btn.disabled = false; btn.classList.remove('loading'); renderStart(); app.ui.toast(t('modelFail'), 6000); return; }
-    btn.disabled = false; btn.classList.remove('loading');
+    if (!app.clf) { btn.disabled = true; btn.classList.add('loading'); label.textContent = t('offlineModel'); app.loadingShownAt = performance.now(); }
+    try { await app.ensureClf(); } catch { btn.disabled = false; btn.classList.remove('loading'); renderStart(); app.ui.toast(t('modelFail'), 6000); return; }
+    btn.disabled = false; btn.classList.remove('loading'); if (app.loadingShownAt) { app.loadingMs = Math.round(performance.now() - app.loadingShownAt); app.loadingShownAt = null; }
     await startRoundMode(); playDaily(app, { practice: !!dayResult(app.today()) });
   });
   $('#round-close').addEventListener('click', () => app.goHome());
@@ -179,7 +187,7 @@ async function boot() {
     document.documentElement.style.setProperty('--py', ((e.clientY / innerHeight - 0.5) * 8).toFixed(1) + 'px');
   }, { passive: true });
   $('#btn-yesterday').addEventListener('click', async () => {
-    const y = app.yesterday; if (!y) return; await app.clfPromise;
+    const y = app.yesterday; if (!y) return; await app.ensureClf();
     const card = await yesterdayCard(app, y); app.lastCard = { kind: 'yesterday', text: card.text, bytes: card.blob.size };
     await shareImage(app, { blob: card.blob, filename: `kalemo-${y.number}-gestern.png`, text: card.text, forceFallback: !!app.TEST });
   });

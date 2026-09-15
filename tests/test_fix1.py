@@ -690,5 +690,43 @@ with server() as base, sync_playwright() as p:
     if section('p3_16'):
         S.run('P3-16 Blase', p3_16)
 
+    # ---------- P3-13: Startseite leicht (Mal-KI + Runden-Audio erst bei Absicht) ----------
+    def p3_13():
+        import gzip, time as _t
+        for label, mob in (('Desktop', False), ('Handy', True)):
+            kw = {'viewport': {'width': 390, 'height': 844}, 'is_mobile': True, 'has_touch': True} if mob else {'viewport': {'width': 1280, 'height': 800}}
+            c = b.new_context(**kw); pg = c.new_page(); errs = []; got = []
+            pg.on('pageerror', lambda e: errs.append(str(e)))
+            def on_fin(rq):
+                try:
+                    r = rq.response(); body = r.body() if r else b''
+                    ct = (r.headers.get('content-type', '') if r else '')
+                    est = len(gzip.compress(body, 6)) if any(x in ct for x in ('javascript', 'css', 'json', 'html', 'text', 'svg')) else len(body)
+                    got.append((rq.url.split('/', 3)[-1][:60], len(body), est))
+                except Exception:
+                    pass
+            pg.on('requestfinished', on_fin)
+            t0 = _t.time()
+            pg.goto(base + '/?test=1&lazy=1'); pg.wait_for_function('() => window.__kalemo && window.__kalemo.ready', timeout=30000)
+            pg.wait_for_load_state('networkidle'); pg.wait_for_timeout(2500)
+            total = sum(x[2] for x in got); heavy = [x[0] for x in got if any(k in x[0] for k in ('tf.min.js', 'doodlenet', '/w/', '/b/', '/p/', 'manifest.json', 'others.json', 'mediapipe'))]
+            S.check(f'{label}: Start ohne Mal-KI/Runden-Audio, Transfer < 400 KB (gzip-geschätzt)', total < 400_000 and not heavy and not pg.evaluate('() => window.__state().clfReady'), f'{total / 1000:.0f} KB, {len(got)} Requests, schwer: {heavy[:3]}')
+            pg.evaluate('() => window.__settings({native: "de", learn: "tr", airOffered: true, chosenPair: true})')
+            plan = pg.evaluate('() => window.__plan()'); wid = plan['slots'][0]['id']
+            if mob:
+                pg.tap('#btn-daily')
+            else:
+                pg.click('#btn-daily')
+            st = wait_state(pg, f's.round && s.round.target === {json.dumps(wid)}', 30000)
+            load_ms = pg.evaluate('() => window.__kalemo.loadingMs ?? 0')
+            S.check(f'{label}: nach Tipp auf Tagesskizze Ladeanzeige ≤ 1 s sichtbar, Runde startet', load_ms <= 1000 and st['clfReady'], f'{load_ms} ms')
+            pg.evaluate('(st) => window.__feedStrokes(st, {timing: "real", ptMs: 12, gapMs: 160})', FIX[wid][0])
+            st = wait_state(pg, f's.lastResult && s.lastResult.id === {json.dumps(wid)} && s.overlay', 40000)
+            S.check(f'{label}: erster Treffer < 60 s nach Aufruf', st['lastResult']['result'] == 'hit' and _t.time() - t0 < 60, f'{_t.time() - t0:.1f} s')
+            S.check(f'{label}: keine Seitenfehler', not errs, errs[:2])
+            c.close()
+    if section('p3_13'):
+        S.run('P3-13 Leichter Start', p3_13)
+
     b.close()
 S.finish()

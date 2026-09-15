@@ -28,7 +28,9 @@ export function installAudio(app) {
     master.gain.setTargetAtTime(app.settings.muted ? 0 : 1, ctx.currentTime, 0.02);
     if (!app.settings.music) music.stop();
   }
-  fetch('audio/v1/manifest.json').then((r) => (r.ok ? r.json() : {})).then((m) => (manifest = m || {})).catch(() => {});
+  // Review P3-13: Manifest (23 KB) erst bei Spiel-Absicht laden, nicht auf der Startseite
+  let manifestP = null;
+  const loadManifest = () => (manifestP ||= fetch('audio/v1/manifest.json').then((r) => (r.ok ? r.json() : {})).then((m) => (manifest = m || {})).catch(() => {}));
 
   async function load(path) {
     if (buffers.has(path)) return buffers.get(path);
@@ -152,5 +154,5 @@ export function installAudio(app) {
     },
     stop() { if (!ctx || !this.el) return; musicBus.gain.setTargetAtTime(0, ctx.currentTime, 0.25); const el = this.el; setTimeout(() => { if (!this.on) el.pause(); }, 900); this.on = false; },
   };
-  app.audio = { unlock, ready, applySettings, get ctx() { return ctx; } };
+  app.audio = { unlock, ready, applySettings, loadManifest, get ctx() { return ctx; } };
 }
