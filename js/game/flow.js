@@ -189,7 +189,6 @@ export function installFlow(app) {
     const order = app.round.langOrder();
     if (plural) app.voice?.announce(w.id, order, { delay: 400, plural });
     else if (out.result === 'hit') app.voice?.hitAnnounce(w.id, order);
-    else if (out.helped) app.voice?.announce(w.id, order, { delay: 500 });
     else app.voice?.missAnnounce(w.id, order);
     await sleep(out.result === 'hit' ? 950 : 1000); // Treffer-/Zerbrösel-Animation wirken lassen
     if (out.result === 'hit' && !plural) {

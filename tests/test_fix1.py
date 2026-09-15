@@ -117,5 +117,54 @@ with server() as base, sync_playwright() as p:
     if section('p1_2'):
         S.run('P1-2 Herausfordern', p1_2)
 
+    # ---------- P1-3: Hilfe = Hinweis statt Aufgeben ----------
+    def p1_3():
+        for native, learn, date in (('en', 'tr', '2026-10-17'), ('tr', 'de', '2026-10-20')):
+            c = b.new_context(viewport={'width': 1280, 'height': 800}); pg = c.new_page(); errs = []
+            pg.on('pageerror', lambda e: errs.append(str(e)))
+            pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000)
+            pg.evaluate('(p) => window.__settings(p)', {'native': native, 'learn': learn, 'airOffered': True, 'chosenPair': True})
+            pg.evaluate('(d) => window.__setDate(d)', date)
+            plan = pg.evaluate('() => window.__plan()'); slot = next(s for s in plan['slots'] if s['kind'] != 'plural'); wid = slot['id']; w = WORDS[wid]
+            # bis zum ersten Einzelwort vorspulen (Mehrzahl hat keine Hilfe)
+            pg.evaluate('() => window.__startDaily()')
+            idx = plan['slots'].index(slot)
+            for k in range(idx):
+                s2 = plan['slots'][k]
+                if learn == 'de' and s2['kind'] != 'plural':
+                    pg.wait_for_selector('.art-card', timeout=15000); pg.evaluate('(a) => window.__chooseArticle(a)', WORDS[s2['id']]['de']['art'])
+                base_n = wait_state(pg, f's.round && s.round.target === {json.dumps(s2["id"])}', 20000)['drawCount']
+                for r_ in range(s2['n'] if s2['kind'] == 'plural' else 1):
+                    wait_state(pg, f's.round && s.drawCount === {base_n + r_}', 30000)
+                    pg.evaluate('(st) => window.__feedStrokes(st, {timing: "real", ptMs: 8, gapMs: 120})', FIX[s2['id']][r_ % 2])
+                wait_state(pg, f's.lastResult && s.lastResult.id === {json.dumps(s2["id"])} && s.overlay', 40000); pg.evaluate('() => window.__next()')
+            if learn == 'de':
+                pg.wait_for_selector('.art-card', timeout=15000); pg.evaluate('(a) => window.__chooseArticle(a)', w['de']['art'])
+            wait_state(pg, f's.round && s.round.target === {json.dumps(wid)} && !s.overlay', 20000)
+            pg.wait_for_selector('#round-help:not([hidden])', timeout=12000)
+            pg.click('#round-help', force=True)
+            pg.wait_for_selector('#round-overlay .card.help .others canvas', timeout=6000)
+            card_txt = pg.text_content('#round-overlay .card.help') or ''
+            n_ex = len(pg.query_selector_all('#round-overlay .card.help .others canvas'))
+            words_all = [w['tr']['word'], w['en']['word'], w['de']['noun']]
+            leak = [x for x in words_all if x.lower() in card_txt.lower()]
+            title_ok = {'en': 'your turn', 'tr': 'şimdi sen'}[native] in card_txt.lower()
+            S.check(f'{native}→{learn}: Hilfe zeigt „So malen es andere — jetzt du!" + 2–3 Beispiele OHNE Übersetzung', title_ok and 2 <= n_ex <= 3 and not leak and not pg.query_selector('#round-overlay .lang-line'), (card_txt[:80], n_ex, leak))
+            S.check(f'{native}→{learn}: nie „nicht erkannt" als Hilfe-Text', not any(x in card_txt for x in ('nicht erkannt', 'couldn’t tell', 'Anlayamadım')), card_txt[:80])
+            s1 = pg.evaluate('() => window.__state()'); t1 = pg.text_content('#timer-s'); pg.wait_for_timeout(1600); s2_ = pg.evaluate('() => window.__state()'); t2 = pg.text_content('#timer-s')
+            S.check(f'{native}→{learn}: Timer pausiert während der Hilfe (Runde läuft nicht weiter)', s1['round']['paused'] and abs(s2_['round']['elapsedMs'] - s1['round']['elapsedMs']) < 60 and t1 == t2 and not s2_['round']['enabled'], (s1['round']['elapsedMs'], s2_['round']['elapsedMs'], t1, t2))
+            pg.click('#round-overlay [data-act=help-go]', force=True)
+            s3 = wait_state(pg, 's.round && !s.round.paused && !s.overlay', 5000)
+            left = int(pg.text_content('#timer-s') or 0)
+            S.check(f'{native}→{learn}: „Jetzt du!" → dieselbe Runde mit Restzeit, Malen wieder an', s3['round']['target'] == wid and s3['round']['enabled'] and 5 <= left <= 13, (left, s3['round']['target']))
+            pg.evaluate('(st) => window.__feedStrokes(st, {timing: "real", ptMs: 10, gapMs: 140})', FIX[wid][0])
+            st = wait_state(pg, f's.lastResult && s.lastResult.id === {json.dumps(wid)} && s.overlay', 30000)
+            lr = st['lastResult']; exp = 60 + (20 if learn == 'de' else 0)
+            S.check(f'{native}→{learn}: Treffer nach Hilfe zählt — Punkte ohne Tempo-Bonus ({exp})', lr['result'] == 'hit' and lr['helped'] and lr['points'] == exp, (lr['result'], lr['points'], lr['helped']))
+            S.check(f'{native}→{learn}: keine Seitenfehler', not errs, errs[:2])
+            c.close()
+    if section('p1_3'):
+        S.run('P1-3 Hilfe', p1_3)
+
     b.close()
 S.finish()

@@ -27,9 +27,17 @@ export class RoundEngine {
     this.t0 = null; this.done = false; this.result = null; this.hitAt = null;
     this.targetSince = null; this.lastSpokenId = null; this.speechEnd = -Infinity; this.speechStart = -Infinity;
     this.tips = []; this.hardSaid = false; this.bestWrong = null; this.lastTop = null; this.predictions = 0;
+    this.pausedAt = null; this.helped = false;
   }
   start(t) { this.reset(); this.t0 = t; return [{ type: 'start', t }]; }
-  elapsed(t) { return this.t0 == null ? 0 : t - this.t0; }
+  elapsed(t) { return this.t0 == null ? 0 : (this.pausedAt ?? t) - this.t0; }
+  get paused() { return this.pausedAt != null; }
+  /** Hilfe-Karte offen: Rundenuhr steht (Restzeit bleibt erhalten) */
+  pause(t) { if (this.pausedAt == null && !this.done && this.t0 != null) { this.pausedAt = t; this.targetSince = null; } }
+  resume(t) {
+    if (this.pausedAt == null) return;
+    const d = t - this.pausedAt; this.t0 += d; this.speechStart += d; this.speechEnd += d; this.pausedAt = null;
+  }
   /** Controller meldet Ende einer Sprachausgabe (sonst Schätzung aus speak-Ereignis) */
   speechEnded(t) { this.speechEnd = t; }
   /** Controller meldet echte Clip-Dauer (verlängert/verkürzt die Schätzung) */
@@ -38,7 +46,7 @@ export class RoundEngine {
 
   /** Neue Klassifikation. top = [{id,p}] absteigend (maskiert), ink = bisherige Strichlänge */
   onPrediction(t, top, ink, { estSpeechMs = 1300 } = {}) {
-    if (this.done || this.t0 == null || !top || !top.length) return [];
+    if (this.done || this.t0 == null || this.paused || !top || !top.length) return [];
     const ev = [], e = this.elapsed(t);
     this.predictions++;
     this.lastTop = top.slice(0, 5).map((x) => ({ id: x.id, p: +x.p.toFixed(3) }));
@@ -65,7 +73,7 @@ export class RoundEngine {
   }
   /** Uhr-Tick (z. B. jede Animation-Frame) */
   tick(t) {
-    if (this.done || this.t0 == null) return [];
+    if (this.done || this.t0 == null || this.paused) return [];
     const e = this.elapsed(t), ev = [];
     if (e >= this.duration) return this.finish(t, 'timeout', ev);
     if (!this.hardSaid && e >= this.duration - this.r.hardMs && e < this.duration - 1200 && !this.speaking(t) && t - this.speechEnd >= 600) {
@@ -78,9 +86,10 @@ export class RoundEngine {
     ev.push({ type: result, t: this.elapsed(t), interrupt: true });
     return ev;
   }
-  /** Punkte: Treffer 60 + Tempo-Bonus bis 40 (linear über Dauer) */
+  /** Punkte: Treffer 60 + Tempo-Bonus bis 40 (linear über Dauer). Nach Hilfe: Treffer zählt, aber ohne Tempo-Bonus */
   points() {
     if (this.result !== 'hit') return 0;
+    if (this.helped) return 60;
     return 60 + Math.round(40 * Math.max(0, 1 - this.hitAt / this.duration));
   }
   snapshot() {

@@ -6,6 +6,7 @@ import { playDaily } from './game/daily.js';
 /** Szenen für Screenshots/acuity-loop: ?test=1&scene=<name> */
 export async function scene(app, name) {
   const $ = (s) => document.querySelector(s);
+  const Q = (k) => new URLSearchParams(location.search).get(k);
   const others = await app.others();
   const pick = (id) => others[id][0].strokes;
   const setPair = (native, learn) => { Object.assign(app.settings, { native, learn, airOffered: true }); app.applyTexts(); };
@@ -38,6 +39,13 @@ export async function scene(app, name) {
         st.setCursor(st.w * 0.62 + Math.sin(now / 700) * 20, st.h * 0.3, 'hover'); requestAnimationFrame(draw);
       };
       requestAnimationFrame(draw); app.round.showBubble('Hmm … ay?');
+      break;
+    }
+    case 'help': { // Iteration 1: Hilfe-Karte „So malen es andere — jetzt du!" über laufender Runde
+      setPair('de', 'tr'); await app.clfPromise; roundBase(Q('word') || 'bicycle');
+      app.round.draw({ id: Q('word') || 'bicycle' });
+      await app.round.feed(pick('bicycle').slice(0, 1), { timing: 'instant' });
+      app.round.help(app.round.active);
       break;
     }
     case 'article': setPair('tr', 'de'); roundBase('cat', { learnArticle: false }); app.stage.enabled = false; app.articleStep(app.byId.get('cat')); loop(); break;
@@ -108,7 +116,7 @@ export function install(app) {
     const r = app.round?.active;
     return JSON.parse(JSON.stringify({
       screen: app.screen, mode: app.mode, settings: app.settings, date: app.today(), clfReady: !!app.clf, backend: app.clf?.backend,
-      round: r ? { target: r.w.id, elapsedMs: Math.round(r.engine.elapsed(performance.now())), tips: r.engine.tips, lastTop: r.engine.lastTop, predictions: r.engine.predictions } : null,
+      round: r ? { target: r.w.id, elapsedMs: Math.round(r.engine.elapsed(performance.now())), tips: r.engine.tips, lastTop: r.engine.lastTop, predictions: r.engine.predictions, paused: r.engine.paused, helped: !!r.helped, enabled: app.stage.enabled } : null,
       overlay: !document.querySelector('#round-overlay').hidden,
       overlayClass: document.querySelector('#round-overlay').className,
       lastArticle: app.lastArticle || null, toast: document.querySelector('#toast').hidden ? null : document.querySelector('#toast').textContent,

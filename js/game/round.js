@@ -3,7 +3,7 @@ import { RoundEngine } from '../core/engine.js';
 import { HIT_FLOOR } from '../core/classifier.js';
 import { t, word, cap, strokeColor, LANGS, pluralPhrase, ART_TEXT } from '../core/i18n.js';
 import { drawStrokes } from './ink.js';
-import { mount as mountAlive, confetti } from './alive.js';
+import { mount as mountAlive, confetti, unmountAll } from './alive.js';
 
 const CLASSIFY_MS = 450;
 const $ = (s, r = document) => r.querySelector(s);
@@ -62,7 +62,7 @@ export class RoundController {
   }
 
   async _classify(force = false) {
-    const r = this.active; if (!r || r.engine.done) return;
+    const r = this.active; if (!r || r.engine.done || r.engine.paused) return;
     if (r.busy) { if (force) r.pending = true; return; } // erzwungene Klassifikation nie verlieren
     const clf = this.app.clf; if (!clf) return;
     const now = performance.now();
@@ -112,15 +112,15 @@ export class RoundController {
   _loop(now) {
     this.raf = requestAnimationFrame(this._loop);
     const r = this.active;
-    if (r && !r.engine.done) {
+    if (r && !r.engine.done && !r.engine.paused) {
       if (r.confirmAt && now >= r.confirmAt && !r.busy) { r.confirmAt = null; this._classify(true); }
       else if (r.engine.targetSince != null && !r.busy && now - r.lastClassify >= 320) this._classify(true); // Bestätigung auch ohne neue Striche
       else this._classify(false);
       this._handle(r, r.engine.tick(now));
       const left = Math.max(0, r.engine.duration - r.engine.elapsed(now));
       this.app.ui?.timer(left, r.opts.totalMs || r.engine.duration);
-      // Hilfe nach 8 s: „So malen es andere" (beendet die Runde freundlich, auch per Tastatur erreichbar)
-      if (!r.helpShown && r.engine.elapsed(now) > 8000 && !r.opts.totalMs) { r.helpShown = true; const hb = document.getElementById('round-help'); hb.hidden = false; hb.onclick = () => { if (this.active === r && !r.engine.done) { this.app.sfx?.play('tap'); r.helped = true; this._handle(r, r.engine.finish(performance.now(), 'timeout')); } }; }
+      // Hilfe nach 8 s: „So malen es andere — jetzt du!" = Hinweis, kein Aufgeben (Runde pausiert, danach Restzeit)
+      if (!r.helpShown && r.engine.elapsed(now) > 8000 && !r.opts.totalMs) { r.helpShown = true; const hb = document.getElementById('round-help'); hb.hidden = false; hb.onclick = () => this.help(r); }
       if (left < 5000 && left > 0 && Math.floor(left / 1000) !== r.lastTickS) { r.lastTickS = Math.floor(left / 1000); this.app.sfx?.play('tick'); }
     }
     if (!r || now >= (r.frozenUntil || 0)) this.stage.render(now);
@@ -148,9 +148,6 @@ export class RoundController {
       try { navigator.vibrate?.(40); } catch {}
       setTimeout(() => { ink.classList.remove('squash'); void ink.offsetWidth; ink.classList.add('squash'); confetti(document.querySelector('#stage canvas.fx'), this.stage.color); }, 100);
       setTimeout(() => app.sfx?.play(r.w.sfx), 520);
-    } else if (r.helped) { // Hilfe erbeten: nicht „Zeit ist um" sagen (Sprach-Review 3 Nr. 1)
-      this.showBubble(t('helpBubble', {}, learn));
-      this.stage.crumble(); app.sfx?.play('crumble');
     } else {
       this.showBubble(t('timeUp', {}, learn));
       this.stage.crumble();
@@ -159,6 +156,37 @@ export class RoundController {
     out.helped = !!r.helped;
     this.active = null;
     r.resolve(out);
+  }
+
+  /**
+   * Hilfe als Hinweis (Review 1 P1-3): Uhr pausiert, Karte „So malen es andere — jetzt du!" mit Beispielen OHNE
+   * Übersetzung, danach geht dieselbe Runde mit der Restzeit weiter. Treffer zählt (ohne Tempo-Bonus).
+   */
+  async help(r) {
+    const app = this.app, ui = app.settings.native;
+    if (this.active !== r || r.engine.done || r.helpOpen) return;
+    r.helpOpen = true; r.helped = true; r.engine.helped = true;
+    document.getElementById('round-help').hidden = true;
+    r.engine.pause(performance.now());
+    if (this.stage.active) this.stage.endStroke();
+    this.stage.enabled = false; app.sfx?.play('tap'); app.sfx?.scribbleStop(); app.voice?.stop();
+    this.bubble.hidden = true;
+    this.overlay.className = 'overlay'; this.overlay.hidden = false;
+    this.overlay.innerHTML = `<div class="card help" role="dialog" aria-live="polite"><h3>${escapeHtml(t('helpTitle', {}, ui))}</h3><div class="others"></div>
+      <button class="btn primary big" data-act="help-go">${escapeHtml(t('helpGo', {}, ui))}</button></div>`;
+    this._fillOthers(r.w, this.overlay.querySelector('.others'), { replay: true });
+    await new Promise((res) => {
+      const go = this.overlay.querySelector('[data-act=help-go]');
+      go.addEventListener('click', () => res(), { once: true });
+      app.hooks.helpGo = res;
+      setTimeout(() => go.focus({ preventScroll: true }), 50);
+    });
+    if (this.active !== r || r.engine.done) return; // Runde inzwischen geschlossen
+    unmountAll(this.overlay); this.overlay.hidden = true; this.overlay.innerHTML = '';
+    app.sfx?.play('tap');
+    r.engine.resume(performance.now()); r.helpOpen = false;
+    this.stage.enabled = true; this.stage.pointerOn = app.mode === 'screen';
+    app.voice?.word(r.w.id, app.settings.learn);
   }
 
   /** Wörter in 3 Sprachen: Lernsprache zuerst, dann Muttersprache, dann dritte */
@@ -191,11 +219,12 @@ export class RoundController {
     });
   }
 
-  async _fillOthers(w, box) {
+  async _fillOthers(w, box, { replay = false } = {}) {
     const others = await this.app.others();
     const list = (others[w.id] || []).slice(0, 3);
     box.innerHTML = list.map(() => '<canvas width="160" height="160"></canvas>').join('');
     [...box.querySelectorAll('canvas')].forEach((c, i) => {
+      if (replay) { mountAlive(c, { strokes: list[i].strokes, color: '#1E2A3A', style: 'pencil', width: 3, replay: 2.2 + i * 0.35, delay: i * 350, boil: 0.5, still: true, seed: i + 3 }); return; }
       const ctx = c.getContext('2d');
       drawStrokes(ctx, list[i].strokes, { style: 'pencil', color: '#1E2A3A', width: 3.2, box: { x: 0, y: 0, w: 160, h: 160 }, seed: i + 3 });
     });
