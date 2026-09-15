@@ -22,7 +22,7 @@ export function installFlow(app) {
   };
   /** Luft-Modus einschalten. Rückgabe true = läuft. Fehler → Bildschirm-Modus ohne Nachhaken. */
   app.enterAir = async ({ handCheck = true } = {}) => {
-    if (inAppBrowser()) { app.ui.toast(t('inApp')); return false; }
+    if (inAppBrowser()) { app.ui.toast(`${t('inApp')} — ${t('inAppB')}`, 4200); return false; }
     const air = await app.getAir();
     // Erst die Kamera-Abfrage (direkt nach der Vorab-Karte), dann die Modelle — bei Ablehnung kein Download umsonst
     try { await air.startCamera(); }
@@ -55,7 +55,11 @@ export function installFlow(app) {
   function renderToggle() {
     const el = $('#mode-toggle'); if (!el) return;
     el.hidden = app.screen !== 'round';
-    el.innerHTML = `<button class="chip" data-m="screen" aria-pressed="${app.mode === 'screen'}">${escapeHtml(t('screenToggle'))}</button><button class="chip" data-m="air" aria-pressed="${app.mode === 'air'}">${escapeHtml(t('airToggle'))}</button>`;
+    // In-App-Browser: kein Balken über der Runde, nur ein kleiner Hinweis-Chip am „In die Luft"-Schalter
+    const air = inAppBrowser()
+      ? `<button class="chip locked" data-m="air" aria-pressed="false" title="${escapeHtml(t('inApp'))}">${escapeHtml(t('airToggle'))}<small>${escapeHtml(t('inAppChip'))}</small></button>`
+      : `<button class="chip" data-m="air" aria-pressed="${app.mode === 'air'}">${escapeHtml(t('airToggle'))}</button>`;
+    el.innerHTML = `<button class="chip" data-m="screen" aria-pressed="${app.mode === 'screen'}">${escapeHtml(t('screenToggle'))}</button>${air}`;
   }
   app.renderToggle = renderToggle;
   $('#mode-toggle').addEventListener('click', async (e) => {

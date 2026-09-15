@@ -136,7 +136,8 @@ async function boot() {
   window.addEventListener('pointerdown', () => { if (app.screen !== 'round') setTimeout(() => app.music?.play(), 50); }, { once: true });
   app.setMode('screen');
   applyTexts();
-  if (inAppBrowser()) $('#inapp').hidden = false;
+  if (inAppBrowser() && !app.settings.inAppDismissed) $('#inapp').hidden = false;
+  $('#inapp-close').addEventListener('click', () => { $('#inapp').hidden = true; app.settings = saveSettings({ inAppDismissed: true }); app.sfx?.play('tap'); });
   app.clfPromise = createClassifier({ words, backend: Q.get('backend') || undefined }).then((c) => (app.clf = c)).catch((e) => { app.log.push('clf ' + e.message); throw e; });
   $('#btn-daily').addEventListener('click', async () => {
     app.sfx?.play('tap');

@@ -25,11 +25,11 @@
   </defs>
 </svg>
 
-<div id="inapp" class="inapp" hidden role="status"><strong data-t="inApp"></strong> <span data-t="inAppB"></span></div>
-
 <!-- START -->
 <main id="screen-start" class="screen paper" aria-labelledby="title">
   <div class="start-wrap">
+    <!-- In-App-Browser-Hinweis: eigene Layout-Zeile (nie über Inhalt), mit × — Zustand in localStorage -->
+    <div id="inapp" class="inapp" hidden role="status"><p><strong data-t="inApp"></strong> <span data-t="inAppB"></span></p><button class="inapp-x" id="inapp-close" aria-label="Schließen" data-t-aria="close"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <header class="start-head">
       <h1 id="title" class="logo">Kalemo<svg class="logo-trail" viewBox="0 0 220 26" aria-hidden="true"><path d="M6 16c30-10 60 8 92-2s62-10 116-3" pathLength="1"/></svg></h1>
       <p class="tagline" aria-live="polite"><span id="tagline"></span></p>
