@@ -39,7 +39,7 @@ export function installDict(app) {
       const c = ev.target.closest('.dict-cell'); if (c) { app.sfx?.play('tap'); detail(entries.find((x) => x.id === c.dataset.id)); return; }
       if (ev.target.closest('[data-act=home]')) { app.goHome(); return; }
       if (ev.target.closest('[data-act=poster]')) {
-        const p = await poster(app, entries); app.lastPoster = { bytes: p.blob.size, w: p.canvas.width, h: p.canvas.height };
+        const p = await poster(app, entries); app.lastPoster = { bytes: p.blob.size, w: p.canvas.width, h: p.canvas.height, fill: p.fill };
         await shareImage(app, { blob: p.blob, filename: 'kalemo-poster.png', text: 'Kalemo', forceFallback: !!app.TEST });
       }
     };

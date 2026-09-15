@@ -248,15 +248,23 @@ export async function poster(app, entries) {
   paper(ctx, W, H, 99);
   ctx.fillStyle = INK; ctx.font = '700 110px Caveat'; ctx.fillText(t('dict', {}, native), 80, 160);
   ctx.font = '700 30px Nunito'; ctx.fillStyle = PENCIL; ctx.fillText(`${LANG_CODE[learn]} · ${LANG_CODE[native]} · ${new Date().toLocaleDateString(native)}`, 84, 215);
-  const list = entries.slice(0, 20); const cols = 4, cw = (W - 160) / cols, ch = 360;
+  // Review P3-6: Raster passt sich der Wortzahl an (große Kacheln bei wenigen Wörtern, Seite immer gefüllt)
+  const list = entries.slice(0, 20), n = Math.max(1, list.length);
+  const cols = n === 1 ? 1 : n <= 6 ? 2 : n <= 12 ? 3 : 4, rows = Math.ceil(n / cols);
+  const top = 262, avail = H - 150 - top, cw = (W - 160) / cols, ch = Math.min(avail / rows, cw * 1.25);
+  const y0 = top + (avail - ch * rows) / 2, fs = Math.round(Math.max(44, Math.min(96, cw * 0.15))), fs2 = Math.round(Math.max(26, Math.min(44, cw * 0.075)));
   list.forEach((e, i) => {
-    const w = app.byId.get(e.id); if (!w) return; const x = 80 + (i % cols) * cw, y = 260 + Math.floor(i / cols) * ch;
+    const row = Math.floor(i / cols), inRow = row === rows - 1 ? n - row * cols : cols; // unvollständige letzte Zeile mittig
+    const w = app.byId.get(e.id); if (!w) return; const x = 80 + (i % cols) * cw + ((cols - inRow) * cw) / 2, y = y0 + row * ch;
     const col = learn === 'de' ? ART_TEXT[w.de.art] : INK;
-    drawStrokes(ctx, e.strokes, { style: 'pencil', color: learn === 'de' ? ART_COLOR[w.de.art] : INK, width: 5, box: { x: x + 10, y: y + 6, w: cw - 20, h: ch - 120 }, seed: i + 1 });
-    ctx.textAlign = 'center'; ctx.fillStyle = col; ctx.font = '700 46px Caveat'; ctx.fillText(word(w, learn), x + cw / 2, y + ch - 70);
-    ctx.fillStyle = PENCIL; ctx.font = '400 28px Nunito'; ctx.fillText(word(w, native), x + cw / 2, y + ch - 32); ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(255,253,247,0.75)'; rr(ctx, x + 8, y + 8, cw - 16, ch - 16, 22); ctx.fill();
+    drawStrokes(ctx, e.strokes, { style: 'crayon', color: col, fringe: learn === 'de' ? FRINGE[w.de.art] : FRINGE.neutral, paper: 'rgba(255,253,247,0.6)', width: Math.max(5, Math.min(12, cw / 55)), box: { x: x + 20, y: y + 16, w: cw - 40, h: ch - fs - fs2 - 60 }, seed: i + 1 });
+    ctx.textAlign = 'center'; ctx.fillStyle = col; ctx.font = `700 ${fs}px Caveat`; ctx.fillText(word(w, learn), x + cw / 2, y + ch - fs2 - 34);
+    ctx.fillStyle = PENCIL; ctx.font = `400 ${fs2}px Nunito`; ctx.fillText(word(w, native), x + cw / 2, y + ch - 24); ctx.textAlign = 'left';
   });
   ctx.fillStyle = INK; ctx.font = '700 64px Caveat'; ctx.textAlign = 'right'; ctx.fillText('Kalemo', W - 80, H - 70);
   ctx.fillStyle = PENCIL; ctx.font = '700 26px Nunito'; ctx.fillText('kalemo.demo.osai.solutions', W - 80, H - 36); ctx.textAlign = 'left';
-  return { blob: await toBlob(c), canvas: c };
+  // Füllgrad (Test): Anteil Zeilen im Rasterbereich mit Tinte
+  const d = ctx.getImageData(0, top, W, avail).data; let inked = 0; for (let y = 0; y < avail; y += 8) { let any = false; for (let x = 80; x < W - 80; x += 6) { const k = (y * W + x) * 4; if (d[k] + d[k + 1] + d[k + 2] < 400) { any = true; break; } } if (any) inked++; }
+  return { blob: await toBlob(c), canvas: c, fill: +(inked / Math.ceil(avail / 8)).toFixed(2) };
 }

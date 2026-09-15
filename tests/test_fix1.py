@@ -777,5 +777,16 @@ with server() as base, sync_playwright() as p:
     if section('p3_15_5'):
         S.run('P3-15/P3-5', p3_15_5)
 
+    # ---------- P3-6: Poster-Raster passt sich der Wortzahl an ----------
+    def p3_6():
+        c = b.new_context(viewport={'width': 1280, 'height': 800}); pg = c.new_page()
+        pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000)
+        r = pg.evaluate('''async () => { const app = window.__kalemo; const o = await app.others(); const m = await import('/js/game/cards.js'); const ids = app.words.map(w => w.id);
+          const out = {}; for (const n of [1, 5, 12, 20]) { const p = await m.poster(app, ids.slice(0, n).map((id) => ({ id, strokes: o[id][0].strokes }))); out[n] = [p.canvas.width, p.canvas.height, p.fill]; } return out; }''')
+        S.check('Poster 1240×1754 bei 1/5/12/20 Wörtern, Rasterfläche gefüllt (≥ 55 % der Zeilen mit Tinte, 1 Wort ≥ 40 %; vorher 5 Wörter ≈ 25 %)', all(v[0] == 1240 and v[1] == 1754 and v[2] >= (0.4 if k == '1' else 0.55) for k, v in r.items()), r)
+        c.close()
+    if section('p3_6'):
+        S.run('P3-6 Poster', p3_6)
+
     b.close()
 S.finish()
