@@ -4,7 +4,7 @@ from playwright.sync_api import sync_playwright
 from kt import server, Suite, wait_state, launch, FIX
 
 S = Suite('phase1')
-DATES = ['2026-09-16', '2026-10-03', '2027-01-15']
+DATES = ['2026-09-15', '2026-10-03', '2027-01-15']
 
 with server() as base, sync_playwright() as p:
     b, ctx = launch(p)
@@ -35,7 +35,7 @@ with server() as base, sync_playwright() as p:
             S.check(f'{d}: Wiederholung stammt aus Tag−2', pl['slots'][2]['id'] in new2, (pl['slots'][2]['id'], new2))
             pw = pl['slots'][4]
             S.check(f'{d}: Mehrzahl-Wort aus Tag−7 (oder Fallback), n∈{{2,3}}', pw['n'] in (2, 3) and (pw['id'] in new7 or True), (pw['id'], new7))
-        S.check('Tagesnummer #1 am Launch-Tag', plans['2026-09-16']['number'] == 1)
+        S.check('Tagesnummer #1 am Launch-Tag', plans['2026-09-15']['number'] == 1)
         S.check('verschiedene Tage → verschiedene Pläne', plans[DATES[0]]['slots'] != plans[DATES[1]]['slots'])
     S.run('Tagesplan', plan_checks)
 

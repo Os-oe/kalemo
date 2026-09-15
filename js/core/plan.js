@@ -2,7 +2,7 @@
 // Slots: [neu, neu, Wiederholung(Tag−2), neu, Mehrzahl(Wort von Tag−7)]
 // Vor Launch+2 / +7 ziehen die modularen Indizes automatisch Wörter vom Ende der Pool-Reihenfolge.
 
-export const LAUNCH = '2026-09-16'; // Tagesskizze #1
+export const LAUNCH = '2026-09-15'; // Tagesskizze #1 = Deploy-Tag
 const SEED = 0x4b414c45; // "KALE"
 
 export function berlinDate(ms = Date.now()) {
