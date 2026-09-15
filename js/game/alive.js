@@ -42,7 +42,12 @@ function loop(now) {
     const alive = now < it.t0 ? 0 : Math.min(1, t * 2.5);
     const box = { x: 0, y: 0, w, h };
     const progress = o.replay ? Math.min(1, ((t % (o.replay + 1.2)) / o.replay)) : 1; // Leuchtspur entsteht in Schleife
-    const fit = drawStrokes(ctx, o.strokes, { style: o.style || 'pencil', color: o.color, fringe: o.fringe, paper: o.paper, padding: o.padding, width: (o.width || 3.2) * dpr * Math.max(0.7, Math.min(1.6, w / (200 * dpr))), box, boil: reduce ? 0 : (o.boil ?? 0.9), t, motion: o.motion, alive: o.still ? 0 : alive, seed: o.seed || 1, progress: reduce ? 1 : progress });
+    const common = { style: o.style || 'pencil', color: o.color, fringe: o.fringe, paper: o.paper, padding: o.padding, boil: reduce ? 0 : (o.boil ?? 0.9), motion: o.motion, alive: o.still ? 0 : alive, progress: reduce ? 1 : progress };
+    let fit;
+    if (o.groups?.length > 1) { // Mehrzahl: N Zeichnungen nebeneinander, leicht versetzt im Takt
+      const n = o.groups.length, cw = w / n;
+      o.groups.forEach((g, gi) => { const f = drawStrokes(ctx, g, { ...common, width: (o.width || 3.2) * dpr * Math.max(0.7, Math.min(1.6, cw / (200 * dpr))), box: { x: gi * cw, y: h * 0.08, w: cw, h: h * 0.84 }, t: t + gi * 0.23, seed: (o.seed || 1) + gi * 7 }); if (gi === 0) fit = f; });
+    } else fit = drawStrokes(ctx, o.strokes, { ...common, width: (o.width || 3.2) * dpr * Math.max(0.7, Math.min(1.6, w / (200 * dpr))), box, t, seed: o.seed || 1 });
     // Kategorie-Partikel
     if (!reduce && !o.still && alive > 0 && o.motion && fit) particles(it, o.motion, fit, box, dt, dpr);
     it.particles.update(dt); it.particles.draw(ctx);

@@ -189,7 +189,8 @@ export function installFlow(app) {
     out.kind = slot.kind; out.n = plural; out.articleOk = articleOk;
     if (articleOk) out.points += 20;
     const order = app.round.langOrder();
-    if (plural) app.voice?.announce(w.id, order, { delay: 400, plural });
+    if (plural && out.result === 'hit') app.voice?.pluralHitAnnounce(w.id, order, plural); // P3-4: Ausruf in der Mehrzahl
+    else if (plural) app.voice?.announce(w.id, order, { delay: 400, plural });
     else if (out.result === 'hit') app.voice?.hitAnnounce(w.id, order);
     else app.voice?.missAnnounce(w.id, order);
     await sleep(out.result === 'hit' ? 950 : 1000); // Treffer-/Zerbrösel-Animation wirken lassen

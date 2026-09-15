@@ -1,5 +1,5 @@
 // Tagesende: lebende eigene Zeichnungen, „KI erkannte x/5", Punkte-Count-up, Serien-Flamme, lustigster Fehltipp.
-import { t, word, ART_TEXT, FRINGE, funnyLine, funnyAllowed } from '../core/i18n.js';
+import { t, word, ART_TEXT, FRINGE, funnyLine, funnyAllowed, pluralPhrase } from '../core/i18n.js';
 import { streak, saveSettings } from '../core/store.js';
 import { addDays } from '../core/plan.js';
 import { mount, unmountAll } from './alive.js';
@@ -21,7 +21,8 @@ export function installDayEnd(app) {
     grid.innerHTML = sum.results.map((r, i) => {
       const w = app.byId.get(r.id); const ok = r.result === 'hit' || (r.parts > 0);
       const col = learn === 'de' ? ART_TEXT[r.kind === 'plural' ? 'plural' : w.de.art] : '#1E2A3A';
-      return `<figure class="${ok ? 'ok' : 'miss'}" style="--d:${i * 90}ms"><canvas></canvas><figcaption style="color:${col}">${escapeHtml(word(w, learn))}${r.kind === 'plural' ? ` <small>${r.parts}/${r.n}</small>` : ''}</figcaption></figure>`;
+      // Mehrzahl (P3-4): Kachel in der Mehrzahl („zwei Frösche") mit allen gemalten Zeichnungen
+      return `<figure class="${ok ? 'ok' : 'miss'}" style="--d:${i * 90}ms"><canvas></canvas><figcaption style="color:${col}">${escapeHtml(r.kind === 'plural' && r.n ? pluralPhrase(w, learn, r.n) : word(w, learn))}${r.kind === 'plural' ? ` <small>${r.parts}/${r.n}</small>` : ''}</figcaption></figure>`;
     }).join('');
     [...grid.querySelectorAll('canvas')].forEach((c, i) => {
       const r = sum.results[i], w = app.byId.get(r.id); const ok = r.result === 'hit' || r.parts > 0;
@@ -29,7 +30,7 @@ export function installDayEnd(app) {
       const col = learn === 'de' ? ART_TEXT[r.kind === 'plural' ? 'plural' : w.de.art] : '#1E2A3A';
       // Tagesende-Kachel als Standbild (Iteration 1): ganze Zeichnung immer sichtbar, Line-Boil als leise Bewegung
       const fringe = learn === 'de' ? FRINGE[r.kind === 'plural' ? 'plural' : w.de.art] : FRINGE.neutral;
-      mount(c, { strokes, color: col, fringe: ok ? fringe : '#C9CED6', style: 'crayon', width: 3.4, boil: 0.9, still: true, delay: 300 + i * 160, seed: i + 2 });
+      mount(c, { strokes, groups: r.kind === 'plural' && r.drawings?.length > 1 ? r.drawings : null, color: col, fringe: ok ? fringe : '#C9CED6', style: 'crayon', width: 3.4, boil: 0.9, still: true, delay: 300 + i * 160, seed: i + 2 });
     });
     // Punkte zählen hoch
     const pts = $('#dayend-points'); const start = performance.now(); const dur = 1200;

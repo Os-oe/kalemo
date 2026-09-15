@@ -119,12 +119,16 @@ export function installAudio(app) {
     /** „kedi · die Katze · cat": Lernsprache, Muttersprache, dritte */
     announce: (id, order, { delay = 0, plural = null } = {}) => sequence(order.flatMap((l, i) => [...(i ? [0.35] : []), ...(plural ? (l === 'tr' ? [P.num(plural, 'tr'), ...(app.byId.get(id)?.tr?.tane ? ['tr/n/tane'] : []), P.word(id, 'tr')] : [P.num(plural, l), P.plural(id, l)]) : [P.word(id, l)])]), { delay: delay / 1000 }),
     timeup: (l) => sequence([P.x('timeup', l)]),
+    /** Mehrzahl-Zwischenstand: „eins!" / „bir!" (vorhandene Zahl-Clips) */
+    count: (i, l) => sequence([P.num(i, l)]),
+    /** Mehrzahl geschafft: „Ich weiß! Zwei Frösche!" … „iki kurbağa · two frogs" (Zahl-Clip + Plural-Clip, TR Zahl + Wort) */
+    pluralHitAnnounce: (id, order, n) => { stopVoice(); const ph = (l) => (l === 'tr' ? [P.num(n, 'tr'), ...(app.byId.get(id)?.tr?.tane ? ['tr/n/tane'] : []), P.word(id, 'tr')] : [P.num(n, l), P.plural(id, l)]); return sequence([P.x(Math.random() < 0.5 ? 'hit1' : 'hit2', order[0]), 0.08, ...ph(order[0]), 0.55, ...ph(order[1]), 0.35, ...ph(order[2])], { gap: 0.02 }); },
     /** Treffer: „Buldum! Kedi!" … „die Katze · cat" (ein Ablauf, Lernsprache zuerst) */
     hitAnnounce: (id, order) => { stopVoice(); return sequence([P.x(Math.random() < 0.5 ? 'hit1' : 'hit2', order[0]), 0.08, P.word(id, order[0]), 0.55, P.word(id, order[1]), 0.35, P.word(id, order[2])]); },
     /** Zeit um: freundlich + Wort trotzdem in 3 Sprachen */
     missAnnounce: (id, order) => { stopVoice(); return sequence([P.x('timeup', order[0]), 0.45, P.word(id, order[0]), 0.35, P.word(id, order[1]), 0.35, P.word(id, order[2])]); },
     stop: stopVoice,
-    preloadWords: (ids, langs) => { const ps = []; for (const id of ids) for (const l of langs) { ps.push(P.word(id, l)); if (l !== 'tr') ps.push(P.plural(id, l)); } for (const id of ids) ps.push(P.bare(id)); for (const l of langs) { ['hmm1', 'hmm2', 'hmm3', 'hit1', 'hit2', 'timeup', 'hard'].forEach((k) => ps.push(P.x(k, l))); [2, 3].forEach((n) => ps.push(P.num(n, l))); } preload(ps); },
+    preloadWords: (ids, langs) => { const ps = []; for (const id of ids) for (const l of langs) { ps.push(P.word(id, l)); if (l !== 'tr') ps.push(P.plural(id, l)); } for (const id of ids) ps.push(P.bare(id)); for (const l of langs) { ['hmm1', 'hmm2', 'hmm3', 'hit1', 'hit2', 'timeup', 'hard'].forEach((k) => ps.push(P.x(k, l))); [1, 2, 3].forEach((n) => ps.push(P.num(n, l))); } preload(ps); },
     duration: (path) => (manifest[path + '.mp3'] || manifest[path] || 0) / 1000,
   };
 

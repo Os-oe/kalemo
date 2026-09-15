@@ -1,7 +1,7 @@
 // Runden-Controller: verbindet Bühne, Klassifikator, RoundEngine, Stimme/SFX und Overlay.
 import { RoundEngine } from '../core/engine.js';
 import { HIT_FLOOR } from '../core/classifier.js';
-import { t, word, cap, strokeColor, LANGS, pluralPhrase, ART_TEXT, FRINGE } from '../core/i18n.js';
+import { t, word, cap, strokeColor, LANGS, pluralPhrase, ART_TEXT, FRINGE, NUM } from '../core/i18n.js';
 import { drawStrokes } from './ink.js';
 import { mount as mountAlive, confetti, unmountAll } from './alive.js';
 
@@ -47,7 +47,7 @@ export class RoundController {
     this.stage.setColor(opts.color || strokeColor(w, app.settings.learn));
     this.stage.enabled = true;
     this.stage.pointerOn = app.mode === 'screen';
-    this.bubble.hidden = true;
+    if (!opts.plural || opts.plural.i === 1) this.bubble.hidden = true; // Mehrzahl: „Eins!" bleibt stehen, bis die KI wieder rät
     return new Promise((resolve) => {
       const r = this.active = {
         w, engine, opts, resolve, lastVersion: -1, lastClassify: 0, busy: false, confirmAt: null, frozenUntil: 0,
@@ -143,7 +143,10 @@ export class RoundController {
     const ink = this.stage.canvas;
     if (result === 'hit') {
       r.frozenUntil = performance.now() + 100; // Freeze 80–120 ms
-      this.showBubble(t('guessHit', { w: cap(word(r.w, learn), learn) }, learn));
+      const pl = r.opts.plural; // Mehrzahl (Review P3-4): Zwischenstand zählen, am Ende „Ich weiß! Zwei Frösche!"
+      if (pl && pl.i < pl.n) { this.showBubble(`${cap(NUM[learn][pl.i], learn)}!`); app.voice?.count(pl.i, learn); }
+      else if (pl) this.showBubble(t('guessHit', { w: cap(pluralPhrase(r.w, learn, pl.n), learn) }, learn));
+      else this.showBubble(t('guessHit', { w: cap(word(r.w, learn), learn) }, learn));
       app.sfx?.play('hit');
       try { navigator.vibrate?.(40); } catch {}
       setTimeout(() => { ink.classList.remove('squash'); void ink.offsetWidth; ink.classList.add('squash'); confetti(document.querySelector('#stage canvas.fx'), this.stage.color); }, 100);
@@ -211,7 +214,8 @@ export class RoundController {
       const col = learn === 'de' ? ART_TEXT[key] : '#1E2A3A';
       const fringe = learn === 'de' ? FRINGE[key] : FRINGE.neutral;
       const strokes = out.drawings?.length ? out.drawings[0] : out.strokes;
-      mountAlive(this.overlay.querySelector('canvas.alive'), { strokes, color: col, fringe, style: 'crayon', width: 5.2, padding: 0.13, motion: { kind: w.motion, id: w.id }, delay: 120, seed: 4 });
+      const groups = plural && out.drawings?.length > 1 ? out.drawings : null; // Mehrzahl: alle N Zeichnungen nebeneinander
+      mountAlive(this.overlay.querySelector('canvas.alive'), { strokes, groups, color: col, fringe, style: 'crayon', width: groups ? 4.2 : 5.2, padding: 0.13, motion: { kind: w.motion, id: w.id }, delay: 120, seed: 4 });
       setTimeout(() => app.sfx?.play('glitter'), 350);
     }
     this.overlay.querySelectorAll('[data-say]').forEach((b) => b.addEventListener('click', () => app.voice?.word(w.id, b.dataset.say)));

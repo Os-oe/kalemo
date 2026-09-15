@@ -601,5 +601,45 @@ with server() as base, sync_playwright() as p:
     if section('p3_1'):
         S.run('P3-1 Luft-Angebot', p3_1)
 
+    # ---------- P3-4: Mehrzahl — Ausruf, Stimme, Treffer-Karte, Tagesende in der Mehrzahl ----------
+    def p3_4():
+        c = b.new_context(viewport={'width': 1280, 'height': 800}); pg = c.new_page(); errs = []
+        pg.on('pageerror', lambda e: errs.append(str(e)))
+        pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000)
+        pg.mouse.click(5, 5)
+        pg.evaluate('() => window.__settings({native: "tr", learn: "de", airOffered: true, chosenPair: true, muted: false})')
+        pg.evaluate('() => window.__setDate("2026-09-17")')  # Tag #3: Mehrzahl „drei Äpfel"
+        plan, _ = play_daily(pg, 'de', stop_before=4)
+        slot = plan['slots'][4]; wid = slot['id']; n = slot['n']; w = WORDS[wid]
+        base_n = wait_state(pg, f's.round && s.round.target === {json.dumps(wid)}', 30000)['drawCount']
+        bubbles = []
+        for k in range(n):
+            wait_state(pg, f's.round && s.round.target === {json.dumps(wid)} && s.drawCount === {base_n + k}', 30000)
+            pg.evaluate('(st) => window.__feedStrokes(st, {timing: "real", ptMs: 8, gapMs: 120})', FIX[wid][k % 2])
+            if k < n - 1:
+                st = wait_state(pg, f's.drawCount === {base_n + k + 1} || s.overlay', 30000)
+                bubbles.append((st['bubble'] or {}).get('text'))
+        st = wait_state(pg, f's.lastResult && s.lastResult.id === {json.dumps(wid)} && s.overlay', 40000)
+        final = (st['bubble'] or {}).get('text')
+        nums = {1: 'Eins', 2: 'Zwei', 3: 'Drei'}
+        exp_final = f"Ich weiß! {nums[n]} {w['de']['pl']}!"
+        S.check(f'Zwischenstand zählt („Eins!"), Ausruf in der Mehrzahl („{exp_final}")', bubbles[:1] == ['Eins!'] and final == exp_final, (bubbles, final))
+        pg.wait_for_timeout(500)
+        vl = pg.evaluate('() => window.__state().voiceLog')
+        count_v = any(v['parts'] == ['de/n/1'] for v in vl)
+        hitv = [v for v in vl if any('/x/hit' in q for q in v['parts']) and f'de/p/{w["cls"]}' in v['parts']]
+        S.check('Stimme: Zahl-Clip beim Zwischenstand + Treffer = Ausruf + Zahl-Clip + Plural-Clip (3 Sprachen)', count_v and hitv and f'de/n/{n}' in hitv[-1]['parts'] and f'tr/n/{n}' in hitv[-1]['parts'] and f'en/p/{w["cls"]}' in hitv[-1]['parts'], hitv[-1]['parts'] if hitv else [v['parts'] for v in vl[-4:]])
+        groups = pg.evaluate('''() => { const c = document.querySelector('#round-overlay canvas.alive'); if (!c) return null; const x = c.getContext('2d'); const d = x.getImageData(0, 0, c.width, c.height).data; const cols = [];
+          for (let g = 0; g < 3; g++) { let n = 0; for (let y = 0; y < c.height; y += 3) for (let i = Math.floor(g * c.width / 3); i < (g + 1) * c.width / 3; i += 3) { const k = (y * c.width + i) * 4; if (d[k + 3] > 200) n++; } cols.push(n); } return cols; }''')
+        S.check(f'Treffer-Karte zeigt {n} Zeichnungen nebeneinander', st['lastResult']['parts'] == n and groups and all(x > 20 for x in groups[:n]), (groups, st['lastResult']['parts']))
+        pg.evaluate('() => window.__next()')
+        wait_state(pg, 's.screen === "dayend" && s.summary', 20000)
+        cap = pg.text_content('#dayend-grid figure:nth-child(5) figcaption') or ''
+        S.check(f'Tagesende-Kachel in der Mehrzahl („{nums[n].lower()} {w["de"]["pl"]}")', cap.startswith(f'{nums[n].lower()} {w["de"]["pl"]}') and f'{n}/{n}' in cap, cap)
+        S.check('P3-4: keine Seitenfehler', not errs, errs[:2])
+        c.close()
+    if section('p3_4'):
+        S.run('P3-4 Mehrzahl', p3_4)
+
     b.close()
 S.finish()

@@ -23,7 +23,7 @@ export function installPlural(app) {
       const left = TOTAL - (performance.now() - t0);
       if (left < 800) break;
       sub.textContent = `${t('pluralDraw', { n }, ui)} · ${t('pluralCount', { i, n }, ui)}`;
-      const out = await app.round.draw({ id: w.id, durationMs: left, color, totalMs: TOTAL, hardAtMs: 5000 });
+      const out = await app.round.draw({ id: w.id, durationMs: left, color, totalMs: TOTAL, hardAtMs: 5000, plural: { i, n } });
       lastOut = out; tips.push(...out.tips);
       if (out.bestWrong && (!bestWrong || out.bestWrong.p > bestWrong.p)) bestWrong = out.bestWrong;
       if (out.result !== 'hit') break;
@@ -31,7 +31,7 @@ export function installPlural(app) {
       app.stage.addGhost(out.strokes, color);
       sub.textContent = `${t('pluralCount', { i, n }, ui)}`;
       app.sfx?.play('hit');
-      await new Promise((r) => setTimeout(r, i < n ? 520 : 300));
+      await new Promise((r) => setTimeout(r, i < n ? 620 : 300));
     }
     const elapsed = performance.now() - t0;
     app.stage.clearGhosts(); sub.textContent = '';
