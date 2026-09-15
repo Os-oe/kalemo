@@ -680,6 +680,25 @@ with server(8792) as base, sync_playwright() as p:
             finally:
                 c.close()
 
+    # ---------- Aufgabe 11 (R2-P3-11 + Orchestrator-Notizen): Hilfe-Karte ----------
+    def t11_help():
+        c, pg, errs = fresh(b)
+        try:
+            pg.goto(base + '/?test=1&scene=help&word=bicycle'); pg.wait_for_selector('#round-overlay .card.help .others canvas', timeout=15000)
+            title = pg.text_content('#round-overlay .card.help h3') or ''; go = pg.text_content('#round-overlay [data-act=help-go]') or ''
+            S.check('Hilfe: Titel „So malen es andere", Knopf „Jetzt du!" — „jetzt du" nicht doppelt', title == 'So malen es andere' and go == 'Jetzt du!' and 'jetzt du' not in title.lower(), (title, go))
+            n = len(pg.query_selector_all('#round-overlay .card.help .others canvas'))
+            S.check('Fahrrad: nur Beispiele, die ein Mensch erkennt — 2 statt 3 (Sichtung tools/examples-drop.json)', n == 2, n)
+            count = '''() => [...document.querySelectorAll('#round-overlay .card.help .others canvas')].map(c => { const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let k = 0; for (let i = 3; i < d.length; i += 16) if (d[i] > 120) k++; return k; })'''
+            pg.wait_for_timeout(3200); a = pg.evaluate(count); pg.wait_for_timeout(1500); b2 = pg.evaluate(count)
+            S.check('Beispiele einmal animiert, Endbild bleibt stehen (keine leeren Kacheln nach dem Einmalen)', all(x > 40 for x in a) and all(abs(x - y) <= max(8, x * 0.15) for x, y in zip(a, b2)), (a, b2))
+            S.check('Hilfe-Karte: keine Seitenfehler', not errs, errs[:2])
+        finally:
+            c.close()
+
+    if on('t11'):
+        S.run('11 Hilfe-Karte', t11_help)
+
     if on('t9'):
         S.run('9 Demo-Szenen', t9_demo)
 

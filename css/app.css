@@ -390,3 +390,7 @@ body.landing-on #screen-duel .page { max-width: none; padding: 0; min-height: 10
   .start-wrap.played .today-art { width: 64px; height: 64px; }
   .start-wrap.played .today-main strong { font-size: 1.7rem; }
 }
+
+/* R2-P3-11: 2 oder 3 lesbare Beispiele — Kacheln füllen die Breite */
+.others { grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr)); }
+.others[style*="--n: 2"] canvas, .others[style*="--n:2"] canvas { max-width: 200px; justify-self: center; }

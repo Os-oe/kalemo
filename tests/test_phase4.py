@@ -151,7 +151,7 @@ with server() as base, sync_playwright() as p:
         page.wait_for_selector('#round-overlay .card.help .others canvas', timeout=6000)
         page.wait_for_timeout(800); s = page.evaluate('() => window.__state()')
         v_after = [v for v in s['voiceLog'] if v['t'] >= t_click]; fx_after = [x['name'] for x in s['fxLog'] if x['t'] >= t_click]
-        S.check('Hilfe-Weg: Hinweis-Karte „your turn" statt Aufgeben — kein Zeit-um-Clip/-Ton, Runde pausiert, kein Ergebnis', s['round'] and s['round']['paused'] and not any('/x/timeup' in q for v in v_after for q in v['parts']) and 'timeup' not in fx_after and 'your turn' in (page.text_content('#round-overlay .card.help h3') or '').lower() and not (s['lastResult'] and s['lastResult']['id'] == wid), ([v['parts'] for v in v_after], fx_after))
+        S.check('Hilfe-Weg: Hinweis-Karte „your turn" statt Aufgeben — kein Zeit-um-Clip/-Ton, Runde pausiert, kein Ergebnis', s['round'] and s['round']['paused'] and not any('/x/timeup' in q for v in v_after for q in v['parts']) and 'timeup' not in fx_after and 'others draw it' in (page.text_content('#round-overlay .card.help h3') or '').lower() and 'your turn' in (page.text_content('#round-overlay .card.help [data-act=help-go]') or '').lower() and not (s['lastResult'] and s['lastResult']['id'] == wid), ([v['parts'] for v in v_after], fx_after))
         aria = page.get_attribute('#round-close', 'aria-label')
         S.check('aria-label folgt der UI-Sprache (EN: Close)', aria == 'Close', aria)
         page.evaluate('() => window.__home()')

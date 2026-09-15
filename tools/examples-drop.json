@@ -1,0 +1,8 @@
+{
+  "_info": "Iteration 2 (R2-P3-11 + Orchestrator-Notiz): menschliche Sichtung der Kontaktbögen aller 148×3 „So malen andere“-Beispiele (data/examples.json). Diese Indizes erkennt ein Mensch nicht sicher als das Motiv → entfernt (lieber 2 statt 3). Anwenden: python3 tools/examples-drop.py",
+  "backpack": [1], "beard": [2], "bicycle": [2], "bread": [1], "brain": [1], "camel": [0], "castle": [0], "cactus": [2],
+  "clock": [1], "cloud": [2], "cup": [1], "drums": [2], "duck": [1], "fish": [2], "fork": [1], "frog": [2], "hat": [0],
+  "key": [1], "knife": [2], "lighthouse": [0], "motorbike": [0], "moon": [1], "mouse": [0], "mouth": [1], "octopus": [2],
+  "piano": [1], "sandwich": [1], "skyscraper": [2], "shoe": [0], "snowman": [2], "snowflake": [2], "toilet": [2],
+  "train": [0], "tiger": [0], "truck": [0], "trumpet": [0], "violin": [2], "tree": [2]
+}

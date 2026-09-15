@@ -41,7 +41,7 @@ function loop(now) {
     if (o.bg) { ctx.fillStyle = o.bg; ctx.fillRect(0, 0, w, h); }
     const alive = now < it.t0 ? 0 : Math.min(1, t * 2.5);
     const box = { x: 0, y: 0, w, h };
-    const progress = o.replay ? Math.min(1, ((t % (o.replay + 1.2)) / o.replay)) : 1; // Leuchtspur entsteht in Schleife
+    const progress = o.replay ? (o.once ? Math.min(1, t / o.replay) : Math.min(1, ((t % (o.replay + 1.2)) / o.replay))) : 1; // Leuchtspur entsteht in Schleife bzw. einmal (once: Endbild bleibt stehen, R2-P3-11)
     const common = { style: o.style || 'pencil', color: o.color, fringe: o.fringe, paper: o.paper, padding: o.padding, boil: reduce ? 0 : (o.boil ?? 0.9), motion: o.motion, alive: o.still ? 0 : alive, progress: reduce ? 1 : progress };
     let fit;
     if (o.groups?.length > 1) { // Mehrzahl: N Zeichnungen nebeneinander, leicht versetzt im Takt

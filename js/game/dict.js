@@ -67,8 +67,9 @@ export function installDict(app) {
     mount(box.querySelector('canvas.big'), { strokes: e.strokes, color: col, style: 'pencil', width: 3.6, motion: { kind: w.motion, id: w.id } });
     const others = (await app.examples())[w.id] || [];
     const oBox = box.querySelector('.others');
+    oBox.style.setProperty('--n', Math.min(3, others.length) || 3);
     oBox.innerHTML = others.slice(0, 3).map(() => '<canvas></canvas>').join('');
-    oBox.querySelectorAll('canvas').forEach((c, i) => mount(c, { strokes: others[i].strokes, color: '#6B7280', style: 'pencil', width: 2.4, replay: 2.4 + i * 0.4, delay: i * 500, boil: 0.6, still: true, seed: i + 7 }));
+    oBox.querySelectorAll('canvas').forEach((c, i) => mount(c, { strokes: others[i].strokes, color: '#5F6672', style: 'pencil', width: 2.4, replay: 2 + i * 0.35, once: true, delay: i * 300, boil: 0.6, still: true, seed: i + 7 }));
     app.voice?.word(w.id, learn);
     box.onclick = (ev) => {
       const s = ev.target.closest('[data-say]'); if (s) { app.voice?.word(w.id, s.dataset.say); return; }

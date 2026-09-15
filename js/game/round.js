@@ -277,10 +277,12 @@ export class RoundController {
 
   async _fillOthers(w, box, { replay = false } = {}) {
     const others = await this.app.examples();
-    const list = (others[w.id] || []).slice(0, 3);
+    const list = (others[w.id] || []).slice(0, 3); // Iteration 2: nach menschlicher Sichtung 2–3 lesbare Beispiele (tools/examples-drop.json)
+    box.style.setProperty('--n', list.length || 3);
     box.innerHTML = list.map(() => '<canvas width="160" height="160"></canvas>').join('');
     [...box.querySelectorAll('canvas')].forEach((c, i) => {
-      if (replay) { mountAlive(c, { strokes: list[i].strokes, color: '#1E2A3A', style: 'pencil', width: 3, replay: 2.2 + i * 0.35, delay: i * 350, boil: 0.5, still: true, seed: i + 3 }); return; }
+      // R2-P3-11: einmal animieren, Endbild bleibt stehen (vorher Endlos-Schleife mit zeitweise leeren Kacheln)
+      if (replay) { mountAlive(c, { strokes: list[i].strokes, color: '#1E2A3A', style: 'pencil', width: 3, replay: 1.8 + i * 0.3, once: true, delay: i * 250, boil: 0.5, still: true, seed: i + 3 }); return; }
       const ctx = c.getContext('2d');
       drawStrokes(ctx, list[i].strokes, { style: 'pencil', color: '#1E2A3A', width: 3.2, box: { x: 0, y: 0, w: 160, h: 160 }, seed: i + 3 });
     });

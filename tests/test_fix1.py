@@ -172,7 +172,7 @@ with server() as base, sync_playwright() as p:
             words_all = [w['tr']['word'], w['en']['word'], w['de']['noun']]
             leak = [x for x in words_all if x.lower() in card_txt.lower()]
             title_ok = {'en': 'your turn', 'tr': 'şimdi sen'}[native] in card_txt.lower()
-            S.check(f'{native}→{learn}: Hilfe zeigt „So malen es andere — jetzt du!" + 2–3 Beispiele OHNE Übersetzung', title_ok and 2 <= n_ex <= 3 and not leak and not pg.query_selector('#round-overlay .lang-line'), (card_txt[:80], n_ex, leak))
+            S.check(f'{native}→{learn}: Hilfe zeigt „So malen es andere" + Knopf „Jetzt du!" + 2–3 Beispiele OHNE Übersetzung', title_ok and 2 <= n_ex <= 3 and not leak and not pg.query_selector('#round-overlay .lang-line'), (card_txt[:80], n_ex, leak))
             S.check(f'{native}→{learn}: nie „nicht erkannt" als Hilfe-Text', not any(x in card_txt for x in ('nicht erkannt', 'couldn’t tell', 'Anlayamadım')), card_txt[:80])
             s1 = pg.evaluate('() => window.__state()'); t1 = pg.text_content('#timer-s'); pg.wait_for_timeout(1600); s2_ = pg.evaluate('() => window.__state()'); t2 = pg.text_content('#timer-s')
             S.check(f'{native}→{learn}: Timer pausiert während der Hilfe (Runde läuft nicht weiter)', s1['round']['paused'] and abs(s2_['round']['elapsedMs'] - s1['round']['elapsedMs']) < 60 and t1 == t2 and not s2_['round']['enabled'], (s1['round']['elapsedMs'], s2_['round']['elapsedMs'], t1, t2))
@@ -763,7 +763,7 @@ with server() as base, sync_playwright() as p:
         S.check('P3-15: keine Tensor-Shape-Warnung beim Laden der Mal-KI', not any('shape of the input tensor' in x for x in cons), [x[:90] for x in cons][:3])
         ex = json.load(open(os.path.join(ROOT, 'data/examples.json'))); old = json.load(open(os.path.join(ROOT, 'data/others.json')))
         per = lambda lst: sum(len(d['strokes']) for d in lst) / max(1, len(lst))
-        S.check('P3-5: 3 lesbare Beispiele je Wort (148), erkannt mit p ≥ 0,5', len(ex) == len(WORDS) and all(len(v) == 3 and all(d['p'] >= 0.5 for d in v) for v in ex.values()), [k for k, v in ex.items() if len(v) < 3][:5])
+        S.check('P3-5: 2–3 lesbare Beispiele je Wort (148), erkannt mit p ≥ 0,5 (Iteration 2: unlesbare nach Sichtung entfernt, lieber 2 als 3)', len(ex) == len(WORDS) and all(2 <= len(v) <= 3 and all(d['p'] >= 0.5 for d in v) for v in ex.values()), [k for k, v in ex.items() if len(v) < 2][:5])
         S.check('P3-5: Fahrrad-Beispiele detailreicher als vorher (Striche je Zeichnung)', per(ex['bicycle']) > per(old['bicycle']) + 2 and min(len(d['strokes']) for d in ex['bicycle']) >= 5, (per(old['bicycle']), per(ex['bicycle'])))
         pg.goto(base + '/?test=1&scene=help'); pg.wait_for_selector('#round-overlay .card.help .others canvas', timeout=15000)
         S.check('Hilfe-Karte + Zeit-um-Karte + Wörterbuch nutzen data/examples.json', any(u.endswith('/data/examples.json') for u in reqs))

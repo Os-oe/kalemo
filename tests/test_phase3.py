@@ -125,7 +125,7 @@ with server() as base, sync_playwright() as p:
                 pg.click('.dict-cell')
                 pg.wait_for_selector('#sheet .dict-detail .others canvas', timeout=8000)
                 n_langs = len(pg.query_selector_all('#sheet .dict-detail .lang-line')); n_oth = len(pg.query_selector_all('#sheet .dict-detail .others canvas'))
-                S.check('Wörterbuch-Detail: 3 Sprachen + „So malen andere" (3 kuratierte)', n_langs == 3 and n_oth == 3, (n_langs, n_oth))
+                S.check('Wörterbuch-Detail: 3 Sprachen + „So malen andere" (2–3 kuratierte, Iteration 2 nach Sichtung)', n_langs == 3 and 2 <= n_oth <= 3, (n_langs, n_oth))
                 pg.click('#sheet [data-act=close]')
                 pg.click('[data-act=poster]')
                 st3 = wait_state(pg, 's.lastPoster && s.sheet', 15000)
