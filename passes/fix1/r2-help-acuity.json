@@ -1,0 +1,67 @@
+{
+  "url": "http://127.0.0.1:8794/?test=1&scene=help",
+  "label": "r2-help",
+  "checkedAt": "2026-09-15T14:41:44.781Z",
+  "threshold": 0.15,
+  "minCells": 2,
+  "desktop": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix1/r2-help-desktop.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "360×225",
+      "overall": 0.7605,
+      "cells": [
+        0.0063,
+        0.3125,
+        0.8106,
+        0.0376,
+        1.2782,
+        1.3018,
+        0.1018,
+        1.8261,
+        1.1696
+      ],
+      "aliveCells": [
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-mitte",
+        "mitte-rechts",
+        "unten-mitte",
+        "unten-rechts"
+      ],
+      "aliveCount": 6
+    }
+  },
+  "mobile": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix1/r2-help-mobile.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "97×211",
+      "overall": 0.7916,
+      "cells": [
+        0.025,
+        0.1516,
+        0.2868,
+        1.1462,
+        0.95,
+        1.4359,
+        1.1613,
+        1.1914,
+        0.8048
+      ],
+      "aliveCells": [
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-links",
+        "mitte-mitte",
+        "mitte-rechts",
+        "unten-links",
+        "unten-mitte",
+        "unten-rechts"
+      ],
+      "aliveCount": 8
+    }
+  },
+  "flags": [],
+  "motionVerdict": "LEBENDIG"
+}

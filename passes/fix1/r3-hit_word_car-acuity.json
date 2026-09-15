@@ -1,0 +1,68 @@
+{
+  "url": "http://127.0.0.1:8794/?test=1&scene=hit&word=car",
+  "label": "r3-hit_word_car",
+  "checkedAt": "2026-09-15T14:47:35.623Z",
+  "threshold": 0.15,
+  "minCells": 2,
+  "desktop": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix1/r3-hit_word_car-desktop.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "360×225",
+      "overall": 2.3847,
+      "cells": [
+        0.006,
+        3.6262,
+        0.7848,
+        0.0317,
+        13.8212,
+        1.2887,
+        0.0807,
+        0.7137,
+        1.1092
+      ],
+      "aliveCells": [
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-mitte",
+        "mitte-rechts",
+        "unten-mitte",
+        "unten-rechts"
+      ],
+      "aliveCount": 6
+    }
+  },
+  "mobile": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix1/r3-hit_word_car-mobile.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "97×211",
+      "overall": 6.0133,
+      "cells": [
+        1.4308,
+        8.8289,
+        1.4189,
+        14.1133,
+        14.1179,
+        12.7449,
+        0.6654,
+        0.482,
+        0.468
+      ],
+      "aliveCells": [
+        "oben-links",
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-links",
+        "mitte-mitte",
+        "mitte-rechts",
+        "unten-links",
+        "unten-mitte",
+        "unten-rechts"
+      ],
+      "aliveCount": 9
+    }
+  },
+  "flags": [],
+  "motionVerdict": "LEBENDIG"
+}

@@ -1,0 +1,60 @@
+{
+  "url": "http://127.0.0.1:8794/?test=1&scene=dict&detail=1",
+  "label": "r1-dict_detail_1",
+  "checkedAt": "2026-09-15T14:38:12.835Z",
+  "threshold": 0.15,
+  "minCells": 2,
+  "desktop": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix1/r1-dict_detail_1-desktop.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "360×225",
+      "overall": 0.5376,
+      "cells": [
+        0,
+        3.878,
+        0.0101,
+        0.002,
+        0.0756,
+        0.0009,
+        0,
+        0.8719,
+        0
+      ],
+      "aliveCells": [
+        "oben-mitte",
+        "unten-mitte"
+      ],
+      "aliveCount": 2
+    }
+  },
+  "mobile": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix1/r1-dict_detail_1-mobile.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "97×211",
+      "overall": 1.1604,
+      "cells": [
+        0,
+        7.4181,
+        0,
+        0,
+        0.3723,
+        0,
+        0.5345,
+        0.7183,
+        1.4366
+      ],
+      "aliveCells": [
+        "oben-mitte",
+        "mitte-mitte",
+        "unten-links",
+        "unten-mitte",
+        "unten-rechts"
+      ],
+      "aliveCount": 5
+    }
+  },
+  "flags": [],
+  "motionVerdict": "LEBENDIG"
+}

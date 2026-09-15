@@ -114,3 +114,32 @@ Motion-Gate: **LEBENDIG** (Desktop 7/9 Zellen, motion 2,37 · mobil 4,96), 0 JS-
 3. Tagesende-Kacheln als Standbild (ganze Zeichnung, Line-Boil) — Fahrrad-Fragment-Problem weg (`test_fix1 p13`).
 4. Kein weiterer Befund an der Karte; offen bleibt nur die Qualität der Datensatz-Beispiele (P3-5, eigener Punkt).
 5. Messbar: `test_fix1.py p13` 9/9 (Größe ≥ 1,35×, Bewegung im Rahmen über 4 s, Tagesende still).
+
+## Iteration 1 · Runde 1 — alle geänderten Screens (`passes/fix1/r1-*`)
+Szenen: start · starttile · round · help · article · dayend+Angebot · duel · duelopts · weak · dict-detail · card · linkcard · calib.
+Motion-Gate: alle **LEBENDIG** außer **card STILLSTAND (1/9)** — Tagesende-Kacheln sind jetzt Standbilder, die Teilen-Vorschau ist ein PNG. 0 JS-Fehler.
+1. card: Teilen-Sheet steht still → langsamer Lichtglanz über der Karten-Vorschau (reduced-motion: aus).
+2. start: Tagline zeigte nach einem Sprachwechsel bis zum Schleifenende die alte Sprache („Draw it in the air." bei DE) → Tagline + Blase reagieren sofort auf das neue Sprachpaar.
+3. linkcard (ohne Zwischenablage-Recht): Fallback-Toast zeigte die rohe URL, die über den Bildrand lief → nie URL als Toast, Karte meldet „Link markieren und kopieren.", Toasts brechen um.
+4. dayend: Luft-Angebot stand zwischen Lustig-Satz und „Teilen" und schob die Hauptaktion nach unten → Angebot unter die Aktionsleiste.
+5. duel TR: „Hava Düellosu" liest sich wie Wetter-Duell (Review P3-16) → „Havada Düello".
+6. Gut, ohne Befund: Start-Kachel „Heute 4/5" + Countdown, Sprachwahl mit ⇄ und schraffierter Sperre, Hilfe-Karte mit lesbarem Fahrrad-Beispiel, Duell-Wortwahl mit grauer Muttersprache, Stoppuhr im Antwort-Sheet, „Üb deine schwachen Wörter (2)", Kalibrier-Karte.
+
+## Iteration 1 · Runde 2 — alle geänderten Screens + Treffer-Karte (`passes/fix1/r2-*`, `r2b-card`)
+Motion-Gate: alle LEBENDIG außer card (1/9) → nach Fix `r2b-card` **LEBENDIG (4/9 · mobil 7,8)**. 0 JS-Fehler.
+1. card: Glanz lief mit 3,2 s fast im Takt des 3-s-Messabstands (gleiche Phase in beiden Frames) → 2,3 s Glanz, breiter, + sanftes Schweben der Vorschau (5,2 s).
+2. start: Tagline jetzt sofort in der Muttersprache („Mal’s in die Luft.") — Runde-1-Befund behoben.
+3. linkcard: Hinweis „Link markieren und kopieren." stand in Erfolgs-Grün → Grün nur bei „Link kopiert.".
+4. dayend: Luft-Angebot unter der Aktionsleiste, „Teilen" wieder die erste Aktion — behoben.
+5. duel: Wortkarten mit grauer Muttersprache lösen Mehrdeutigkeit („kale — die Burg") auch ohne Bild — ok.
+6. hit (Fahrrad mobil): Zeichnung groß, im Rahmen, Fahrtwind sichtbar — kein weiterer Befund.
+
+## Iteration 1 · Runde 3 — alle geänderten Screens + Luft + Treffer (`passes/fix1/r3-*`)
+Motion-Gate: start 2/9 · starttile 2/9 · round 7/9 · help 6/9 · article 6/9 · dayend+Angebot 3/9 · duel 2/9 · duelopts 6/9 · weak 2/9 · dict-detail 2/9 · card **6/9** · linkcard 4/9 · calib 5/9 · hit(Auto) 6/9 · roundair 9/9 — alle **LEBENDIG**, 0 JS-Fehler.
+1. card: Glanz + Schweben tragen die Teilen-Vorschau (6/9) — Stillstand aus Runde 1/2 behoben.
+2. linkcard: Hinweis ohne Erfolgs-Grün, Link-Box + drei Aktionen passen mobil ohne Scrollen.
+3. roundair: Kopfzeile, Blase und Schalter liegen über der Leuchttinte (z-Ebenen aus P2-6), Ring-Cursor auf dem Kamerabild lesbar.
+4. starttile Desktop 1280×800: Kachel + „Noch mal üben" im ersten Bild; Duell/Wörterbuch rutschen knapp unter die Kante — bewusst (nach dem Spielen sind Teilen/Herausfordern die Hauptaktionen).
+5. help Desktop: Beispiel-Kacheln entstehen nacheinander (Replay), lesbares Fahrrad zuerst — kein Befund.
+6. calib / weak / duelopts: Texte in einer Zeile pro Aufgabe, Knöpfe ≥ 44 px, keine Überlappung — abgenommen.
+Urteil Iteration 1 visuell: alle geänderten Screens ≥ 3 Runden, letzte Runde ohne STILLSTAND.

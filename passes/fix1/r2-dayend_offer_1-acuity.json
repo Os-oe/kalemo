@@ -1,0 +1,64 @@
+{
+  "url": "http://127.0.0.1:8794/?test=1&scene=dayend&offer=1",
+  "label": "r2-dayend_offer_1",
+  "checkedAt": "2026-09-15T14:42:07.951Z",
+  "threshold": 0.15,
+  "minCells": 2,
+  "desktop": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix1/r2-dayend_offer_1-desktop.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "360×225",
+      "overall": 0.2773,
+      "cells": [
+        0.4224,
+        1.102,
+        0.8558,
+        0,
+        0.116,
+        0,
+        0,
+        0,
+        0
+      ],
+      "aliveCells": [
+        "oben-links",
+        "oben-mitte",
+        "oben-rechts"
+      ],
+      "aliveCount": 3
+    }
+  },
+  "mobile": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix1/r2-dayend_offer_1-mobile.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "97×211",
+      "overall": 1.0621,
+      "cells": [
+        0.7361,
+        0.7416,
+        1.1673,
+        1.5576,
+        0.8171,
+        1.1975,
+        2.4462,
+        0.8549,
+        0
+      ],
+      "aliveCells": [
+        "oben-links",
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-links",
+        "mitte-mitte",
+        "mitte-rechts",
+        "unten-links",
+        "unten-mitte"
+      ],
+      "aliveCount": 8
+    }
+  },
+  "flags": [],
+  "motionVerdict": "LEBENDIG"
+}

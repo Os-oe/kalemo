@@ -1,0 +1,63 @@
+{
+  "url": "http://127.0.0.1:8794/?test=1&scene=calib",
+  "label": "r2-calib",
+  "checkedAt": "2026-09-15T14:43:30.904Z",
+  "threshold": 0.15,
+  "minCells": 2,
+  "desktop": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix1/r2-calib-desktop.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "360×225",
+      "overall": 0.625,
+      "cells": [
+        0.006,
+        0.316,
+        0.788,
+        0.0432,
+        0,
+        1.3147,
+        0.1094,
+        1.8748,
+        1.1731
+      ],
+      "aliveCells": [
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-rechts",
+        "unten-mitte",
+        "unten-rechts"
+      ],
+      "aliveCount": 5
+    }
+  },
+  "mobile": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix1/r2-calib-mobile.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "97×211",
+      "overall": 0.4006,
+      "cells": [
+        0.0152,
+        0.125,
+        0.2418,
+        0.0485,
+        0,
+        0.1713,
+        1.11,
+        1.1368,
+        0.7693
+      ],
+      "aliveCells": [
+        "oben-rechts",
+        "mitte-rechts",
+        "unten-links",
+        "unten-mitte",
+        "unten-rechts"
+      ],
+      "aliveCount": 5
+    }
+  },
+  "flags": [],
+  "motionVerdict": "LEBENDIG"
+}

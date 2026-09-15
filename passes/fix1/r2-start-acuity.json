@@ -1,0 +1,59 @@
+{
+  "url": "http://127.0.0.1:8794/?test=1&scene=start",
+  "label": "r2-start",
+  "checkedAt": "2026-09-15T14:41:08.717Z",
+  "threshold": 0.15,
+  "minCells": 2,
+  "desktop": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix1/r2-start-desktop.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "360×225",
+      "overall": 1.7066,
+      "cells": [
+        0.0004,
+        2.9841,
+        0,
+        0.002,
+        12.3698,
+        0.0031,
+        0,
+        0,
+        0
+      ],
+      "aliveCells": [
+        "oben-mitte",
+        "mitte-mitte"
+      ],
+      "aliveCount": 2
+    }
+  },
+  "mobile": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix1/r2-start-mobile.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "97×211",
+      "overall": 3.8725,
+      "cells": [
+        2.5691,
+        6.7036,
+        1.2981,
+        0.1025,
+        24.4168,
+        0.0576,
+        0,
+        0,
+        0
+      ],
+      "aliveCells": [
+        "oben-links",
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-mitte"
+      ],
+      "aliveCount": 4
+    }
+  },
+  "flags": [],
+  "motionVerdict": "LEBENDIG"
+}

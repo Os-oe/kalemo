@@ -1,0 +1,61 @@
+{
+  "url": "http://127.0.0.1:8794/?test=1&scene=starttile",
+  "label": "r3-starttile",
+  "checkedAt": "2026-09-15T14:45:11.966Z",
+  "threshold": 0.15,
+  "minCells": 2,
+  "desktop": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix1/r3-starttile-desktop.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "360×225",
+      "overall": 1.7843,
+      "cells": [
+        0,
+        2.9765,
+        0.0005,
+        0.0043,
+        12.8546,
+        0.0032,
+        0.111,
+        0.1082,
+        0
+      ],
+      "aliveCells": [
+        "oben-mitte",
+        "mitte-mitte"
+      ],
+      "aliveCount": 2
+    }
+  },
+  "mobile": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix1/r3-starttile-mobile.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "97×211",
+      "overall": 3.9699,
+      "cells": [
+        2.5557,
+        6.7009,
+        1.2903,
+        0.6413,
+        24.351,
+        0.1009,
+        0.3696,
+        0,
+        0
+      ],
+      "aliveCells": [
+        "oben-links",
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-links",
+        "mitte-mitte",
+        "unten-links"
+      ],
+      "aliveCount": 6
+    }
+  },
+  "flags": [],
+  "motionVerdict": "LEBENDIG"
+}

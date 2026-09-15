@@ -15,7 +15,7 @@ export const CAT = [[[24,27,36,64,84,107,130,152,170,200,216,218,215,205,191,173
 export function installAttract(app) {
   const canvas = document.getElementById('attract'); const ctx = canvas.getContext('2d');
   const bubble = document.getElementById('attract-bubble'); const tag = document.getElementById('tagline');
-  let raf = null, t0 = 0, loopN = -1, lastBubble = '', staticKey = '';
+  let raf = null, t0 = 0, loopN = -1, lastBubble = '', staticKey = '', lastPair = '';
   const strokes = CAT;
 
   function setBubble(key, html) {
@@ -42,6 +42,7 @@ export function installAttract(app) {
     const key = `${W}x${H}|${learn}|${native}`;
     if (reduce && staticKey === key) return; // Standbild: nur bei Größen-/Sprachwechsel neu zeichnen
     if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
+    if (lastPair !== learn + native) { lastPair = learn + native; loopN = -1; lastBubble = ''; } // Sprachwechsel: Tagline + Blase sofort neu
     const time = (now - t0) / 1000, n = Math.floor(time / LOOP);
     const lt = reduce ? CARD_AT + 1 : time % LOOP;
     if (n !== loopN || reduce) {

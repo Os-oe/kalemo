@@ -163,6 +163,12 @@ body[data-mode="air"] .stage canvas.ink, body[data-mode="air"] .stage canvas.fx 
 .sheet-card h3, .sheet-card h4 { font-family: var(--hand); font-size: 2rem; margin: 4px 0 10px; }
 .sheet-card h4 { font-size: 1.6rem; margin-top: 14px; }
 .share-img { width: 100%; max-height: 56vh; object-fit: contain; border-radius: 14px; box-shadow: var(--shadow); }
+/* Teilen-Vorschau: langsamer Lichtglanz über der Karte (Motion-Gate; bei reduced-motion aus) */
+.share-wrap { position: relative; display: block; overflow: hidden; border-radius: 14px; animation: cardfloat 5.2s ease-in-out infinite; }
+.share-wrap::after { content: ''; position: absolute; inset: -20% auto -20% -60%; width: 55%; background: linear-gradient(100deg, transparent, rgba(255,251,239,.7), transparent); transform: skewX(-12deg); animation: glint 2.3s ease-in-out infinite; pointer-events: none; }
+@keyframes glint { 0% { left: -60%; } 60%, 100% { left: 130%; } }
+@keyframes cardfloat { 50% { transform: translateY(-6px) rotate(-.6deg); } }
+.toast { max-width: calc(100% - 32px); overflow-wrap: anywhere; text-align: center; }
 .hint.ok { color: var(--das-t); }
 .lang-line { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; border: 0; background: transparent; font-family: var(--hand); font-size: 1.9rem; padding: 2px 10px; border-radius: 12px; cursor: pointer; color: var(--ink); text-align: left; }
 .lang-line.first { font-size: 2.4rem; font-weight: 700; }

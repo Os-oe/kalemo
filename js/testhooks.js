@@ -65,6 +65,7 @@ export async function scene(app, name) {
         results: plan.slots.map((s, i) => ({ id: s.id, kind: s.kind, n: s.n, parts: s.kind === 'plural' ? s.n : undefined, result: i === 3 ? 'timeout' : 'hit', hitAt: 3000 + i * 1900, points: i === 3 ? 0 : 80, strokes: (others[s.id] || others.cat)[1 % (others[s.id] || others.cat).length].strokes })),
         funniest: { target: plan.slots[0].id, id: 'lion', p: 0.8 } };
       localStorage.setItem('kalemo.streak', JSON.stringify({ count: 3, last: '2026-09-20' })); app.dateOverride = '2026-09-20';
+      if (Q('offer')) { app.settings.airOffered = false; app.settings.air = false; }
       await app.showDayEnd(sum);
       if (name === 'card') document.querySelector('#btn-share').click();
       if (name === 'ycard') { const { yesterdayCard } = await import('./game/cards.js'); const { shareImage } = await import('./game/share.js'); const c = await yesterdayCard(app, sum); shareImage(app, { blob: c.blob, text: c.text, forceFallback: true }); }
@@ -78,6 +79,24 @@ export async function scene(app, name) {
       break;
     }
     case 'duel': setPair('de', 'tr'); app.duel.create(); break;
+    case 'starttile': case 'linkcard': { // Iteration 1: Start-Kachel nach dem Spielen · Link-Karte auf dem Tagesende
+      setPair('de', 'tr'); await app.ensureClf();
+      const plan = planFor(app.today(), app.words);
+      const sum = { number: plan.number, date: app.today(), hits: 4, points: 377, scored: true, learn: 'tr', native: 'de',
+        results: plan.slots.map((s, i) => ({ id: s.id, kind: s.kind, n: s.n, parts: s.kind === 'plural' ? s.n : undefined, result: i === 3 ? 'timeout' : 'hit', hitAt: 3000 + i * 1900, points: 80, strokes: (others[s.id] || others.cat)[0].strokes })),
+        funniest: { target: plan.slots[0].id, id: 'lion', p: 0.8 } };
+      localStorage.setItem('kalemo.day.' + app.today(), JSON.stringify(sum)); localStorage.setItem('kalemo.streak', JSON.stringify({ count: 2, last: app.today() }));
+      if (name === 'starttile') { app.goHome(); break; }
+      await app.showDayEnd(sum); app.challengeFrom(sum); setTimeout(() => document.querySelector('#sheet .pick')?.click(), 200);
+      break;
+    }
+    case 'calib': { setPair('de', 'tr'); roundBase('cat'); app.stage.enabled = false; await app.getAir(); app.calibratePen(); loop(); break; }
+    case 'weak': {
+      setPair('de', 'tr');
+      for (const id of ['cat', 'sun', 'house']) await app.dict.put(id, { strokes: others[id][0].strokes.map(([x, y]) => [x, y, x.map((_, i) => i * 30)]), date: '2026-09-20' });
+      localStorage.setItem('kalemo.weak', JSON.stringify({ spoon: { misses: 2, helps: 0, clean: 0 }, frog: { misses: 0, helps: 1, clean: 0 } }));
+      await app.openDict(); break;
+    }
     case 'duelopts': {
       setPair('de', 'tr'); app.settings.chosenPair = true; await app.ensureClf();
       const { encode } = await import('./core/codec.js');

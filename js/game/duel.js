@@ -223,12 +223,12 @@ export function installDuel(app) {
       sheet.onclick = (e) => { if (e.target === sheet) close(); };
     }
     const status = card.querySelector('.link-status');
-    const say = (msg) => { status.textContent = msg; status.hidden = false; };
+    const say = (msg) => { status.textContent = msg; status.hidden = false; status.classList.toggle('ok', msg === t('duelCopied', {}, ui)); };
     const close = () => { if (inRound) { app.hideCard(); app.goHome(); } else { unmountAll(sheet); sheet.hidden = true; sheet.innerHTML = ''; } };
-    const doShare = async () => { const r = await shareLink(app, { url, text, quiet: true }); app.lastLinkShare = { mode: r, url, text }; if (r === 'copied') say(t('duelCopied', {}, ui)); return r; };
+    const doShare = async () => { const r = await shareLink(app, { url, text, quiet: true }); app.lastLinkShare = { mode: r, url, text }; if (r === 'copied') say(t('duelCopied', {}, ui)); else if (r === 'shown') say(t('duelCopyManual', {}, ui)); return r; };
     card.addEventListener('click', async (e) => {
       if (e.target.closest('[data-act=share]')) await doShare();
-      if (e.target.closest('[data-act=copy]')) { const ok = await copyText(`${text}\n${url}`); app.lastLinkShare = { mode: ok ? 'copied' : 'failed', url, text }; if (ok) say(t('duelCopied', {}, ui)); }
+      if (e.target.closest('[data-act=copy]')) { const ok = await copyText(`${text}\n${url}`); app.lastLinkShare = { mode: ok ? 'copied' : 'failed', url, text }; say(t(ok ? 'duelCopied' : 'duelCopyManual', {}, ui)); }
       if (e.target.closest('[data-act=done]')) close();
     });
     if (autoShare) doShare();

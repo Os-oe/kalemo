@@ -24,7 +24,7 @@ export async function shareImage(app, { blob, filename = 'kalemo.png', text, url
   const touch = matchMedia('(hover: none)').matches;
   const box = document.getElementById('sheet');
   box.innerHTML = `<div class="sheet-card" role="dialog" aria-label="${escapeHtml(t('share'))}">
-    <img src="${href}" alt="" class="share-img">
+    <span class="share-wrap"><img src="${href}" alt="" class="share-img"></span>
     ${touch ? `<p class="hint">${escapeHtml(t('shareLong'))}</p>` : ''}
     ${copied ? `<p class="hint ok">${escapeHtml(t('shareCopied'))}</p>` : ''}
     <div class="actions"><a class="btn primary" href="${href}" download="${escapeHtml(filename)}" data-act="save">${escapeHtml(t('shareSave'))}</a>
@@ -42,6 +42,6 @@ export async function shareLink(app, { url, text, quiet = false }) {
     try { await navigator.share({ url, text, title: 'Kalemo' }); return 'shared'; } catch (e) { if (e?.name === 'AbortError') return 'cancelled'; }
   }
   const ok = await copyText(`${text}\n${url}`);
-  if (!quiet || !ok) app.ui.toast(ok ? t('duelCopied') : url, 3000);
+  if (!quiet) app.ui.toast(ok ? t('duelCopied') : t('duelCopyManual'), 3000); // nie die rohe URL als Toast (lief aus dem Bild)
   return ok ? 'copied' : 'shown';
 }

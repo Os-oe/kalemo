@@ -1,0 +1,67 @@
+{
+  "url": "http://127.0.0.1:8794/?test=1&scene=duelopts",
+  "label": "r1-duelopts",
+  "checkedAt": "2026-09-15T14:37:48.748Z",
+  "threshold": 0.15,
+  "minCells": 2,
+  "desktop": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix1/r1-duelopts-desktop.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "360×225",
+      "overall": 1.2731,
+      "cells": [
+        0.0131,
+        0.6446,
+        1.8643,
+        0.0883,
+        2.9161,
+        2.8886,
+        0.1129,
+        0.561,
+        2.3695
+      ],
+      "aliveCells": [
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-mitte",
+        "mitte-rechts",
+        "unten-mitte",
+        "unten-rechts"
+      ],
+      "aliveCount": 6
+    }
+  },
+  "mobile": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix1/r1-duelopts-mobile.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "97×211",
+      "overall": 0.7403,
+      "cells": [
+        0.0888,
+        0.3631,
+        0.7342,
+        0.7426,
+        0.9284,
+        2.5183,
+        0.6973,
+        0.3827,
+        0.2442
+      ],
+      "aliveCells": [
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-links",
+        "mitte-mitte",
+        "mitte-rechts",
+        "unten-links",
+        "unten-mitte",
+        "unten-rechts"
+      ],
+      "aliveCount": 8
+    }
+  },
+  "flags": [],
+  "motionVerdict": "LEBENDIG"
+}
