@@ -29,6 +29,27 @@ def play_first_hit(page, ids_expected=None):
     return plan
 
 
+def play_to_dayend(page):
+    """Iteration 1 (Review P3-1): das Luft-Angebot kommt erst am Tagesende → Tagesskizze komplett spielen (Lernsprache ohne Artikel)."""
+    plan = page.evaluate('() => window.__plan()')
+    page.evaluate('() => window.__startDaily()')
+    for i, slot in enumerate(plan['slots']):
+        w = slot['id']
+        base_n = wait_state(page, f's.round && s.round.target === {json.dumps(w)}', 20000)['drawCount']
+        for k in range(slot['n'] if slot['kind'] == 'plural' else 1):
+            wait_state(page, f's.round && s.drawCount === {base_n + k}', 30000)
+            page.evaluate('(st) => window.__feedStrokes(st, {timing: "real", ptMs: 8, gapMs: 120})', FIX[w][k % 2])
+        st = wait_state(page, f's.lastResult && s.lastResult.id === {json.dumps(w)} && s.overlay', 40000)
+        if i == 0:
+            S.check(f'1. Treffer ({w}) — danach KEIN Luft-Angebot mitten in der Tagesskizze', st['lastResult']['result'] == 'hit', st['lastResult']['result'])
+        page.evaluate('() => window.__next()')
+        if i == 0:
+            page.wait_for_timeout(500)
+            S.check('Desktop: nach Treffer 1 keine „Jetzt in die Luft?"-Karte (P3-1)', page.query_selector('#round-overlay [data-k="yes"]') is None)
+    wait_state(page, 's.screen === "dayend"', 20000)
+    return plan
+
+
 with server() as base, sync_playwright() as p:
     # ---------------- A/B: __feedLandmarks ----------------
     b, ctx = launch(p)
@@ -127,16 +148,15 @@ with server() as base, sync_playwright() as p:
         pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000)
         pg.evaluate('() => window.__settings({native: "de", learn: "tr", airOffered: false, air: false, airDenied: false})')
         pg.evaluate('() => window.__setDate("2026-09-21")')
-        plan = play_first_hit(pg)
-        pg.evaluate('() => window.__next()')
-        pg.wait_for_selector('.overlay [data-k="yes"]', timeout=5000)
-        S.check('Desktop: nach 1. Treffer Angebot „Jetzt in die Luft?"', True)
-        pg.click('.overlay [data-k="yes"]')
+        plan = play_to_dayend(pg)
+        pg.wait_for_selector('#dayend-air [data-k="yes"]', timeout=5000)
+        S.check('Desktop: Angebot „Jetzt in die Luft?" am Tagesende', True)
+        pg.click('#dayend-air [data-k="yes"]')
         pg.wait_for_selector('.precam-card [data-k="go"]', timeout=5000)
         S.check('Vorab-Karte mit Datenschutz-Satz', 'verlässt nie' in (pg.text_content('.precam-card') or ''))
         pg.click('.precam-card [data-k="go"]')
-        st = wait_state(pg, f's.round && s.round.target === {json.dumps(plan["slots"][1]["id"])}', 20000)
-        S.check('Kamera abgelehnt → Bildschirm-Modus, freundlicher Hinweis, Runde 2 läuft', st['mode'] == 'screen' and (st['toast'] or '').startswith('Kein Problem') and st['settings']['airDenied'] is True, (st['mode'], st['toast']))
+        st = wait_state(pg, 's.screen === "dayend" && s.toast', 20000)
+        S.check('Kamera abgelehnt → Bildschirm-Modus, freundlicher Hinweis, zurück zum Tagesende', st['mode'] == 'screen' and (st['toast'] or '').startswith('Kein Problem') and st['settings']['airDenied'] is True, (st['mode'], st['toast']))
         S.check('abgelehnt: kein Modell-Download (Handerkennung nicht geladen)', pg.evaluate('() => !window.__kalemo.air || window.__kalemo.air.state === "off"'))
         S.check('keine Seitenfehler (abgelehnt)', not errs, errs[:3])
         b2.close()
@@ -151,16 +171,15 @@ with server() as base, sync_playwright() as p:
         pg.goto(base + '/?test=1&delegate=CPU'); wait_state(pg, 's.clfReady', 60000)
         pg.evaluate('() => window.__settings({native: "de", learn: "en", airOffered: false, air: false, airDenied: false})')
         pg.evaluate('() => window.__setDate("2026-09-22")')
-        plan = play_first_hit(pg)
-        pg.evaluate('() => window.__next()')
-        pg.click('.overlay [data-k="yes"]', timeout=5000)
+        plan = play_to_dayend(pg)
+        pg.click('#dayend-air [data-k="yes"]', timeout=5000)
         pg.click('.precam-card [data-k="go"]', timeout=5000)
         pg.wait_for_selector('.clear-card', timeout=90000)
         S.check('Onboarding: Hand-Check erscheint nach Kamera-Freigabe + Modell-Laden', True)
         pg.wait_for_selector('.clear-card.ok', timeout=30000)
         S.check('Hand-Check wird grün (Hand im Fake-Kamera-Video erkannt)', True)
-        st = wait_state(pg, f's.round && s.round.target === {json.dumps(plan["slots"][1]["id"])}', 20000)
-        S.check('Runde 2 läuft im Luft-Modus', st['mode'] == 'air', st['mode'])
+        st = wait_state(pg, f's.round && s.round.target === {json.dumps(plan["slots"][0]["id"])}', 20000)
+        S.check('Übungsrunde startet im Luft-Modus', st['mode'] == 'air', st['mode'])
         pg.wait_for_timeout(4000)
         a = pg.evaluate('() => window.__airStats()')
         S.check('Fake-Kamera (mjpeg, CPU): Landmarken kommen an', a['frames'] > 30 and a['handFrames'] > 10 and a['delegate'] == 'CPU', a)
@@ -185,6 +204,8 @@ with server() as base, sync_playwright() as p:
         pg.evaluate('() => window.__next()')
         st = wait_state(pg, f's.round && s.round.target === {json.dumps(plan["slots"][1]["id"])}', 15000)
         S.check('Handy: nach 1. Treffer kein Luft-Angebot, Bildschirm bleibt Standard', st['mode'] == 'screen' and not st['settings'].get('airOffered'), st['mode'])
+        pg.evaluate('() => window.__kalemo.showDayEnd({ number: 9, date: "2026-09-23", hits: 5, points: 400, scored: false, learn: "tr", results: [] })')
+        S.check('Handy: auch am Tagesende kein Luft-Angebot', pg.is_hidden('#dayend-air'))
         b4.close()
     S.run('Handy', mobile)
 S.finish()

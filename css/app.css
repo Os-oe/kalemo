@@ -188,6 +188,13 @@ body[data-mode="air"] .round-top { background: linear-gradient(rgba(10,16,32,.55
 .streak-line { display: flex; align-items: center; justify-content: center; gap: 8px; }
 .flame { width: 30px; height: 40px; animation: flicker 1.2s ease-in-out infinite; transform-origin: 50% 100%; }
 @keyframes flicker { 30% { transform: scale(1.06, .95) rotate(-3deg); } 60% { transform: scale(.96, 1.05) rotate(2deg); } }
+.air-offer { display: grid; grid-template-columns: auto 1fr; grid-template-areas: 'ico text' 'acts acts'; gap: 6px 14px; align-items: center; max-width: 620px; margin: 16px auto 0; padding: 12px 16px; background: var(--night); color: #FFFBEF; border-radius: 18px; box-shadow: var(--shadow); animation: rise .5s .8s both; }
+.air-offer .air-ico { grid-area: ico; width: 52px; height: 52px; fill: none; stroke: var(--gold); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 6px rgba(255,200,87,.6)); }
+.air-offer .air-text { grid-area: text; display: flex; flex-direction: column; text-align: left; }
+.air-offer strong { font-family: var(--hand); font-size: 1.9rem; line-height: 1; }
+.air-offer span { font-size: .95rem; opacity: .9; }
+.air-offer .air-acts { grid-area: acts; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+.air-offer .btn.ghost { color: #FFFBEF; }
 .funny { display: flex; flex-direction: column; font-family: var(--hand); font-size: 1.8rem; font-weight: 700; }
 .funny small { font-family: var(--ui); font-size: .85rem; color: var(--pencil); }
 .dayend-grid figure { animation: rise .4s both; animation-delay: var(--d); }

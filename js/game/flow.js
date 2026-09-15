@@ -80,10 +80,10 @@ export function installFlow(app) {
     setTimeout(() => { if (!done) { done = true; air.listeners.handcheck = null; hideCard(); resolve(false); } }, 20000);
   });
 
-  /** Nach dem ersten Treffer am Laptop: Angebot → Vorab-Karte → Abfrage → Hand-Check */
-  app.offerAir = async () => {
+  /** Angebot → Vorab-Karte → Abfrage → Hand-Check. skipAsk: Frage wurde schon beantwortet (Tagesende-Kachel) */
+  app.offerAir = async ({ skipAsk = false } = {}) => {
     app.settings = saveSettings({ airOffered: true });
-    const yes = await choice(`<h3>${escapeHtml(t('airOfferT'))}</h3><p>${escapeHtml(t('airOfferB'))}</p>`, [['yes', t('airYes'), 'primary'], ['no', t('airNo'), 'ghost']]);
+    const yes = skipAsk ? 'yes' : await choice(`<h3>${escapeHtml(t('airOfferT'))}</h3><p>${escapeHtml(t('airOfferB'))}</p>`, [['yes', t('airYes'), 'primary'], ['no', t('airNo'), 'ghost']]);
     if (yes !== 'yes') { app.settings = saveSettings({ airDeclined: true }); return false; }
     // Review P2-6: alte Leuchttinte weg, bevor Kamera-Onboarding und Hand-Check darüber liegen
     app.stage.clear(); app.stage.clearGhosts(); app.round.bubble.hidden = true;
@@ -204,9 +204,19 @@ export function installFlow(app) {
     }
     const extraHtml = plural && out.tip ? `<p class="tipcard">${escapeHtml(out.tip)}</p>` : '';
     await app.round.resultCard(out, { plural, extraHtml, forceHit: !!(plural && out.parts > 0) });
-    if (out.result === 'hit' && isDesktop() && !app.settings.airOffered && app.mode === 'screen' && !app.settings.air && !app.DEMO) {
-      await app.offerAir();
-    }
-    return out;
+    return out; // Review P3-1: kein Luft-Angebot mehr direkt nach Treffer 1 — das Tagesende bietet es an
+  };
+
+  /** Tagesende am Laptop: „Jetzt in die Luft?" (nur einmal, nicht am Handy/In-App/Demo) */
+  app.shouldOfferAir = () => isDesktop() && !app.settings.airOffered && !app.settings.air && app.mode === 'screen' && !app.DEMO && !inAppBrowser();
+  app.airFromDayEnd = async () => {
+    app.show('round'); app.renderToggle(); app.ui.slots(0, 0, []);
+    $('#word').textContent = t('airToggle'); $('#word-sub').textContent = '';
+    app.stage.clear(); app.stage.enabled = false;
+    const ok = await app.offerAir({ skipAsk: true });
+    if (!ok || app.mode !== 'air') { app.show('dayend'); return false; }
+    const { playDaily } = await import('./daily.js');
+    playDaily(app, { practice: true }); // gleich ausprobieren: Übungsrunde in der Luft
+    return true;
   };
 }

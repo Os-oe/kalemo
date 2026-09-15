@@ -1,6 +1,6 @@
 // Tagesende: lebende eigene Zeichnungen, „KI erkannte x/5", Punkte-Count-up, Serien-Flamme, lustigster Fehltipp.
 import { t, word, ART_TEXT, FRINGE, funnyLine, funnyAllowed } from '../core/i18n.js';
-import { streak } from '../core/store.js';
+import { streak, saveSettings } from '../core/store.js';
 import { addDays } from '../core/plan.js';
 import { mount, unmountAll } from './alive.js';
 import { escapeHtml } from './round.js';
@@ -39,8 +39,15 @@ export function installDayEnd(app) {
     const f = sum.funniest && funnyAllowed(sum.funniest.target, sum.funniest.id) ? funnyLine(app.byId.get(sum.funniest.target), app.byId.get(sum.funniest.id), native) : null;
     const fe = $('#dayend-funny'); fe.hidden = !f; fe.innerHTML = f ? `<small>${escapeHtml(t('funniest'))}</small>${escapeHtml(f)}` : '';
     app.lastSummary = sum;
+    $('#dayend-air').hidden = !app.shouldOfferAir?.();
     app.music?.play();
   };
+  $('#dayend-air').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-k]'); if (!b) return;
+    app.sfx?.play('tap'); $('#dayend-air').hidden = true;
+    if (b.dataset.k === 'yes') await app.airFromDayEnd();
+    else app.settings = saveSettings({ airOffered: true, airDeclined: true });
+  });
 
   /** Heute-Karte teilen — vom Tagesende und von der Ergebnis-Kachel auf dem Start (P2-2) */
   app.shareToday = async (sum, btn) => {

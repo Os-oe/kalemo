@@ -571,5 +571,35 @@ with server() as base, sync_playwright() as p:
     if section('p13'):
         S.run('13 Money-Shot', p13)
 
+    # ---------- P3-1: „Jetzt in die Luft?" erst am Tagesende ----------
+    def p3_1():
+        c = b.new_context(viewport={'width': 1280, 'height': 800}); pg = c.new_page(); errs = []
+        pg.on('pageerror', lambda e: errs.append(str(e)))
+        pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000)
+        pg.evaluate('() => window.__settings({native: "de", learn: "tr", airOffered: false, air: false, chosenPair: true})')
+        pg.evaluate('() => window.__setDate("2026-10-05")')
+        plan, _ = play_daily(pg, 'tr', stop_before=1)
+        pg.wait_for_timeout(600)
+        S.check('Nach Treffer 1 + Weiter: keine „Jetzt in die Luft?"-Karte, Runde 2 läuft', pg.query_selector('#round-overlay [data-k="yes"]') is None and pg.evaluate('() => window.__state().round?.target') == plan['slots'][1]['id'])
+        pg.evaluate('() => window.__home()')
+        pg.goto(base + '/?test=1&scene=dayend'); wait_state(pg, 's.screen === "dayend" && s.summary', 30000)
+        pg.evaluate('() => { window.__settings({ airOffered: false, air: false }); window.__kalemo.showDayEnd(window.__kalemo.lastSummary); return 1; }')
+        pg.wait_for_selector('#dayend-air:not([hidden])', timeout=5000)
+        txt = pg.text_content('#dayend-air') or ''
+        S.check('Tagesende (Laptop): Angebot „Jetzt in die Luft?" mit „Ja, in die Luft" / „Nicht jetzt"', 'Jetzt in die Luft?' in txt and 'Nicht jetzt' in txt, txt[:80])
+        pg.click('#dayend-air [data-k="no"]')
+        st = pg.evaluate('() => window.__state()')
+        pg.evaluate('() => window.__kalemo.showDayEnd(window.__kalemo.lastSummary)')
+        S.check('„Nicht jetzt" → Angebot weg und kommt nicht wieder', pg.is_hidden('#dayend-air') and st['settings']['airOffered'] and st['screen'] == 'dayend')
+        c.close()
+        m = b.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True); pm = m.new_page()
+        pm.goto(base + '/?test=1&scene=dayend'); wait_state(pm, 's.screen === "dayend" && s.summary', 30000)
+        pm.evaluate('() => { window.__settings({ airOffered: false, air: false }); window.__kalemo.showDayEnd(window.__kalemo.lastSummary); return 1; }')
+        S.check('Handy: kein Luft-Angebot am Tagesende', pm.is_hidden('#dayend-air'))
+        m.close()
+        S.check('P3-1: keine Seitenfehler', not errs, errs[:2])
+    if section('p3_1'):
+        S.run('P3-1 Luft-Angebot', p3_1)
+
     b.close()
 S.finish()
