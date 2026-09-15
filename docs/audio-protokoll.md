@@ -22,7 +22,7 @@ Die Takes der Vorgängerin wurden weiterverwendet (`work/voicetest/*/take-lines-
 
 ## 1. Stimmenwahl (A/B, je 5 Beispielwörter)
 
-Methode: dieselben 5 Wörter je Sprache, im Bündel erzeugt. Es wurden alle vorhandenen Takes ausgewertet, aus der Vorgänger-Session und aus der Prompt-Diagnose (Formate Zeilen, Ellipse, Zeilen mit Zählsatz, Absätze). Ein Take gilt als „vollständig“, wenn silencedetect exakt 5 Segmente findet. Die STT lief mit dem finalen Prüfverfahren (Abschnitt 3). Rohdaten: `work/voicetest/results.json`.
+Methode: dieselben 5 Wörter je Sprache, im Bündel erzeugt. Es wurden alle vorhandenen Takes ausgewertet, aus der Vorgänger-Session und aus der Prompt-Diagnose (Formate Zeilen, Ellipse, Zeilen mit Zählsatz, Absätze). Ein Take gilt als „vollständig“, wenn silencedetect exakt 5 Segmente findet. Die STT lief mit dem finalen Prüfverfahren (Abschnitt 3). Rohdaten: ~~`work/voicetest/results.json`~~ — **am 15.09. um 10:26 versehentlich gelöscht**, zusammen mit den Takes. Ursache: Ein hängender Befehl der Vorgänger-Session wurde nach Abschluss der Produktion noch ausgeführt. Messwerte je Stimme und Take sind in `work/voicetest.log` erhalten, Details in `work/voicetest/VERLUST.txt`. Clips, Reports und Kosten sind nicht betroffen.
 
 | Sprache | Stimme | vollständige Takes | STT-Treffer | Tempo (Silben/s) | Pause Ø | s je Eintrag | Lautheits-Streuung roh | Wahl |
 |---|---|---|---|---|---|---|---|---|
