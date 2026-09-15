@@ -8,6 +8,7 @@ import { escapeHtml } from './round.js';
 import { shareLink, copyText } from './share.js';
 import { mount, unmountAll, confetti } from './alive.js';
 import { duelOutcome, secs1, OPTIONS_AT_MS } from '../core/duelscore.js';
+import { mountPair } from './pair.js';
 
 const $ = (s) => document.querySelector(s);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -78,17 +79,15 @@ export function installDuel(app) {
     return new Promise((resolve) => {
       app.show('duel');
       const render = () => {
-        const s = app.settings;
-        const seg = (key) => LANGS.map((l) => `<button role="radio" aria-checked="${s[key] === l}" data-k="${key}" data-l="${l}" aria-label="${escapeHtml(t('langName.' + l))}">${LANG_CODE[l]}</button>`).join('');
         $('#duel-body').innerHTML = `<h2 class="h-hand">${escapeHtml(t('duelIncoming'))}</h2>
-          <section class="pair"><label class="pair-col"><span>${escapeHtml(t('iSpeak'))}</span><div class="seg" role="radiogroup">${seg('native')}</div></label>
-          <label class="pair-col"><span>${escapeHtml(t('iLearn'))}</span><div class="seg" role="radiogroup">${seg('learn')}</div></label></section>
+          <section class="pair" id="duel-pair"><div class="pair-col"><span id="dp-n">${escapeHtml(t('iSpeak'))}</span><div class="seg" data-pair="native" role="radiogroup" aria-labelledby="dp-n"></div></div>
+          <button type="button" class="swap-btn" data-pair="swap"></button>
+          <div class="pair-col"><span id="dp-l">${escapeHtml(t('iLearn'))}</span><div class="seg" data-pair="learn" role="radiogroup" aria-labelledby="dp-l"></div></div></section>
           <button class="btn primary big" data-act="go">${escapeHtml(t('duelWatch'))}</button>`;
+        mountPair($('#duel-pair'), app, { onChange: () => { app.applyTexts(); render(); } });
       };
       render();
       $('#duel-body').onclick = (e) => {
-        const b = e.target.closest('[data-l]');
-        if (b) { const key = b.dataset.k, other = key === 'native' ? 'learn' : 'native', l = b.dataset.l; const patch = { [key]: l }; if (app.settings[other] === l) patch[other] = app.settings[key]; app.settings = saveSettings(patch); app.applyTexts(); render(); return; }
         if (e.target.closest('[data-act=go]')) { app.settings = saveSettings({ chosenPair: true }); app.applyTexts(); resolve(); }
       };
       app.hooks.pairGo = () => { app.settings = saveSettings({ chosenPair: true }); app.applyTexts(); resolve(); };

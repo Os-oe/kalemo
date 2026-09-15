@@ -313,7 +313,7 @@ with server() as base, sync_playwright() as p:
         S.check('Rückspiel-Link trägt den Stand (1:0 aus Sicht des neuen Absenders), URL < 300', dec == [1, 0] and st['lastDuel']['length'] < 300 and pg is not None, (dec, st['lastDuel']['length']))
         # zurück beim ersten Absender: sieht „Rückspiel — Stand 0:1"
         p3 = c.new_page(); p3.goto(st['lastDuel']['url'].replace('/#d=', '/?test=1#d='))
-        p3.wait_for_selector('#duel-body [data-act=go]', timeout=30000); p3.click('#duel-body [data-l="de"][data-k="native"]'); p3.click('#duel-body [data-act=go]')
+        p3.wait_for_selector('#duel-body [data-act=go]', timeout=30000); p3.click('#duel-body [data-pair="swap"]'); p3.click('#duel-body [data-act=go]')
         wait_state(p3, 's.duelState && s.duelState.phase === "replay"', 30000)
         sub = p3.text_content('#word-sub') or ''
         S.check('Rückspiel beim ursprünglichen Absender: „Rückspiel — Stand 0:1"', 'Stand 0:1' in sub, sub)
@@ -363,6 +363,41 @@ with server() as base, sync_playwright() as p:
         c.close()
     if section('p2_4'):
         S.run('P2-4 Duell-Wortwahl', p2_4)
+
+    # ---------- P2-5: Sprachwahl — aktive Sprache tut nichts, Tauschen nur über ⇄ (+ P3-8 Pfeiltasten) ----------
+    def p2_5():
+        c = b.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True, locale='de-DE'); pg = c.new_page(); errs = []
+        pg.on('pageerror', lambda e: errs.append(str(e)))
+        pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000)
+        s0 = pg.evaluate('() => window.__state().settings')
+        pair0 = (s0['native'], s0['learn'])
+        pg.tap(f'#pair-learn [data-l="{s0["learn"]}"]'); pg.tap(f'#pair-native [data-l="{s0["native"]}"]')
+        s1 = pg.evaluate('() => window.__state().settings')
+        S.check(f'Frischer Besuch {pair0}: Tipp auf aktive Sprache → Paar unverändert, UI bleibt', (s1['native'], s1['learn']) == pair0 and pg.text_content('#pair-native-l') == 'Ich spreche', (s1['native'], s1['learn']))
+        pg.tap(f'#pair-learn [data-l="{s0["native"]}"]', force=True)
+        s2 =pg.evaluate('() => window.__state().settings')
+        locked = pg.get_attribute(f'#pair-learn [data-l="{s0["native"]}"]', 'aria-disabled')
+        S.check('Tipp auf die Sprache der anderen Spalte → gesperrt, kein heimliches Tauschen', (s2['native'], s2['learn']) == pair0 and locked == 'true', (s2['native'], s2['learn'], locked))
+        pg.tap('#pair-swap')
+        s3 = pg.evaluate('() => window.__state().settings')
+        S.check('⇄-Knopf tauscht das Paar (UI folgt der neuen Muttersprache)', (s3['native'], s3['learn']) == (pair0[1], pair0[0]) and s3['chosenPair'], (s3['native'], s3['learn'], pg.text_content('#pair-native-l')))
+        pg.tap('#pair-swap')
+        other = next(l for l in ('de', 'en', 'tr') if l not in pair0)
+        pg.tap(f'#pair-learn [data-l="{other}"]')
+        s4 = pg.evaluate('() => window.__state().settings')
+        S.check('Andere freie Sprache wählbar', (s4['native'], s4['learn']) == (pair0[0], other), (s4['native'], s4['learn']))
+        # Tastatur: Pfeile in der Radiogruppe (P3-8), gesperrte Sprache wird übersprungen
+        pg.focus(f'#pair-learn [data-l="{other}"]')
+        pg.keyboard.press('ArrowRight')
+        s5 = pg.evaluate('() => window.__state().settings')
+        focused = pg.evaluate('() => document.activeElement && document.activeElement.dataset.l')
+        S.check('Pfeiltaste wählt die nächste freie Sprache (gesperrte übersprungen), Fokus bleibt in der Gruppe', s5['learn'] not in (other, s5['native']) and focused == s5['learn'], (s5['native'], s5['learn'], focused))
+        tabs = pg.evaluate("() => [...document.querySelectorAll('#pair-learn button')].map(b => b.tabIndex)")
+        S.check('Roving tabindex: nur die aktive Sprache ist per Tab erreichbar', sorted(tabs) == [-1, -1, 0], tabs)
+        S.check('P2-5: keine Seitenfehler', not errs, errs[:2])
+        c.close()
+    if section('p2_5'):
+        S.run('P2-5 Sprachwahl', p2_5)
 
     b.close()
 S.finish()

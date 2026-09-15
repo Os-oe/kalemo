@@ -53,7 +53,13 @@ button { font: inherit; color: inherit; }
 .attract-bubble.pop { animation: pop .32s cubic-bezier(.3,1.6,.5,1); }
 .tagline.fade { animation: tagfade 9.2s ease-in-out infinite; }
 @keyframes tagfade { 0% { opacity: 0; transform: translateY(6px); } 6% { opacity: 1; transform: none; } 92% { opacity: 1; } 100% { opacity: 0; } }
-.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pair { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: end; }
+.swap-btn { width: 44px; height: 48px; border: 2px solid var(--ink); border-radius: 12px; background: #FFFDF7; display: grid; place-items: center; cursor: pointer; color: var(--ink); box-shadow: 2px 2px 0 var(--ink); }
+.swap-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.swap-btn:active { transform: translate(2px, 2px); box-shadow: none; }
+.swap-btn.nudge { animation: nudge .5s ease; background: var(--gold); }
+@keyframes nudge { 25% { transform: rotate(-12deg) scale(1.08); } 75% { transform: rotate(12deg) scale(1.08); } }
+.seg button.locked { color: rgba(30,42,58,.38); cursor: not-allowed; background: repeating-linear-gradient(-45deg, #FFFDF7 0 6px, #F1EADB 6px 12px); }
 .pair-col { display: flex; flex-direction: column; gap: 6px; font-weight: 700; font-size: .95rem; }
 .seg { display: flex; border: 2px solid var(--ink); border-radius: 12px; overflow: hidden; }
 .seg button { flex: 1; min-height: 44px; border: 0; background: #FFFDF7; font-weight: 800; cursor: pointer; }

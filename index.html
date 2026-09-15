@@ -35,9 +35,10 @@
       <p class="tagline" aria-live="polite"><span id="tagline"></span></p>
     </header>
     <div class="attract" aria-hidden="true"><canvas id="attract"></canvas><div class="attract-bubble" id="attract-bubble"></div></div>
-    <section class="pair" aria-label="Sprachen" data-t-aria="languages">
-      <label class="pair-col"><span data-t="iSpeak"></span><div class="seg" id="pair-native" role="radiogroup"></div></label>
-      <label class="pair-col"><span data-t="iLearn"></span><div class="seg" id="pair-learn" role="radiogroup"></div></label>
+    <section class="pair" id="pair" aria-label="Sprachen" data-t-aria="languages">
+      <div class="pair-col"><span id="pair-native-l" data-t="iSpeak"></span><div class="seg" id="pair-native" data-pair="native" role="radiogroup" aria-labelledby="pair-native-l"></div></div>
+      <button type="button" class="swap-btn" id="pair-swap" data-pair="swap"></button>
+      <div class="pair-col"><span id="pair-learn-l" data-t="iLearn"></span><div class="seg" id="pair-learn" data-pair="learn" role="radiogroup" aria-labelledby="pair-learn-l"></div></div>
     </section>
     <nav class="start-actions">
       <!-- Ergebnis-Kachel nach dem Spielen (überlebt Reload): Heute x/5 · Teilen · Herausfordern · Countdown -->

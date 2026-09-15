@@ -18,6 +18,7 @@ import { shareImage } from './game/share.js';
 import { mount, unmountAll } from './game/alive.js';
 import { installAudio } from './game/audio.js';
 import { installAttract } from './game/attract.js';
+import { mountPair } from './game/pair.js';
 
 /** Beim Rundenstart: Luft-Modus wieder aufnehmen, wenn früher erlaubt (Desktop, nicht abgelehnt) */
 async function startRoundMode() {
@@ -70,17 +71,8 @@ function applyTexts() {
 
 // ---------- Start ----------
 function renderStart() {
-  const s = app.settings, iso = app.today();
-  const mk = (box, key, other) => {
-    box.innerHTML = LANGS.map((l) => `<button role="radio" aria-checked="${s[key] === l}" data-l="${l}" aria-label="${t('langName.' + l)}">${LANG_CODE[l]}</button>`).join('');
-    box.onclick = (e) => {
-      const b = e.target.closest('button'); if (!b) return;
-      const l = b.dataset.l; const patch = { [key]: l, chosenPair: true };
-      if (s[other] === l) patch[other] = s[key]; // tauschen statt gleiche Sprache
-      app.settings = saveSettings(patch); app.sfx?.play('tap'); applyTexts();
-    };
-  };
-  mk($('#pair-native'), 'native', 'learn'); mk($('#pair-learn'), 'learn', 'native');
+  const iso = app.today();
+  (app.pairCtl ||= mountPair($('#pair'), app, { onChange: () => applyTexts() })).render();
   const plan = planFor(iso, app.words.length ? app.words : [{ id: 'x', acc: 1 }]);
   const today = dayResult(iso), done = !!today;
   $('#daily-label').textContent = done ? t('practice') : t('daily', { n: plan.number });

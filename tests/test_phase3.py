@@ -153,7 +153,7 @@ with server() as base, sync_playwright() as p:
         pg.goto(base + '/?test=1#d=' + code)
         pg.wait_for_selector('#duel-body [data-act=go]', timeout=20000)
         S.check('Duell-Link, erster Besuch: Sprachpaar-Wahl vor dem Replay', True)
-        pg.click('#duel-body [data-l="tr"][data-k="learn"]')
+        pg.click('#duel-body [data-pair="learn"] [data-l="tr"]')  # Iteration 1: Sprachwahl über mountPair
         pg.click('#duel-body [data-act=go]')
         st = wait_state(pg, 's.duelState && s.duelState.phase === "options"', 60000)
         opts = st['duelState']['options']
