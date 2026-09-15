@@ -647,6 +647,42 @@ with server(8792) as base, sync_playwright() as p:
         finally:
             c.close()
 
+    # ---------- Aufgabe 9: Demo-Modus für op-capture ----------
+    def t9_demo():
+        for scene, kw in (('hook', {}), ('hit', {}), ('article', {}), ('plural', {}), ('dayend', {}), ('duel', PHONE), ('landing', PHONE), ('landing', {})):
+            c, pg, errs = fresh(b, **kw)
+            try:
+                pg.goto(base + f'/?demo=1&scene={scene}&nomusic=1')
+                if scene in ('hook', 'hit', 'article', 'plural'):
+                    seen_finish = False
+                    for _ in range(900):
+                        s = pg.evaluate('() => { const a = window.__kalemo; return a && a.round ? { f: !!a.round.active?.finishing, lr: a.lastResult ? { result: a.lastResult.result, strokes: a.lastResult.strokes.length, drawings: (a.lastResult.drawings || []).map(d => d.length), parts: a.lastResult.parts } : null, ov: !document.querySelector("#round-overlay").hidden } : null; }')
+                        if s and s['f']:
+                            seen_finish = True
+                        if s and s['lr'] and s['ov']:
+                            break
+                        pg.wait_for_timeout(80)
+                    exp = pg.evaluate('''([scene]) => { const q = new URLSearchParams(location.search); return fetch('data/examples.json').then(r => r.json()).then(ex => scene === 'plural' ? [0, 1, 2].map(k => ex.apple[k].strokes.length) : ex[q.get('word') || 'cat'][scene === 'hook' ? 2 : 0].strokes.length); }''', [scene])
+                    lr = s['lr']
+                    full = (lr['drawings'] == exp) if scene == 'plural' else (lr['strokes'] == exp)
+                    S.check(f'Demo {scene}: läuft durch (Treffer), vollständige examples-Zeichnung gespeichert, „Mal ruhig fertig"-Phase sichtbar', lr['result'] == 'hit' and full and seen_finish, (lr, exp, seen_finish))
+                elif scene == 'dayend':
+                    pg.wait_for_selector('#sheet img.share-img', timeout=60000)
+                    card = pg.evaluate('() => window.__kalemo.demoResult && window.__kalemo.demoResult.card')
+                    S.check('Demo dayend: Tagesende → spoilerfreie Teilen-Karte (keine Heldenzeichnung, 5 Spuren)', card and card['hero'] is None and card['gates'] == 5, card)
+                elif scene == 'duel':
+                    pg.wait_for_function('() => window.__kalemo.duelState && window.__kalemo.duelState.phase === "options"', timeout=60000)
+                    S.check('Demo duel (Handy): Replay → 4 Antworten', pg.evaluate('() => window.__kalemo.duelState.options.length') == 4)
+                else:
+                    pg.wait_for_selector('#duel-body .landing-logo', state='visible', timeout=20000); pg.wait_for_selector('#duel-body [data-act=go]', timeout=30000)
+                    S.check(f'Demo landing ({"Handy" if kw else "Desktop"}): Empfänger-Landeseite mit Logo, Einzeiler, Knopf', 'Rate, was es ist' in (pg.text_content('#duel-body') or ''))
+                S.check(f'Demo {scene}: 0 JS-Fehler', not errs, errs[:2])
+            finally:
+                c.close()
+
+    if on('t9'):
+        S.run('9 Demo-Szenen', t9_demo)
+
     if on('t8'):
         S.run('8 Gestern-Raster + Poster-Glanz', t8_grid_glint)
 

@@ -48,6 +48,16 @@ export async function scene(app, name) {
       app.round.resultCard({ id, result: 'hit', strokes, points: 90 });
       loop(); break;
     }
+    case 'partial': { // Iteration 2 (R2-P2-2): Mehrzahl-Teilerfolg „Fast! 2 von 3" für acuity-loop
+      setPair('de', 'tr'); roundBase('apple'); app.stage.enabled = false;
+      const ex = await app.examples(); const d = [0, 1].map((k) => ex.apple[k].strokes);
+      app.round.showBubble(app.t('timeUp', {}, 'tr'));
+      app.round.resultCard({ id: 'apple', result: 'timeout', parts: 2, n: 3, strokes: d[0], drawings: d, points: 67 }, { plural: 3, partial: true, extraHtml: '<p class="tipcard">Im Türkischen reicht die Zahl: üç elma</p>' });
+      loop(); break;
+    }
+    case 'quit': { // Iteration 2 (R2-P2-8): Rückfrage beim Schließen der Tagesskizze
+      setPair('de', 'tr'); await app.ensureClf(); playDaily(app); setTimeout(() => app.requestClose(), 1200); break;
+    }
     case 'help': { // Iteration 1: Hilfe-Karte „So malen es andere — jetzt du!" über laufender Runde
       setPair('de', 'tr'); await app.ensureClf(); roundBase(Q('word') || 'bicycle');
       app.round.draw({ id: Q('word') || 'bicycle' });
