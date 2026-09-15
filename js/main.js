@@ -7,6 +7,14 @@ import { Stage } from './game/stage.js';
 import { RoundController, escapeHtml } from './game/round.js';
 import { playDaily } from './game/daily.js';
 import { drawStrokes } from './game/ink.js';
+import { installFlow, isDesktop, inAppBrowser } from './game/flow.js';
+
+/** Beim Rundenstart: Luft-Modus wieder aufnehmen, wenn früher erlaubt (Desktop, nicht abgelehnt) */
+async function startRoundMode() {
+  app.show('round');
+  if (app.settings.air && !app.settings.airDenied && !inAppBrowser() && app.mode !== 'air') await app.enterAir({ handCheck: false });
+  app.renderToggle();
+}
 
 const Q = new URLSearchParams(location.search);
 const $ = (s, r = document) => r.querySelector(s);
@@ -36,9 +44,12 @@ app.ui = {
 app.show = function (name) {
   for (const el of document.querySelectorAll('.screen')) el.hidden = el.id !== 'screen-' + name;
   document.body.dataset.screen = name; app.screen = name;
+  if (name === 'round' && app.stage) { app.stage.resize(); app.round.ensureLoop(); } // sofort messen, nicht erst im ResizeObserver (sonst 1×1-Bühne)
+  else if (app.round) app.round.stopLoop();
   app.onScreen?.(name);
 };
 
+app.applyTexts = applyTexts;
 function applyTexts() {
   setUiLang(app.settings.native);
   for (const el of document.querySelectorAll('[data-t]')) el.textContent = t(el.dataset.t);
@@ -65,16 +76,7 @@ function renderStart() {
   const badge = $('#streak-badge'); badge.hidden = st < 1; badge.textContent = t('streak', { n: st });
 }
 
-// ---------- Slot spielen (Phase 1: Malen + Ergebnis; Artikel/Mehrzahl folgen) ----------
-app.playSlot = async function (slot, { index, total }) {
-  const w = app.byId.get(slot.id);
-  app.round.showWord(w, { plural: slot.kind === 'plural' ? slot.n : null });
-  const out = await app.round.draw({ id: slot.id });
-  out.kind = slot.kind;
-  app.lastResult = out;
-  await app.round.resultCard(out, { plural: slot.kind === 'plural' ? slot.n : null });
-  return out;
-};
+app.hooks = {};
 
 // ---------- Tagesende (Phase 1: schlicht) ----------
 app.showDayEnd = async function (sum) {
@@ -89,17 +91,30 @@ app.showDayEnd = async function (sum) {
 };
 
 // ---------- Boot ----------
+window.addEventListener('keydown', (e) => { if (e.key === 'Tab') document.body.classList.add('kbd'); });
+window.addEventListener('pointerdown', () => document.body.classList.remove('kbd'));
+window.addEventListener('unhandledrejection', (e) => app.log.push('reject ' + (e.reason?.stack || e.reason || '').toString().slice(0, 300)));
+window.addEventListener('error', (e) => app.log.push('error ' + (e.message || '').slice(0, 200)));
 async function boot() {
   const words = await fetch('data/words.json').then((r) => r.json());
   app.words = words; app.byId = new Map(words.map((w) => [w.id, w]));
   app.stage = new Stage($('#stage'));
   app.round = new RoundController(app);
+  installFlow(app);
+  app.setMode('screen');
   applyTexts();
+  if (inAppBrowser()) $('#inapp').hidden = false;
   app.clfPromise = createClassifier({ words, backend: Q.get('backend') || undefined }).then((c) => (app.clf = c)).catch((e) => { app.log.push('clf ' + e.message); throw e; });
-  $('#btn-daily').addEventListener('click', async () => { await app.clfPromise; playDaily(app, { practice: !!dayResult(app.today()) }); });
-  $('#round-close').addEventListener('click', () => { app.dailyRun = null; app.round.active = null; app.round.overlay.hidden = true; app.stage.enabled = false; app.show('start'); renderStart(); });
+  $('#btn-daily').addEventListener('click', async () => { app.sfx?.play('tap'); await startRoundMode(); await app.clfPromise; playDaily(app, { practice: !!dayResult(app.today()) }); });
+  $('#round-close').addEventListener('click', () => { app.dailyRun = null; app.round.active = null; app.hideCard(); app.stage.enabled = false; app.air?.stop(); app.setMode('screen'); app.show('start'); renderStart(); });
+  app.onLowFps = () => {
+    app.choice(`<h3>${escapeHtml(t('moreLight'))}</h3>`, [['screen', t('toScreen'), 'primary'], ['stay', t('next'), 'ghost']]).then((k) => { if (k === 'screen') app.leaveAir(); });
+  };
   $('#btn-dayend-home').addEventListener('click', () => { app.show('start'); renderStart(); });
-  if (app.TEST) (await import('./testhooks.js')).install(app);
+  if (app.TEST) {
+    const th = await import('./testhooks.js'); th.install(app);
+    if (Q.get('scene')) { app.t = t; await th.scene(app, Q.get('scene')); }
+  }
   app.ready = true;
   document.body.classList.add('ready');
 }

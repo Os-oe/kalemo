@@ -1,0 +1,61 @@
+{
+  "url": "http://127.0.0.1:8820/?test=1&scene=precam",
+  "label": "p2-precam",
+  "checkedAt": "2026-09-15T01:18:59.893Z",
+  "threshold": 0.15,
+  "minCells": 2,
+  "desktop": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/phase2/p2-precam-desktop.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "360×225",
+      "overall": 0.3327,
+      "cells": [
+        0.0046,
+        0.2733,
+        0.0065,
+        0.0017,
+        2.679,
+        0.0096,
+        0.006,
+        0.0019,
+        0.0114
+      ],
+      "aliveCells": [
+        "oben-mitte",
+        "mitte-mitte"
+      ],
+      "aliveCount": 2
+    }
+  },
+  "mobile": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/phase2/p2-precam-mobile.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "97×211",
+      "overall": 1.152,
+      "cells": [
+        1.3032,
+        2.6652,
+        3.9335,
+        0.6531,
+        0.8305,
+        0.9147,
+        0.013,
+        0.0055,
+        0.0318
+      ],
+      "aliveCells": [
+        "oben-links",
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-links",
+        "mitte-mitte",
+        "mitte-rechts"
+      ],
+      "aliveCount": 6
+    }
+  },
+  "flags": [],
+  "motionVerdict": "LEBENDIG"
+}

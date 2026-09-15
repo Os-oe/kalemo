@@ -13,6 +13,7 @@ with server() as base, sync_playwright() as p:
     page.on('pageerror', lambda e: errors.append(str(e)))
     page.goto(base + '/?test=1')
     wait_state(page, 's.clfReady', 60000)
+    page.evaluate('() => window.__settings({native: "de", learn: "tr", airOffered: true})')
 
     def plan_checks():
         plans = {d: page.evaluate('(d) => window.__plan(d)', d) for d in DATES}

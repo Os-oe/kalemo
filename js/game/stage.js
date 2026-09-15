@@ -2,6 +2,23 @@
 // (Bildschirm-Modus) oder vom Stift-Automaten (Luft-Modus) entgegen. Striche in CSS-Pixeln.
 import { inkLength } from '../core/raster.js';
 import { rgba, Particles, reducedMotion } from './ink.js';
+import { drawPointerSilhouette } from './hands.js';
+
+/** Chaikin-Glättung (nur fürs Zeichnen; Rohdaten bleiben unverändert) */
+function chaikin(xs, ys, ws, iter = 2) {
+  let X = xs, Y = ys, W = ws;
+  for (let k = 0; k < iter && X.length > 2; k++) {
+    const nx = [X[0]], ny = [Y[0]], nw = [W[0]];
+    for (let i = 0; i < X.length - 1; i++) {
+      nx.push(0.75 * X[i] + 0.25 * X[i + 1], 0.25 * X[i] + 0.75 * X[i + 1]);
+      ny.push(0.75 * Y[i] + 0.25 * Y[i + 1], 0.25 * Y[i] + 0.75 * Y[i + 1]);
+      nw.push(0.75 * W[i] + 0.25 * W[i + 1], 0.25 * W[i] + 0.75 * W[i + 1]);
+    }
+    nx.push(X[X.length - 1]); ny.push(Y[Y.length - 1]); nw.push(W[W.length - 1]);
+    X = nx; Y = ny; W = nw;
+  }
+  return [X, Y, W];
+}
 
 export class Stage {
   constructor(el, { onStrokeStart, onStrokeEnd, onPoint } = {}) {
@@ -30,7 +47,7 @@ export class Stage {
   }
   setColor(c) { this.color = c; this._rebuildLayer(); }
   /** Stiftbreite relativ zur Bühne */
-  get penWidth() { return Math.max(4, Math.min(11, Math.min(this.w, this.h) / 70)); }
+  get penWidth() { return Math.max(5.5, Math.min(11, Math.min(this.w, this.h) / 66)); }
   clear() { this.strokes = []; this.widths = []; this.active = null; this.activeW = null; this.version++; this._rebuildLayer(); }
   inkLength() { return inkLength(this.active ? [...this.strokes, this.active] : this.strokes); }
   /** Alle Striche inkl. laufendem (Kopie) */
@@ -94,15 +111,17 @@ export class Stage {
     c.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse' && id === null) this.cursor = null; });
   }
 
-  _drawStroke(ctx, [xs, ys], ws, cached) {
+  _drawStroke(ctx, raw, wsRaw, cached) {
+    const [xs, ys, ws] = chaikin(raw[0], raw[1], wsRaw, raw[0].length > 60 ? 1 : 2);
     const n = xs.length; if (!n) return;
     const color = this.color, dpr = this.dpr;
     ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     const avg = ws.reduce((a, b) => a + b, 0) / ws.length;
     const path = () => { ctx.beginPath(); ctx.moveTo(xs[0], ys[0]); if (n === 1) ctx.lineTo(xs[0] + 0.1, ys[0]); for (let i = 1; i < n; i++) { const mx = (xs[i - 1] + xs[i]) / 2, my = (ys[i - 1] + ys[i]) / 2; ctx.quadraticCurveTo(xs[i - 1], ys[i - 1], mx, my); } ctx.lineTo(xs[n - 1], ys[n - 1]); };
-    // Halo
+    // Halo: zwei weiche Schichten statt eines harten Bandes
     ctx.globalCompositeOperation = 'lighter';
-    ctx.shadowColor = color; ctx.shadowBlur = avg * 2.6; ctx.strokeStyle = rgba(color, 0.2); ctx.lineWidth = avg * 3.4; path(); ctx.stroke();
+    ctx.shadowColor = rgba(color, 0.9); ctx.shadowBlur = avg * 4.5; ctx.strokeStyle = rgba(color, 0.07); ctx.lineWidth = avg * 3.8; path(); ctx.stroke();
+    ctx.shadowBlur = avg * 1.8; ctx.strokeStyle = rgba(color, 0.16); ctx.lineWidth = avg * 2.1; path(); ctx.stroke();
     ctx.shadowBlur = 0; ctx.globalCompositeOperation = 'source-over';
     // Farbsaum + Kern mit variabler Breite
     for (const [col, k] of [[color, 1.25], ['#FFFBEF', 0.45]]) {
@@ -121,6 +140,7 @@ export class Stage {
     const dt = Math.min(0.05, (now - this.lastT) / 1000); this.lastT = now;
     const ctx = this.ctx, dpr = this.dpr;
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this._dust(ctx, now, dt);
     ctx.save();
     if (this.twitch > 0) { const k = this.twitch; ctx.translate((Math.random() - 0.5) * 5 * k * dpr, (Math.random() - 0.5) * 5 * k * dpr); this.twitch = Math.max(0, k - dt * 5); }
     if (this.shift) ctx.translate(this.shift * dpr, 0);
@@ -137,6 +157,49 @@ export class Stage {
       ctx.restore();
     }
   }
+  /** Ruhe-Bewegung: treibender Lichtstaub + Mal-Hinweis, solange noch nichts gemalt ist */
+  _dust(ctx, now, dt) {
+    const dpr = this.dpr, reduce = reducedMotion();
+    if (!this.dustP) {
+      let s = 7; const r = () => (s = (s * 16807) % 2147483647) / 2147483647;
+      this.dustP = Array.from({ length: 46 }, () => ({ x: r(), y: r(), z: 0.3 + r() * 0.7, ph: r() * 6.28 }));
+    }
+    ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalCompositeOperation = 'lighter';
+    const t = now / 1000;
+    if (!reduce) { // wandernder Lichtschein über dem Nachtpapier
+      const bx = this.w * (0.5 + 0.42 * Math.sin(t * 0.21)), by = this.h * (0.45 + 0.3 * Math.cos(t * 0.17)), R = Math.max(this.w, this.h) * 0.45;
+      const g = ctx.createRadialGradient(bx, by, 0, bx, by, R); g.addColorStop(0, 'rgba(170,196,255,0.07)'); g.addColorStop(1, 'rgba(170,196,255,0)');
+      ctx.fillStyle = g; ctx.fillRect(0, 0, this.w, this.h);
+    }
+    // Glut steigt aus der Leuchtspur
+    if (!reduce && this.strokes.length && Math.random() < 0.5) {
+      const s = this.strokes[(Math.random() * this.strokes.length) | 0]; const i = (Math.random() * s[0].length) | 0;
+      this.sparks.emit(1, () => ({ x: s[0][i] + this.shift, y: s[1][i], vx: (Math.random() - 0.5) * 14, vy: -18 - Math.random() * 26, g: 0, life: 1.4 + Math.random(), max: 2.4, size: 1.2 + Math.random() * 1.6, color: Math.random() < 0.6 ? '#FFF1C9' : this.color }));
+    }
+    for (const p of this.dustP) {
+      const x = ((p.x + (reduce ? 0 : t * 0.006 * p.z)) % 1) * this.w;
+      const y = ((p.y + (reduce ? 0 : Math.sin(t * 0.3 + p.ph) * 0.01)) % 1) * this.h;
+      const a = 0.05 + 0.1 * p.z * (0.6 + 0.4 * Math.sin(t * 1.3 + p.ph));
+      ctx.fillStyle = `rgba(255,236,190,${a})`; ctx.beginPath(); ctx.arc(x, y, 0.8 + p.z * 1.8, 0, 6.283); ctx.fill();
+    }
+    ctx.restore();
+    // Hinweis-Hand: malt eine kleine Schleife, bis der erste Strich kommt
+    if (this.enabled && !this.strokes.length && !this.active && this.hintOn !== false) {
+      this.enabledAt ??= now;
+      const k = (now - this.enabledAt - 2200) / 1000;
+      if (k > 0 && !reduce) {
+        const cx = this.w / 2, cy = this.h * 0.55, R = Math.min(this.w, this.h) * 0.09;
+        const ph = (k % 2.4) / 2.4 * Math.PI * 2;
+        ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.strokeStyle = rgba(this.color, 0.35); ctx.lineWidth = 3; ctx.setLineDash([2, 9]); ctx.lineCap = 'round';
+        ctx.beginPath(); for (let a = 0; a <= ph; a += 0.12) { const px = cx + Math.sin(a) * R * 1.3, py = cy - Math.sin(a * 2) * R * 0.6; a === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py); } ctx.stroke();
+        const hx = cx + Math.sin(ph) * R * 1.3, hy = cy - Math.sin(ph * 2) * R * 0.6;
+        drawPointerSilhouette(ctx, hx, hy, Math.max(0.6, Math.min(1.1, this.h / 700)), { fill: 'rgba(255,251,239,0.10)', stroke: 'rgba(255,251,239,0.45)' });
+        ctx.restore();
+      }
+    } else this.enabledAt = null;
+  }
+
   /** Datensatz-/Fixture-Striche (0..255) in die Bühnenmitte abbilden */
   mapFixture(strokes, frac = 0.62) {
     const size = Math.min(this.w, this.h) * frac; const ox = (this.w - size) / 2, oy = (this.h - size) / 2 + this.h * 0.04;

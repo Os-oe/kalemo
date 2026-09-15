@@ -1,0 +1,68 @@
+{
+  "url": "http://127.0.0.1:8820/?test=1&scene=round",
+  "label": "p3-round",
+  "checkedAt": "2026-09-15T01:21:27.490Z",
+  "threshold": 0.15,
+  "minCells": 2,
+  "desktop": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/phase2/p3-round-desktop.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "360×225",
+      "overall": 1.0047,
+      "cells": [
+        0.0561,
+        0.2381,
+        1.7803,
+        0.0377,
+        1.2855,
+        1.8013,
+        0.0134,
+        1.6058,
+        2.2236
+      ],
+      "aliveCells": [
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-mitte",
+        "mitte-rechts",
+        "unten-mitte",
+        "unten-rechts"
+      ],
+      "aliveCount": 6
+    }
+  },
+  "mobile": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/phase2/p3-round-mobile.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "97×211",
+      "overall": 1.6429,
+      "cells": [
+        0.1868,
+        0.9702,
+        1.6185,
+        1.2537,
+        1.5475,
+        2.7039,
+        1.7179,
+        1.8749,
+        2.9991
+      ],
+      "aliveCells": [
+        "oben-links",
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-links",
+        "mitte-mitte",
+        "mitte-rechts",
+        "unten-links",
+        "unten-mitte",
+        "unten-rechts"
+      ],
+      "aliveCount": 9
+    }
+  },
+  "flags": [],
+  "motionVerdict": "LEBENDIG"
+}

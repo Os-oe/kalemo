@@ -17,6 +17,8 @@ export class RoundController {
     this._loop = this._loop.bind(this);
   }
   get stage() { return this.app.stage; }
+  ensureLoop() { if (!this.raf) this.raf = requestAnimationFrame(this._loop); }
+  stopLoop() { if (this.raf) cancelAnimationFrame(this.raf); this.raf = null; }
 
   /** Wortanzeige oben (Lernsprache). */
   showWord(w, { article = true, plural = null } = {}) {
@@ -35,6 +37,7 @@ export class RoundController {
    */
   draw(opts) {
     const app = this.app, w = app.byId.get(opts.id);
+    this.stage.resize();
     const minInk = Math.min(this.stage.w, this.stage.h) * 0.18;
     const engine = new RoundEngine({ target: w.id, durationMs: opts.durationMs ?? 20000, minInk });
     this.stage.clear();
@@ -55,18 +58,22 @@ export class RoundController {
   }
 
   async _classify(force = false) {
-    const r = this.active; if (!r || r.engine.done || r.busy) return;
+    const r = this.active; if (!r || r.engine.done) return;
+    if (r.busy) { if (force) r.pending = true; return; } // erzwungene Klassifikation nie verlieren
     const clf = this.app.clf; if (!clf) return;
     const now = performance.now();
     if (!force && (this.stage.version === r.lastVersion || now - r.lastClassify < CLASSIFY_MS)) return;
     const strokes = this.stage.allStrokes(); if (!strokes.length) return;
-    r.busy = true; r.lastVersion = this.stage.version; r.lastClassify = now;
+    r.busy = true; r.pending = false; r.lastVersion = this.stage.version; r.lastClassify = now;
     try {
       const res = await clf.classify(strokes);
       if (!res || this.active !== r || r.engine.done) return;
       const tNow = performance.now();
       this._handle(r, r.engine.onPrediction(tNow, res.top, this.stage.inkLength()));
-    } finally { r.busy = false; }
+    } finally {
+      r.busy = false;
+      if (r.pending && this.active === r && !r.engine.done) { r.pending = false; this._classify(true); }
+    }
   }
 
   _handle(r, events) {
@@ -97,7 +104,8 @@ export class RoundController {
     this.raf = requestAnimationFrame(this._loop);
     const r = this.active;
     if (r && !r.engine.done) {
-      if (r.confirmAt && now >= r.confirmAt) { r.confirmAt = null; this._classify(true); }
+      if (r.confirmAt && now >= r.confirmAt && !r.busy) { r.confirmAt = null; this._classify(true); }
+      else if (r.engine.targetSince != null && !r.busy && now - r.lastClassify >= 320) this._classify(true); // Bestätigung auch ohne neue Striche
       else this._classify(false);
       this._handle(r, r.engine.tick(now));
       const left = Math.max(0, r.engine.duration - r.engine.elapsed(now));
@@ -173,17 +181,19 @@ export class RoundController {
       return;
     }
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const abort = (where) => { this.app.log.push(`feed-abort ${where} enabled=${st.enabled} active=${!!this.active}`); };
     for (const [xs, ys] of pts) {
-      if (!st.enabled) return;
+      if (!st.enabled) return abort('stroke');
       st.beginStroke(xs[0], ys[0]);
       for (let i = 1; i < xs.length; i++) {
         // Zwischenpunkte wie echte Pointer-Events
         const steps = Math.max(1, Math.round(Math.hypot(xs[i] - xs[i - 1], ys[i] - ys[i - 1]) / 9));
-        for (let k = 1; k <= steps; k++) { if (!st.enabled) return; st.addPoint(xs[i - 1] + (xs[i] - xs[i - 1]) * k / steps, ys[i - 1] + (ys[i] - ys[i - 1]) * k / steps); await sleep(ptMs); }
+        for (let k = 1; k <= steps; k++) { if (!st.enabled) return abort('point'); st.addPoint(xs[i - 1] + (xs[i] - xs[i - 1]) * k / steps, ys[i - 1] + (ys[i] - ys[i - 1]) * k / steps); await sleep(ptMs); }
       }
       st.endStroke();
       await sleep(gapMs);
     }
+    this.app.log.push('feed-done ' + pts.length);
   }
 }
 
