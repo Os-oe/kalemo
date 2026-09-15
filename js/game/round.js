@@ -6,6 +6,8 @@ import { drawStrokes } from './ink.js';
 import { mount as mountAlive, confetti, unmountAll } from './alive.js';
 
 const CLASSIFY_MS = 450;
+/** Iteration 2 (R2-P2-1): nach dem Erkennen fertig malen — Karte erst nach Stift-Pause, spätestens nach dem Deckel */
+export const FINISH = { pauseMs: 1200, capMs: 4000 };
 const $ = (s, r = document) => r.querySelector(s);
 
 export class RoundController {
@@ -34,8 +36,10 @@ export class RoundController {
   }
 
   /**
-   * Eine Mal-Runde. Löst auf mit {id, result, hitAt, points, strokes, tips, bestWrong, ms}
-   * opts: { id, durationMs, color, n (Mehrzahl-Zeichnung i/n), silentIntro, onHitCard (false = kein Overlay), label }
+   * Eine Mal-Runde. Löst auf mit {id, result, hitAt, drawMs, points, strokes, tips, bestWrong, ms}
+   * opts: { id, durationMs, color, plural {i,n}, totalMs, finish (false = Karte sofort), onRecognized(r) }
+   * Treffer (Iteration 2): Uhr stoppt beim Erkennen (Wertung = Erkennungszeitpunkt), die Runde nimmt aber weiter Striche an,
+   * bis der Stift 1,2 s ruht, 4 s vergangen sind oder „Fertig" getippt wird — die gespeicherte Zeichnung ist vollständig.
    */
   draw(opts) {
     const app = this.app, w = app.byId.get(opts.id);
@@ -43,7 +47,7 @@ export class RoundController {
     this.stage.resize();
     const minInk = Math.min(this.stage.w, this.stage.h) * 0.18;
     const engine = new RoundEngine({ target: w.id, durationMs: opts.durationMs ?? 20000, minInk, floor: HIT_FLOOR[w.id] || 0 });
-    this.stage.clear();
+    if (opts.keep) this.stage.version++; else this.stage.clear(); // Mehrzahl: ein mitgenommener Strich zählt schon zum nächsten Objekt
     this.stage.setColor(opts.color || strokeColor(w, app.settings.learn));
     this.stage.enabled = true;
     this.stage.pointerOn = app.mode === 'screen';
@@ -51,11 +55,15 @@ export class RoundController {
     return new Promise((resolve) => {
       const r = this.active = {
         w, engine, opts, resolve, lastVersion: -1, lastClassify: 0, busy: false, confirmAt: null, frozenUntil: 0,
-        t0: performance.now(), endAt: null, deadline: opts.deadline || null,
+        t0: performance.now(), endAt: null, deadline: opts.deadline || null, firstStrokeAt: this.stage.active ? 0 : null, finishing: false,
       };
       engine.start(r.t0);
-      this.stage.cb.onStrokeEnd = () => { app.sfx?.scribbleStop(); this._classify(true); };
-      this.stage.cb.onStrokeStart = () => app.sfx?.play('penDown');
+      this.stage.cb.onStrokeEnd = () => { app.sfx?.scribbleStop(); if (r.finishing) this._armFinish(r); else this._classify(true); };
+      this.stage.cb.onStrokeStart = (x, y) => {
+        app.sfx?.play('penDown');
+        if (r.firstStrokeAt == null && !engine.done) r.firstStrokeAt = engine.elapsed(performance.now()); // Malzeit ab erstem Strich (Duell)
+        if (r.finishing) { clearTimeout(r.finishT); r.finishT = null; if (r.opts.carryOutside && this._outside(r, x, y)) this._complete(r, 'hit', { carry: true }); }
+      };
       this.stage.cb.onPoint = (x, y, t, v) => app.sfx?.scribble(v);
       if (!this.raf) this.raf = requestAnimationFrame(this._loop);
     });
@@ -131,30 +139,65 @@ export class RoundController {
   }
 
   _end(r, result) {
+    if (result !== 'hit') return this._complete(r, result);
+    const app = this.app, learn = app.settings.learn, ui = app.settings.native;
+    document.getElementById('round-help').hidden = true;
+    const ink = this.stage.canvas;
+    r.frozenUntil = performance.now() + 100; // Freeze 80–120 ms
+    const pl = r.opts.plural; // Mehrzahl (Review P3-4): Zwischenstand zählen, am Ende „Ich weiß! Zwei Frösche!"
+    if (pl && pl.i < pl.n) { this.showBubble(`${cap(NUM[learn][pl.i], learn)}!`); app.voice?.count(pl.i, learn); }
+    else if (pl) this.showBubble(t('guessHit', { w: cap(pluralPhrase(r.w, learn, pl.n), learn) }, learn));
+    else this.showBubble(t('guessHit', { w: cap(word(r.w, learn), learn) }, learn));
+    app.sfx?.play('hit');
+    try { navigator.vibrate?.(40); } catch {}
+    setTimeout(() => { ink.classList.remove('squash'); void ink.offsetWidth; ink.classList.add('squash'); confetti(document.querySelector('#stage canvas.fx'), this.stage.color); }, 100);
+    setTimeout(() => app.sfx?.play(r.w.sfx), 520);
+    r.opts.onRecognized?.(r);
+    if (r.opts.finish === false) return this._complete(r, 'hit');
+    // Fertig malen: Hinweis in der Blase (UI-Sprache), „Fertig"-Knopf, Karte nach Stift-Pause bzw. Deckel
+    r.finishing = true; r.recognizedAt = performance.now(); r.recognizedStrokes = this.stage.strokes.length + (this.stage.active ? 1 : 0);
+    if (!pl || pl.i === pl.n) { const s = document.createElement('small'); s.className = 'bubble-hint'; s.lang = ui; s.textContent = t('finishHint', {}, ui); this.bubble.append(s); }
+    const done = document.getElementById('round-done'); done.hidden = false; done.onclick = () => { app.sfx?.play('tap'); this._complete(r, 'hit', { carry: false }); };
+    app.hooks.finishNow = () => this._complete(r, 'hit');
+    r.capT = setTimeout(() => this._complete(r, 'hit', { carry: !!r.opts.carryOutside }), r.opts.finishCapMs ?? FINISH.capMs);
+    if (!this.stage.active) this._armFinish(r);
+  }
+
+  _armFinish(r) { clearTimeout(r.finishT); r.finishT = setTimeout(() => this._complete(r, 'hit'), r.opts.finishPauseMs ?? FINISH.pauseMs); }
+
+  /** Mehrzahl: beginnt ein neuer Strich klar außerhalb des erkannten Objekts, ist es schon das nächste */
+  _outside(r, x, y) {
+    const b = bboxOf(this.stage.strokes); if (!b) return false;
+    const m = Math.max(28, Math.max(b.w, b.h) * 0.2);
+    return x < b.x - m || x > b.x + b.w + m || y < b.y - m || y > b.y + b.h + m;
+  }
+
+  /** Runde abschließen (Treffer nach dem Fertigmalen oder Zeit um). carry: laufenden Strich fürs nächste Mehrzahl-Objekt stehen lassen */
+  _complete(r, result, { carry = false } = {}) {
+    if (r.completed) return; r.completed = true;
+    clearTimeout(r.finishT); clearTimeout(r.capT); r.finishing = false;
     const app = this.app, learn = app.settings.learn;
-    this.stage.enabled = false;
-    if (this.stage.active) this.stage.endStroke();
-    app.voice?.stop();
+    document.getElementById('round-done').hidden = true; app.hooks.finishNow = null;
+    if (this.active !== r) return; // Runde inzwischen geschlossen
+    let strokes;
+    if (carry) { strokes = this.stage.detach(); } // Mehrzahl: fertige Striche raus, laufender Strich bleibt für das nächste Objekt
+    else {
+      this.stage.enabled = false;
+      if (this.stage.active) this.stage.endStroke();
+      strokes = this.stage.allStrokes();
+    }
+    if (result !== 'hit') app.voice?.stop();
     const snap = r.engine.snapshot();
     const out = {
-      id: r.w.id, result, hitAt: snap.hitAt, points: r.engine.points(), strokes: this.stage.allStrokes(),
+      id: r.w.id, result, hitAt: snap.hitAt, points: r.engine.points(), strokes,
+      drawMs: result === 'hit' && r.firstStrokeAt != null ? Math.max(0, Math.round(snap.hitAt - r.firstStrokeAt)) : null,
+      elapsedMs: Math.round(result === 'hit' ? snap.hitAt : r.engine.duration),
       tips: snap.tips, bestWrong: snap.bestWrong, lastTop: snap.lastTop, predictions: snap.predictions,
-      stage: { w: this.stage.w, h: this.stage.h },
+      stage: { w: this.stage.w, h: this.stage.h }, recognizedStrokes: r.recognizedStrokes ?? null, carried: !!carry,
     };
     app.sfx?.scribbleStop();
     document.getElementById('round-help').hidden = true;
-    const ink = this.stage.canvas;
-    if (result === 'hit') {
-      r.frozenUntil = performance.now() + 100; // Freeze 80–120 ms
-      const pl = r.opts.plural; // Mehrzahl (Review P3-4): Zwischenstand zählen, am Ende „Ich weiß! Zwei Frösche!"
-      if (pl && pl.i < pl.n) { this.showBubble(`${cap(NUM[learn][pl.i], learn)}!`); app.voice?.count(pl.i, learn); }
-      else if (pl) this.showBubble(t('guessHit', { w: cap(pluralPhrase(r.w, learn, pl.n), learn) }, learn));
-      else this.showBubble(t('guessHit', { w: cap(word(r.w, learn), learn) }, learn));
-      app.sfx?.play('hit');
-      try { navigator.vibrate?.(40); } catch {}
-      setTimeout(() => { ink.classList.remove('squash'); void ink.offsetWidth; ink.classList.add('squash'); confetti(document.querySelector('#stage canvas.fx'), this.stage.color); }, 100);
-      setTimeout(() => app.sfx?.play(r.w.sfx), 520);
-    } else {
+    if (result !== 'hit') {
       this.showBubble(t('timeUp', {}, learn));
       this.stage.crumble();
       app.sfx?.play('crumble'); app.sfx?.play('timeup');
@@ -218,7 +261,7 @@ export class RoundController {
       const fringe = learn === 'de' ? FRINGE[key] : FRINGE.neutral;
       const strokes = out.drawings?.length ? out.drawings[0] : out.strokes;
       const groups = plural && out.drawings?.length > 1 ? out.drawings : null; // Mehrzahl: alle N Zeichnungen nebeneinander
-      mountAlive(this.overlay.querySelector('canvas.alive'), { strokes, groups, color: col, fringe, style: 'crayon', width: groups ? 4.2 : 5.2, padding: 0.13, motion: { kind: w.motion, id: w.id }, delay: 120, seed: 4 });
+      mountAlive(this.overlay.querySelector('canvas.alive'), { strokes, groups, color: col, fringe, style: 'crayon', width: groups ? 4.2 : 5.2, padding: 0.12, motion: { kind: w.motion, id: w.id }, delay: 120, seed: 4 });
       setTimeout(() => app.sfx?.play('glitter'), 350);
     }
     this.overlay.querySelectorAll('[data-say]').forEach((b) => b.addEventListener('click', () => app.voice?.word(w.id, b.dataset.say)));
@@ -263,6 +306,13 @@ export class RoundController {
     }
     this.app.log.push('feed-done ' + pts.length);
   }
+}
+
+/** Bounding-Box fertiger Striche in Bühnen-Pixeln (null = leer) */
+function bboxOf(strokes) {
+  let mx = Infinity, my = Infinity, Mx = -Infinity, My = -Infinity;
+  for (const [xs, ys] of strokes) for (let i = 0; i < xs.length; i++) { if (xs[i] < mx) mx = xs[i]; if (xs[i] > Mx) Mx = xs[i]; if (ys[i] < my) my = ys[i]; if (ys[i] > My) My = ys[i]; }
+  return isFinite(mx) ? { x: mx, y: my, w: Mx - mx, h: My - my } : null;
 }
 
 export function escapeHtml(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }

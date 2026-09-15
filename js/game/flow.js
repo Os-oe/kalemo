@@ -218,16 +218,15 @@ export function installFlow(app) {
       if (plural) app.voice?.plural(w.id, learn, plural); else app.voice?.word(w.id, learn);
     }
     let out;
+    const order = app.round.langOrder();
+    // Iteration 2: Treffer-Stimme („Buldum! Kedi! … die Katze · cat") schon beim Erkennen — man malt beim Zuhören fertig
     if (plural) out = await app.pluralRound(w, plural);
-    else out = await app.round.draw({ id: w.id, color: strokeColor(w, learn) });
+    else out = await app.round.draw({ id: w.id, color: strokeColor(w, learn), onRecognized: () => app.voice?.hitAnnounce(w.id, order) });
     out.kind = slot.kind; out.n = plural; out.articleOk = articleOk;
     if (articleOk) out.points += 20;
-    const order = app.round.langOrder();
-    if (plural && out.result === 'hit') app.voice?.pluralHitAnnounce(w.id, order, plural); // P3-4: Ausruf in der Mehrzahl
-    else if (plural) app.voice?.announce(w.id, order, { delay: 400, plural });
-    else if (out.result === 'hit') app.voice?.hitAnnounce(w.id, order);
-    else app.voice?.missAnnounce(w.id, order);
-    await sleep(out.result === 'hit' ? 950 : 1000); // Treffer-/Zerbrösel-Animation wirken lassen
+    if (plural && out.result !== 'hit') app.voice?.announce(w.id, order, { delay: 400, plural });
+    else if (!plural && out.result !== 'hit') app.voice?.missAnnounce(w.id, order);
+    await sleep(out.result === 'hit' ? 200 : 1000); // Zerbrösel-Animation wirken lassen (Treffer: das Fertigmalen war die Pause)
     if (out.result === 'hit' && !plural) {
       const real = await app.realStep(w);
       out.real = !!real; if (real) out.points *= 2;

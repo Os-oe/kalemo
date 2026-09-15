@@ -55,10 +55,10 @@ export function installDuel(app) {
         const w = app.byId.get(b.dataset.id);
         app.show('round'); app.renderToggle(); app.ui.slots(0, 0, []);
         app.round.showWord(w); app.voice?.word(w.id, learn);
-        const out = await app.round.draw({ id: w.id, color: strokeColor(w, learn) });
+        const out = await app.round.draw({ id: w.id, color: strokeColor(w, learn), onRecognized: () => app.voice?.hitAnnounce(w.id, app.round.langOrder()) });
         app.lastResult = { ...out, kind: 'duel' };
-        if (out.result === 'hit') app.voice?.hitAnnounce(w.id, app.round.langOrder()); else app.voice?.missAnnounce(w.id, app.round.langOrder());
-        await sleep(1100);
+        if (out.result !== 'hit') app.voice?.missAnnounce(w.id, app.round.langOrder());
+        await sleep(out.result === 'hit' ? 300 : 1100);
         await duel.sendDrawing(w.id, out.strokes, out.result === 'hit' ? out.hitAt : 20000, null, { score: sc });
       };
     },
@@ -102,7 +102,7 @@ export function installDuel(app) {
     $('#word').textContent = '?'; $('#word-sub').textContent = sThem + sYou > 0 ? `${t('duelWatch')} · ${t('duelRematch', { a: sYou, b: sThem })}` : t('duelWatch');
     const st = app.stage; st.clear(); st.setColor(strokeColor(w, learn)); st.enabled = true; st.pointerOn = false; st.hintOn = false;
     const strokes = withTimes(d.strokes, d.timing);
-    const mapped = st.mapFixture(strokes).map((s, i) => [s[0], s[1], strokes[i][2]]);
+    const mapped = st.mapFixture(strokes, 0.74).map((s, i) => [s[0], s[1], strokes[i][2]]); // Iteration 2: Replay groß (vorher 62 %)
     const total = strokes.length ? strokes[strokes.length - 1][2].slice(-1)[0] : 0;
     const engine = new RoundEngine({ target: w.id, durationMs: total + 1500, minInk: Math.min(st.w, st.h) * 0.18 });
     const t0 = performance.now(); engine.start(t0);

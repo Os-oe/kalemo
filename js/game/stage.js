@@ -53,6 +53,12 @@ export class Stage {
   /** Zeit um: Zeichnung zerbröselt (keine Buzzer-Strafe) */
   crumble() { this.crumbleAt = performance.now(); }
   inkLength() { return inkLength(this.active ? [...this.strokes, this.active] : this.strokes); }
+  /** Mehrzahl (Iteration 2): fertige Striche herauslösen (Kopie zurück), laufender Strich bleibt für das nächste Objekt */
+  detach() {
+    const done = this.strokes.map((s) => [s[0].slice(), s[1].slice(), s[2].slice()]);
+    this.strokes = []; this.widths = []; this.version++; this._rebuildLayer();
+    return done;
+  }
   /** Alle Striche inkl. laufendem (Kopie) */
   allStrokes() { const all = this.active && this.active[0].length ? [...this.strokes, this.active] : this.strokes; return all.map((s) => [s[0].slice(), s[1].slice(), s[2].slice()]); }
 

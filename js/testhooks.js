@@ -138,12 +138,13 @@ export function install(app) {
   window.__answer = (id, o) => { app.hooks.answer?.(id, o); return true; };
   window.__pairGo = () => { app.hooks.pairGo?.(); return true; };
   window.__home = () => { app.goHome(); return true; };
+  window.__finishNow = () => { app.hooks.finishNow?.(); return true; };
   window.__next = () => { const b = document.querySelector('#round-overlay [data-act=next]'); if (b) b.click(); return !!b; };
   window.__state = () => {
     const r = app.round?.active;
     return JSON.parse(JSON.stringify({
       screen: app.screen, mode: app.mode, settings: app.settings, date: app.today(), clfReady: !!app.clf, backend: app.clf?.backend,
-      round: r ? { target: r.w.id, elapsedMs: Math.round(r.engine.elapsed(performance.now())), tips: r.engine.tips, lastTop: r.engine.lastTop, predictions: r.engine.predictions, paused: r.engine.paused, helped: !!r.helped, enabled: app.stage.enabled } : null,
+      round: r ? { target: r.w.id, elapsedMs: Math.round(r.engine.elapsed(performance.now())), tips: r.engine.tips, lastTop: r.engine.lastTop, predictions: r.engine.predictions, paused: r.engine.paused, helped: !!r.helped, enabled: app.stage.enabled, finishing: !!r.finishing, recognized: r.engine.result === 'hit', recognizedAt: r.recognizedAt ? Math.round(r.recognizedAt) : null } : null,
       overlay: !document.querySelector('#round-overlay').hidden,
       overlayClass: document.querySelector('#round-overlay').className,
       lastArticle: app.lastArticle || null, toast: document.querySelector('#toast').hidden ? null : document.querySelector('#toast').textContent,
@@ -154,7 +155,8 @@ export function install(app) {
       duelPicks: app.duelPicks || null, inapp: !document.querySelector('#inapp').hidden, lastLinkShare: app.lastLinkShare || null,
       fxLog: (app.fxLog || []).slice(-40), voiceLog: (app.voiceLog || []).slice(-20), audioReady: !!app.audio?.ready(),
       stageFx: app.stage ? { strokes: app.stage.strokes.length, squash:app.stage.canvas.classList.contains('squash'), crumbling: app.stage.crumbleAt != null, twitch: +app.stage.twitch.toFixed(2), cursor: app.stage.cursor?.state || null, realBox: !!app.stage.realBox } : null,
-      bubble: document.querySelector('#bubble').hidden ? null : { text: document.querySelector('#bubble').textContent, pop: document.querySelector('#bubble').classList.contains('pop') },
+      // text = Hauptzeile der Blase (ohne winzige Übersetzung/Hinweis), hint = „Mal ruhig fertig …" (Iteration 2)
+      bubble: document.querySelector('#bubble').hidden ? null : { text: [...document.querySelector('#bubble').childNodes].filter((n) => !(n.classList && (n.classList.contains('bubble-sub') || n.classList.contains('bubble-hint')))).map((n) => n.textContent).join(''), hint: document.querySelector('#bubble .bubble-hint')?.textContent || null, pop: document.querySelector('#bubble').classList.contains('pop') },
       lastResult: app.lastResult ? { ...app.lastResult, strokes: app.lastResult.strokes?.length } : null,
       daily: app.dailyRun ? { number: app.dailyRun.plan.number, index: app.dailyRun.index, results: app.dailyRun.results.map((x) => ({ id: x.id, kind: x.kind, result: x.result, points: x.points })) } : null,
       log: app.log.slice(-20),

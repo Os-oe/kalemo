@@ -14,9 +14,27 @@ export function rgba(hex, a) {
 /** Deterministisches Rauschen für Line-Boil */
 function hash(i, j) { let h = (i * 374761393 + j * 668265263) ^ 0x5bd1e995; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967295; }
 
+/**
+ * Sichtbare Ausdehnung (Iteration 2): gezeichnet wird mit Quadratkurven durch die Strecken-Mitten — spitze Ecken (Karottenspitze)
+ * erreichen den Rohpunkt nie. Die Box aus Endpunkten, Mitten und Kurven-Scheiteln lässt die Zeichnung wirklich ~80 % füllen.
+ */
+function visualBbox(strokes) {
+  let mx = Infinity, my = Infinity, Mx = -Infinity, My = -Infinity;
+  const add = (x, y) => { if (x < mx) mx = x; if (x > Mx) Mx = x; if (y < my) my = y; if (y > My) My = y; };
+  for (const [xs, ys] of strokes) {
+    const n = xs.length; if (!n) continue;
+    add(xs[0], ys[0]); add(xs[n - 1], ys[n - 1]);
+    for (let i = 1; i < n - 1; i++) {
+      const m1x = (xs[i - 1] + xs[i]) / 2, m1y = (ys[i - 1] + ys[i]) / 2, m2x = (xs[i] + xs[i + 1]) / 2, m2y = (ys[i] + ys[i + 1]) / 2;
+      add(m1x, m1y); add(0.25 * m1x + 0.5 * xs[i] + 0.25 * m2x, 0.25 * m1y + 0.5 * ys[i] + 0.25 * m2y);
+    }
+  }
+  return { mx, my, Mx, My, w: Mx - mx, h: My - my };
+}
+
 /** Striche in Zielbox einpassen: gibt Transform-Funktion zurück */
 export function fitter(strokes, box, padding = 0.12) {
-  const b = bbox(strokes);
+  const b = visualBbox(strokes);
   if (!isFinite(b.mx)) return { map: (x, y) => [x, y], scale: 1, cx: box.x + box.w / 2, cy: box.y + box.h / 2, bottom: box.y + box.h };
   const w = Math.max(b.w, 1), h = Math.max(b.h, 1);
   const s = Math.min((box.w * (1 - 2 * padding)) / w, (box.h * (1 - 2 * padding)) / h);
@@ -32,7 +50,8 @@ export function fitter(strokes, box, padding = 0.12) {
 export function drawStrokes(ctx, strokes, opts = {}) {
   const { color = '#FFC857', width = 6, style = 'glow', box = null, boil = 0, t = 0, motion = null, alive = 0, seed = 1, progress = 1, crumble = 0 } = opts;
   if (!strokes || !strokes.length) return;
-  const fit = box ? fitter(strokes, box, opts.padding ?? 0.12) :{ map: (x, y) => [x, y], scale: 1, cx: 0, cy: 0, bottom: 0 };
+  // Iteration 2: Zeichnung füllt ~80 % der Kachel (Vektor, nie Pixel-Upscale)
+  const fit = box ? fitter(strokes, box, opts.padding ?? 0.1) : { map: (x, y) => [x, y], scale: 1, cx: 0, cy: 0, bottom: 0 };
   const reduce = reducedMotion();
   const boilFrame = Math.floor(t * 12); // ~12 fps
   const bAmp = reduce ? 0 : boil * Math.max(1, width * 0.28);

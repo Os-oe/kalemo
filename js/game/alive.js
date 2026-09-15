@@ -46,8 +46,8 @@ function loop(now) {
     let fit;
     if (o.groups?.length > 1) { // Mehrzahl: N Zeichnungen nebeneinander, leicht versetzt im Takt
       const n = o.groups.length, cw = w / n;
-      o.groups.forEach((g, gi) => { const f = drawStrokes(ctx, g, { ...common, width: (o.width || 3.2) * dpr * Math.max(0.7, Math.min(1.6, cw / (200 * dpr))), box: { x: gi * cw, y: h * 0.08, w: cw, h: h * 0.84 }, t: t + gi * 0.23, seed: (o.seed || 1) + gi * 7 }); if (gi === 0) fit = f; });
-    } else fit = drawStrokes(ctx, o.strokes, { ...common, width: (o.width || 3.2) * dpr * Math.max(0.7, Math.min(1.6, w / (200 * dpr))), box, t, seed: o.seed || 1 });
+      o.groups.forEach((g, gi) => { const f = drawStrokes(ctx, g, { ...common, width: (o.width || 3.2) * dpr * Math.max(0.7, Math.min(2.6, cw / (200 * dpr))), box: { x: gi * cw, y: h * 0.08, w: cw, h: h * 0.84 }, t: t + gi * 0.23, seed: (o.seed || 1) + gi * 7 }); if (gi === 0) fit = f; });
+    } else fit = drawStrokes(ctx, o.strokes, { ...common, width: (o.width || 3.2) * dpr * Math.max(0.7, Math.min(2.6, w / (200 * dpr))), box, t, seed: o.seed || 1 }); // Strichstärke wächst mit der Kachel (Iteration 2: bis 2,6×)
     // Kategorie-Partikel
     if (!reduce && !o.still && alive > 0 && o.motion && fit) particles(it, o.motion, fit, box, dt, dpr);
     it.particles.update(dt); it.particles.draw(ctx);

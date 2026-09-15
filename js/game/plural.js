@@ -23,7 +23,8 @@ export function installPlural(app) {
       const left = TOTAL - (performance.now() - t0);
       if (left < 800) break;
       sub.textContent = `${t('pluralDraw', { n }, ui)} · ${t('pluralCount', { i, n }, ui)}`;
-      const out = await app.round.draw({ id: w.id, durationMs: left, color, totalMs: TOTAL, hardAtMs: 5000, plural: { i, n } });
+      const out = await app.round.draw({ id: w.id, durationMs: left, color, totalMs: TOTAL, hardAtMs: 5000, plural: { i, n }, finish: i === n,
+        onRecognized: i === n ? () => app.voice?.pluralHitAnnounce(w.id, app.round.langOrder(), n) : null });
       lastOut = out; tips.push(...out.tips);
       if (out.bestWrong && (!bestWrong || out.bestWrong.p > bestWrong.p)) bestWrong = out.bestWrong;
       if (out.result !== 'hit') break;
