@@ -64,5 +64,58 @@ with server() as base, sync_playwright() as p:
     if section('p1_1'):
         S.run('P1-1 In-App', p1_1)
 
+    # ---------- P1-2: Tagesende → Jemanden herausfordern → Link-Karte auf dem Tagesende + Teilen ----------
+    CLIP_SPY = "(() => { const c = navigator.clipboard; if (c && c.writeText) { const o = c.writeText.bind(c); c.writeText = (s) => { window.__clip = s; return o(s); }; } })();"
+    SHARE_MOCK = "navigator.share = async (d) => { window.__shared = { url: d.url, text: d.text }; }; navigator.share.__mock = true;"
+
+    def read_clip(pg):
+        try:
+            txt = pg.evaluate('async () => { try { return await navigator.clipboard.readText(); } catch (e) { return null; } }')
+        except Exception:
+            txt = None
+        return txt if txt else pg.evaluate('() => window.__clip || null')
+
+    def p1_2():
+        for label, mobile in (('Desktop', False), ('Handy', True)):
+            for with_share in (False, True):
+                c = mobile_ctx(b, 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1') if mobile else b.new_context(viewport={'width': 1280, 'height': 800})
+                try:
+                    c.grant_permissions(['clipboard-read', 'clipboard-write'], origin=base)
+                except Exception:
+                    pass
+                c.add_init_script(CLIP_SPY)
+                if with_share:
+                    c.add_init_script(SHARE_MOCK)
+                pg = c.new_page(); errs = []
+                pg.on('pageerror', lambda e: errs.append(str(e)))
+                pg.goto(base + '/?test=1&scene=dayend'); wait_state(pg, 's.screen === "dayend" && s.summary', 30000)
+                pg.click('#btn-challenge', force=True)
+                pg.wait_for_selector('#sheet .pick', timeout=5000)
+                pg.locator('#sheet .pick').first.click(force=True)
+                st = wait_state(pg, 's.lastDuel && s.sheet && s.lastLinkShare', 10000)
+                code_txt = pg.text_content('#sheet .link-card code') or ''
+                box = pg.evaluate("() => { const r = document.querySelector('#sheet .link-card').getBoundingClientRect(); return r.width > 100 && r.height > 100 && r.top >= 0 && r.bottom <= innerHeight + 1; }")
+                sentence = 'Jemand hat dir etwas in die Luft gemalt!'
+                tag = f'{label} {"mit" if with_share else "ohne"} navigator.share'
+                S.check(f'{tag}: Tipp auf Zeichnung → Link-Karte auf dem Tagesende sichtbar (Link = Duell-Link)', st['screen'] == 'dayend' and box and code_txt == st['lastDuel']['url'] and '#d=' in code_txt, (st['screen'], box, code_txt[:60]))
+                if with_share:
+                    shared = pg.evaluate('() => window.__shared')
+                    S.check(f'{tag}: startet direkt navigator.share mit Satz + Link', shared and shared['url'] == st['lastDuel']['url'] and shared['text'] == sentence and st['lastLinkShare']['mode'] == 'shared', shared)
+                else:
+                    clip = read_clip(pg)
+                    S.check(f'{tag}: Fallback kopiert sofort Satz + Link, Karte meldet „Link kopiert."', clip and sentence in clip and st['lastDuel']['url'] in clip and 'kopiert' in (pg.text_content('#sheet .link-status') or ''), clip)
+                pg.evaluate('() => { window.__clip = null; }')
+                pg.click('#sheet [data-act=copy]', force=True)
+                pg.wait_for_function('() => window.__clip', timeout=5000)
+                clip = read_clip(pg)
+                S.check(f'{tag}: „Link kopieren" nimmt den Satz mit (P3-11)', clip and clip.startswith(sentence) and clip.endswith(st['lastDuel']['url']), clip)
+                pg.click('#sheet [data-act=done]', force=True)
+                pg.wait_for_timeout(200)
+                st = pg.evaluate('() => window.__state()')
+                S.check(f'{tag}: „Fertig" schließt nur die Karte, Tagesende bleibt', st['screen'] == 'dayend' and not st['sheet'] and not errs, (st['screen'], errs[:2]))
+                c.close()
+    if section('p1_2'):
+        S.run('P1-2 Herausfordern', p1_2)
+
     b.close()
 S.finish()

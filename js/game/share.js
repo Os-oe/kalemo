@@ -35,13 +35,13 @@ export async function shareImage(app, { blob, filename = 'kalemo.png', text, url
   return 'fallback';
 }
 
-/** Link teilen (Duell) */
-export async function shareLink(app, { url, text }) {
+/** Link teilen (Duell): Web Share, sonst Satz + Link in die Zwischenablage. Test-Modus nutzt navigator.share nur als Attrappe (__mock). */
+export async function shareLink(app, { url, text, quiet = false }) {
   app.sfx?.play('whoosh');
-  if (navigator.share && !app.TEST) {
+  if (navigator.share && (!app.TEST || navigator.share.__mock)) {
     try { await navigator.share({ url, text, title: 'Kalemo' }); return 'shared'; } catch (e) { if (e?.name === 'AbortError') return 'cancelled'; }
   }
   const ok = await copyText(`${text}\n${url}`);
-  app.ui.toast(ok ? t('duelCopied') : url, 3000);
+  if (!quiet || !ok) app.ui.toast(ok ? t('duelCopied') : url, 3000);
   return ok ? 'copied' : 'shown';
 }

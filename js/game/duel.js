@@ -5,7 +5,7 @@ import { encode, decode, withTimes, timingOf } from '../core/codec.js';
 import { saveSettings } from '../core/store.js';
 import { RoundEngine } from '../core/engine.js';
 import { escapeHtml } from './round.js';
-import { shareLink } from './share.js';
+import { shareLink, copyText } from './share.js';
 import { mount, unmountAll } from './alive.js';
 
 const $ = (s) => document.querySelector(s);
@@ -22,12 +22,12 @@ export function installDuel(app) {
       const code = encode({ classIdx: idx, senderMs, strokes });
       return { code, url: `${baseUrl()}#d=${code}` };
     },
-    /** Zeichnung (mit ts oder kompakt+timing) als Duell verschicken */
-    sendDrawing: async (id, strokes, senderMs = 0, timing = null) => {
+    /** Zeichnung (mit ts oder kompakt+timing) als Duell verschicken. autoShare: direkt Teilen-Menü öffnen (Tagesende) */
+    sendDrawing: async (id, strokes, senderMs = 0, timing = null, { autoShare = false } = {}) => {
       const withTs = strokes[0] && strokes[0][2] ? strokes : withTimes(strokes, timing || strokes.map(() => ({ gap: 300, dur: 700 })));
       const { url, code } = await duel.linkFor(id, withTs, senderMs);
       app.lastDuel = { url, code, length: url.length, id };
-      showLinkCard(url);
+      showLinkCard(url, { strokes: withTs, autoShare });
       return url;
     },
     /** Erstellen: 1 von 3 Wörtern wählen → malen → Link */
@@ -174,15 +174,33 @@ export function installDuel(app) {
     });
   }
 
-  function showLinkCard(url) {
-    const ui = app.settings.native;
-    app.showCard(`<h3>${escapeHtml(t('duelLink', {}, ui))}</h3><p class="link-box"><code>${escapeHtml(url)}</code></p>
-      <div class="actions"><button class="btn primary" data-act="share">${escapeHtml(t('duelSend', {}, ui))}</button><button class="btn" data-act="copy">${escapeHtml(t('duelCopy', {}, ui))}</button><button class="btn ghost" data-act="home">${escapeHtml(t('finish', {}, ui))}</button></div>`, 'duel');
-    const card = document.querySelector('#round-overlay .card');
+  /**
+   * Link-Karte. In der Runde als Karte über der Bühne; auf jedem anderen Screen (Tagesende, Start) als Sheet
+   * auf genau diesem Screen (P1-2: früher landete sie im versteckten Runden-Screen). Kopieren nimmt immer den Satz mit (P3-11).
+   */
+  function showLinkCard(url, { strokes = null, autoShare = false } = {}) {
+    const ui = app.settings.native, text = t('duelIncoming', {}, ui);
+    const inRound = app.screen === 'round';
+    const html = `<h3>${escapeHtml(t('duelLink', {}, ui))}</h3>${!inRound && strokes ? '<canvas class="link-art" aria-hidden="true"></canvas>' : ''}
+      <p class="link-say">${escapeHtml(text)}</p><p class="link-box"><code>${escapeHtml(url)}</code></p><p class="hint ok link-status" hidden></p>
+      <div class="actions"><button class="btn primary" data-act="share">${escapeHtml(t('duelSend', {}, ui))}</button><button class="btn" data-act="copy">${escapeHtml(t('duelCopy', {}, ui))}</button><button class="btn ghost" data-act="done">${escapeHtml(t('finish', {}, ui))}</button></div>`;
+    let card;
+    const sheet = document.getElementById('sheet');
+    if (inRound) { app.showCard(html, 'duel'); card = document.querySelector('#round-overlay .card'); }
+    else {
+      sheet.innerHTML = `<div class="sheet-card link-card" role="dialog" aria-label="${escapeHtml(t('duelLink', {}, ui))}">${html}</div>`; sheet.hidden = false; card = sheet.firstElementChild;
+      const art = card.querySelector('canvas.link-art'); if (art) mount(art, { strokes, color: '#1E2A3A', style: 'pencil', width: 2.6, still: true });
+      sheet.onclick = (e) => { if (e.target === sheet) close(); };
+    }
+    const status = card.querySelector('.link-status');
+    const say = (msg) => { status.textContent = msg; status.hidden = false; };
+    const close = () => { if (inRound) { app.hideCard(); app.goHome(); } else { unmountAll(sheet); sheet.hidden = true; sheet.innerHTML = ''; } };
+    const doShare = async () => { const r = await shareLink(app, { url, text, quiet: true }); app.lastLinkShare = { mode: r, url, text }; if (r === 'copied') say(t('duelCopied', {}, ui)); return r; };
     card.addEventListener('click', async (e) => {
-      if (e.target.closest('[data-act=share]')) await shareLink(app, { url, text: t('duelIncoming', {}, ui) });
-      if (e.target.closest('[data-act=copy]')) { const { copyText } = await import('./share.js'); if (await copyText(url)) app.ui.toast(t('duelCopied', {}, ui)); }
-      if (e.target.closest('[data-act=home]')) { app.hideCard(); app.goHome(); }
+      if (e.target.closest('[data-act=share]')) await doShare();
+      if (e.target.closest('[data-act=copy]')) { const ok = await copyText(`${text}\n${url}`); app.lastLinkShare = { mode: ok ? 'copied' : 'failed', url, text }; if (ok) say(t('duelCopied', {}, ui)); }
+      if (e.target.closest('[data-act=done]')) close();
     });
+    if (autoShare) doShare();
   }
 }

@@ -115,7 +115,7 @@ export function install(app) {
       drawCount: app.round?.drawCount || 0, duelState: app.duelState || null, lastDuel: app.lastDuel || null, lastShare: app.lastShare || null,
       lastCard: app.lastCard || null, lastPoster: app.lastPoster || null, dictEntries: app.dictEntries || null, sheet: !document.querySelector('#sheet').hidden,
       summary: app.lastSummary ? { number: app.lastSummary.number, hits: app.lastSummary.hits, points: app.lastSummary.points, streak: app.lastSummary.streak, funniest: app.lastSummary.funniest, results: app.lastSummary.results.map((r) => ({ id: r.id, kind: r.kind, result: r.result, parts: r.parts, n: r.n })) } : null,
-      duelPicks: app.duelPicks || null, inapp: !document.querySelector('#inapp').hidden,
+      duelPicks: app.duelPicks || null, inapp: !document.querySelector('#inapp').hidden, lastLinkShare: app.lastLinkShare || null,
       fxLog: (app.fxLog || []).slice(-40), voiceLog: (app.voiceLog || []).slice(-20), audioReady: !!app.audio?.ready(),
       stageFx: app.stage ? { squash: app.stage.canvas.classList.contains('squash'), crumbling: app.stage.crumbleAt != null, twitch: +app.stage.twitch.toFixed(2), cursor: app.stage.cursor?.state || null, realBox: !!app.stage.realBox } : null,
       bubble: document.querySelector('#bubble').hidden ? null : { text: document.querySelector('#bubble').textContent, pop: document.querySelector('#bubble').classList.contains('pop') },

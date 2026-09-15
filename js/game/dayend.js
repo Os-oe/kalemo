@@ -58,7 +58,8 @@ export function installDayEnd(app) {
     box.querySelectorAll('.pick canvas').forEach((c, k) => { const r = opts[k].r; mount(c, { strokes: r.drawings?.length ? r.drawings[0] : r.strokes, color: '#1E2A3A', style: 'pencil', width: 2.6, still: true }); });
     box.onclick = (e) => {
       const b = e.target.closest('.pick');
-      if (b) { const r = sum.results[+b.dataset.i]; box.hidden = true; box.innerHTML = ''; app.duel.sendDrawing(r.id, r.drawings?.length ? r.drawings[0] : r.strokes, r.hitAt || 0); }
+      // P1-2: Link-Karte auf DIESEM Screen + direkt Teilen-Menü (Tipp = Nutzer-Geste)
+      if (b) { const r = sum.results[+b.dataset.i]; unmountAll(box); box.innerHTML = ''; app.sfx?.play('tap'); app.duel.sendDrawing(r.id, r.drawings?.length ? r.drawings[0] : r.strokes, r.hitAt || 20000, r.timing || null, { autoShare: true }); }
       else if (e.target === box || e.target.closest('[data-act=close]')) { box.hidden = true; box.innerHTML = ''; }
     };
   });
