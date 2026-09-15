@@ -106,6 +106,9 @@ export class RoundController {
       const wd = `${g.de.art} ${g.de.noun}`, i = text.indexOf(wd);
       if (i >= 0) { b.textContent = ''; const span = document.createElement('span'); span.textContent = wd; span.style.color = ART_TEXT[g.de.art]; b.append(text.slice(0, i), span, text.slice(i + wd.length)); }
     }
+    // Review P3-16: winzig die Muttersprache des GERATENEN Worts (g ist nie das Zielwort — Tipps sprechen nur Fehl-Rateversuche)
+    const { native, learn } = this.app.settings;
+    if (g && native !== learn && (!this.active || g.id !== this.active.w.id)) { const s = document.createElement('small'); s.className = 'bubble-sub'; s.lang = native; s.textContent = word(g, native); b.append(s); }
     b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
   }
 

@@ -666,5 +666,29 @@ with server() as base, sync_playwright() as p:
     if section('p3_3'):
         S.run('P3-3 Artikel', p3_3)
 
+    # ---------- P3-16: KI-Blase mit winziger Muttersprache des geratenen Worts ----------
+    def p3_16():
+        c = b.new_context(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True); pg = c.new_page(); errs = []
+        pg.on('pageerror', lambda e: errs.append(str(e)))
+        pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000)
+        pg.evaluate('() => window.__settings({native: "de", learn: "tr", airOffered: true, chosenPair: true})')
+        pg.evaluate('() => window.__setDate("2026-10-08")')
+        plan = pg.evaluate('() => window.__plan()'); wid = plan['slots'][0]['id']
+        pg.evaluate('() => window.__startDaily()')
+        wait_state(pg, f's.round && s.round.target === {json.dumps(wid)}', 20000)
+        guess = 'moon' if wid != 'moon' else 'sun'
+        r = pg.evaluate('''([g]) => { const a = window.__kalemo, r = a.round.active; a.round._handle(r, [{ type: 'guess', id: g, p: 0.6 }]);
+          const b = document.querySelector('#bubble'); const s = b.querySelector('.bubble-sub'); const main = b.firstChild ? b.childNodes[0].textContent : '';
+          const out = { main: b.textContent.replace(s ? s.textContent : '', ''), sub: s ? s.textContent : null, subLang: s?.lang, subSize: s ? parseFloat(getComputedStyle(s).fontSize) : null };
+          a.round.showBubble('Test', r.w); out.targetSub = !!document.querySelector('#bubble .bubble-sub'); return out; }''', [guess])
+        tw = WORDS[wid]; gw = WORDS[guess]
+        S.check('Tipp-Blase: Lernsprache groß, darunter winzig die Muttersprache des GERATENEN Worts', r['main'].startswith('Hmm') and gw['tr']['word'] in r['main'] and r['sub'] == f"{gw['de']['art']} {gw['de']['noun']}" and r['subLang'] == 'de' and r['subSize'] and r['subSize'] < 14, r)
+        S.check('Zielwort bekommt nie eine Übersetzungszeile', r['targetSub'] is False and tw['de']['noun'] not in (r['sub'] or ''), r['targetSub'])
+        pg.evaluate('() => window.__home()')
+        S.check('P3-16: keine Seitenfehler', not errs, errs[:2])
+        c.close()
+    if section('p3_16'):
+        S.run('P3-16 Blase', p3_16)
+
     b.close()
 S.finish()
