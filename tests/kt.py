@@ -57,6 +57,61 @@ def wait_state(page, pred_js, timeout=30000):
     return page.evaluate('() => window.__state()')
 
 
+WORDS = {w['id']: w for w in json.load(open(os.path.join(ROOT, 'data/words.json')))}
+CLIP_SPY = "(() => { const c = navigator.clipboard; if (c && c.writeText) { const o = c.writeText.bind(c); c.writeText = (s) => { window.__clip = s; return o(s).catch(() => {}); }; } })();"
+UA_IG = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 300.0.0.18.110 (iPhone15,2; iOS 17_5; de_DE; de-DE; scale=3.00; 1179x2556)'
+UA_LI = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [LinkedInApp]/9.30.2144'
+UA_SAFARI = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1'
+
+
+def play_slot_hooks(pg, slot, learn, ptMs=8, gapMs=120, timeout=45000):
+    """Ein Slot der Tagesskizze per Fixture-Strichen (Artikel per Hook, Mehrzahl N-mal). Wartet auf die Ergebnis-Karte."""
+    wid = slot['id']; w = WORDS[wid]
+    if learn == 'de' and slot['kind'] != 'plural' and slot.get('article', True):
+        pg.wait_for_selector('.art-card', timeout=20000)
+        pg.evaluate('(a) => window.__chooseArticle(a)', w['de']['art'])
+    base_n = wait_state(pg, f's.round && s.round.target === {json.dumps(wid)}', 30000)['drawCount']
+    for k in range(slot['n'] if slot['kind'] == 'plural' else 1):
+        wait_state(pg, f's.round && s.round.target === {json.dumps(wid)} && s.drawCount === {base_n + k}', 30000)
+        pg.evaluate(f'(st) => window.__feedStrokes(st, {{timing: "real", ptMs: {ptMs}, gapMs: {gapMs}}})', FIX[wid][k % 2])
+    return wait_state(pg, f's.lastResult && s.lastResult.id === {json.dumps(wid)} && s.overlay', timeout)
+
+
+def play_daily_hooks(pg, learn, via_button=False, stop_before=None):
+    """Tagesskizze komplett per Hooks. Liefert (plan, state am Tagesende) bzw. (plan, None) bei stop_before."""
+    plan = pg.evaluate('() => window.__plan()')
+    if via_button:
+        pg.click('#btn-daily')
+    else:
+        pg.evaluate('() => window.__startDaily()')
+    for i, slot in enumerate(plan['slots']):
+        if stop_before is not None and i == stop_before:
+            return plan, None
+        play_slot_hooks(pg, slot, learn)
+        pg.evaluate('() => window.__next()')
+    return plan, wait_state(pg, 's.screen === "dayend" && s.summary', 30000)
+
+
+def word_forms(ids):
+    """Alle sichtbaren Formen der Wörter (DE Nomen/Plural, EN Wort/Plural, TR) — für Spoiler-Wächter."""
+    out = set()
+    for i in ids:
+        w = WORDS[i]
+        for f in (w['de']['noun'], w['de'].get('pl'), w['en']['word'], w['en'].get('pl'), w['tr']['word']):
+            if f:
+                out.add(f.lower())
+    return out
+
+
+def leaks(text, forms):
+    """Welche Wortformen stehen als ganzes Wort im Text? (Wortgrenzen inkl. Umlaute/türkische Buchstaben)"""
+    import re
+    if not text:
+        return []
+    low = text.lower()
+    return sorted(f for f in forms if re.search(r'(?<![0-9a-zçğıöşüäßâî])' + re.escape(f) + r'(?![0-9a-zçğıöşüäßâî])', low))
+
+
 def launch(p, mobile=False, **kw):
     args = ['--enable-unsafe-swiftshader', '--autoplay-policy=no-user-gesture-required'] + kw.pop('args', [])
     b = p.chromium.launch(headless=True, args=args)

@@ -1,7 +1,7 @@
 """Phase-1-Gate (a): Fixture-Suite 5/5 via __feedStrokes + Tagesplan deterministisch für 3 Daten."""
 import json
 from playwright.sync_api import sync_playwright
-from kt import server, Suite, wait_state, launch, FIX
+from kt import server, Suite, wait_state, launch, FIX, WORDS
 
 S = Suite('phase1')
 DATES = ['2026-09-15', '2026-10-03', '2027-01-15']
@@ -40,7 +40,11 @@ with server() as base, sync_playwright() as p:
                 new2 = [s['id'] for s in m2['slots'] if s['kind'] == 'new']
             S.check(f'{d}: Wiederholung stammt aus Tag−2', pl['slots'][2]['id'] in new2, (pl['slots'][2]['id'], new2))
             pw = pl['slots'][4]
-            S.check(f'{d}: Mehrzahl-Wort aus Tag−7 (oder Fallback), n∈{{2,3}}', pw['n'] in (2, 3) and (pw['id'] in new7 or True), (pw['id'], new7))
+            # G5 (Iteration 2): vorher Scheincheck „or True". Echte Regel aus plan.js: Wort von Tag−7, sonst (bereits benutzt/kP)
+            # Fallback = nächstes pluralfähiges, nicht benutztes Wort — dann muss es wenigstens pluralfähig und nicht doppelt sein.
+            used = [s['id'] for s in pl['slots'][:4]]
+            plural_ok = pw['id'] not in used and not WORDS[pw['id']].get('kP') and (pw['id'] in new7 or all(x in used or WORDS[x].get('kP') for x in new7))
+            S.check(f'{d}: Mehrzahl-Wort aus Tag−7 (Fallback nur, wenn alle Tag−7-Wörter vergeben/ohne Plural), n∈{{2,3}}', pw['n'] in (2, 3) and plural_ok, (pw['id'], new7, used))
         S.check('Tagesnummer #1 am Launch-Tag', plans['2026-09-15']['number'] == 1)
         S.check('verschiedene Tage → verschiedene Pläne', plans[DATES[0]]['slots'] != plans[DATES[1]]['slots'])
     S.run('Tagesplan', plan_checks)
