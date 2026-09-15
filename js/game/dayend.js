@@ -39,7 +39,7 @@ export function installDayEnd(app) {
     $('#dayend-streak').innerHTML = sum.streak > 0 ? `${FLAME}<span>${escapeHtml(sum.streak === 1 ? t('streakDay') : t('streakDays', { n: sum.streak }))}</span>` : '';
     const f = sum.funniest && funnyAllowed(sum.funniest.target, sum.funniest.id) ? funnyLine(app.byId.get(sum.funniest.target), app.byId.get(sum.funniest.id), native) : null;
     const fe = $('#dayend-funny'); fe.hidden = !f; fe.innerHTML = f ? `<small>${escapeHtml(t('funniest'))}</small>${escapeHtml(f)}` : '';
-    app.lastSummary = sum;
+    app.lastSummary = sum; app.musicOk = true;
     // Punkt 2e: kam man über „Erst Tagesskizze — dann das Duell", führt ein Knopf zurück ins Duell (der Link bleibt gültig)
     const pd = store.get('pendingDuel', null);
     $('#btn-dayend-duel').hidden = !(pd && pd.date === sum.date && pd.code);

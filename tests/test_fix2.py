@@ -723,6 +723,85 @@ with server(8792) as base, sync_playwright() as p:
         finally:
             c.close()
 
+    # ---------- Aufgabe 14: P3-Feinschliff ----------
+    def t14_small():
+        c, pg, errs = fresh(b); reqs = []
+        pg.on('request', lambda r: reqs.append(r.url))
+        try:
+            pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000); pg.evaluate(SETUP)
+            # R2-P3-6: Datum ohne Reload
+            pg.evaluate('() => { window.__setDate("2026-10-20"); return 1; }')
+            n1 = pg.text_content('#daily-label')
+            pg.evaluate('() => { window.__kalemo.dateOverride = "2026-10-21"; document.dispatchEvent(new Event("visibilitychange")); return 1; }')
+            n2 = pg.text_content('#daily-label')
+            S.check('R2-P3-6: Tab kommt nach Mitternacht zurück → neue Tagesskizze ohne Reload', n1 != n2 and '#' in n2, (n1, n2))
+            # R2-P3-5: Serie verloren
+            pg.evaluate('() => { localStorage.setItem("kalemo.streak", JSON.stringify({ count: 4, last: "2026-10-18" })); window.__home(); return 1; }')
+            hint = pg.text_content('.daily-hint') or ''
+            S.check('R2-P3-5: nach ausgelassenem Tag „Serie verloren — heute neu starten"', hint == 'Serie verloren — heute neu starten', hint)
+            # R2-P3-7: gesperrte Sprache
+            nat = pg.evaluate('() => window.__state().settings.native')
+            pg.click(f'#pair-learn [data-l="{nat}"]', force=True); pg.wait_for_timeout(120)
+            cls = pg.get_attribute(f'#pair-learn [data-l="{nat}"]', 'class') or ''; toast = pg.evaluate('() => window.__state().toast')
+            S.check('R2-P3-7: Tipp auf gesperrte Sprache → Knopf wackelt + Hinweis „Tausche mit ⇄"', 'wobble' in cls and toast == 'Tausche mit ⇄', (cls, toast))
+            # R2-P3-8: Fokus in Einstellungen (Tastatur)
+            pg.focus('#btn-settings'); pg.keyboard.press('Enter'); pg.wait_for_timeout(200)
+            inside = pg.evaluate('() => document.querySelector("#sheet").contains(document.activeElement)')
+            for _ in range(8):
+                pg.keyboard.press('Tab')
+            still = pg.evaluate('() => document.querySelector("#sheet").contains(document.activeElement)')
+            pg.keyboard.press('Escape'); pg.wait_for_timeout(150)
+            back = pg.evaluate('() => document.activeElement && document.activeElement.id')
+            S.check('R2-P3-8: Fokus springt in den Dialog, bleibt bei Tab darin, kehrt nach Esc zurück', inside and still and back == 'btn-settings', (inside, still, back))
+            # R2-P3-14: Musik erst nach dem ersten Treffer
+            pg.mouse.click(5, 5); pg.wait_for_timeout(400)
+            before = any('music/loop' in u for u in reqs)
+            pg.evaluate('() => window.__setDate("2026-10-22")')
+            plan = pg.evaluate('() => window.__plan()')
+            pg.evaluate('() => window.__startDaily()')
+            play_slot_hooks(pg, plan['slots'][0], 'tr'); pg.evaluate('() => window.__home()'); pg.wait_for_timeout(700)
+            after = any('music/loop' in u for u in reqs)
+            S.check('R2-P3-14: Musik-Loop lädt nicht vor dem ersten Treffer (Start + Rundenstart), danach schon', not before and after, (before, after))
+            # R2-P3-15: Nachbar-Klasse (reine Funktion)
+            r = pg.evaluate('''async () => { const m = await import('/js/game/round.js'); const i = await import('/js/core/i18n.js'); const a = window.__kalemo; const names = a.clf.classNames; const idx = (c) => names.indexOf(c);
+              const tree = a.byId.get('tree'), fish = a.byId.get('fish');
+              const s1 = m.nearMiss(tree, { top: [{ id: 'tree', p: 0.7, sub: idx('palm_tree'), subP: 0.6, ownP: 0.1 }] }, names, a.byId);
+              const s2 = m.nearMiss(fish, { top: [{ id: 'whale', p: 0.6 }, { id: 'fish', p: 0.3 }] }, names, a.byId);
+              const s3 = m.nearMiss(tree, { top: [{ id: 'tree', p: 0.8, sub: idx('tree'), subP: 0.7, ownP: 0.7 }] }, names, a.byId);
+              return { s1: s1 && i.nearMissLine(s1, 'de'), s2: s2 && i.nearMissLine(s2, 'de'), s2en: s2 && i.nearMissLine(s2, 'en'), s3 }; }''')
+            S.check('R2-P3-15: Nachbar-Klasse → „Fast — das ist eher eine Palme. Zählt trotzdem!" / „… ein Wal …", sonst kein Hinweis', r['s1'] == 'Fast — das ist eher eine Palme. Zählt trotzdem!' and r['s2'] == 'Fast — das ist eher ein Wal. Zählt trotzdem!' and r['s2en'].startswith('Almost — that’s more like a whale') and r['s3'] is None, r)
+            S.check('Punkt 14: keine Seitenfehler', not errs, errs[:2])
+        finally:
+            c.close()
+
+    def t14_article_fit():
+        c, pg, errs = fresh(b, **PHONE)
+        try:
+            pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000); pg.evaluate(SETUP, {'native': 'tr', 'learn': 'de'})
+            pg.evaluate('() => window.__setDate("2026-10-14")')
+            plan = pg.evaluate('() => window.__plan()'); wid = plan['slots'][0]['id']; art = WORDS[wid]['de']['art']
+            wrong = next(a for a in ('der', 'die', 'das') if a != art)
+            pg.evaluate('() => window.__startDaily()'); pg.wait_for_selector('.art-card', timeout=15000)
+            t0 = pg.evaluate('() => performance.now()')
+            pg.tap(f'.art-card[data-a="{wrong}"]'); pg.wait_for_timeout(250)
+            noun = pg.text_content('.article-card .art-noun') or ''; big = pg.evaluate("() => parseFloat(getComputedStyle(document.querySelector('.article-card .art-noun')).fontSize)")
+            wait_state(pg, f's.round && s.round.target === {json.dumps(wid)}', 8000)
+            dt = pg.evaluate('() => performance.now()') - t0
+            S.check(f'R2-P3-3: anderer Artikel → Wort mit Artikel groß („{noun}"), 2–3 s sichtbar ({dt:.0f} ms)', noun == f"{art} {WORDS[wid]['de']['noun']}" and big >= 48 and 2300 <= dt <= 3600, (noun, big, round(dt)))
+            vl = pg.evaluate('() => window.__state().voiceLog')
+            S.check('R2-P3-3: Stimme sagt das Wort mit Artikel', any(f'de/w/{WORDS[wid]["cls"]}' in v['parts'] for v in vl))
+            pg.evaluate('() => window.__home()')
+            # R2-P3-12: langes Wort in einer Zeile (Handy)
+            pg.evaluate('() => { const a = window.__kalemo; a.show("round"); a.round.showWord(a.byId.get("hot air balloon")); return 1; }'); pg.wait_for_timeout(100)
+            m = pg.evaluate('''() => { const w = document.querySelector('#word'), s = document.querySelector('#slots'); const r = w.getBoundingClientRect(); const lh = parseFloat(getComputedStyle(w).fontSize); return { h: Math.round(r.height), fs: lh, right: Math.round(r.right), timerLeft: Math.round(document.querySelector('#timer').getBoundingClientRect().left), slotsTop: Math.round(s.getBoundingClientRect().top), text: w.textContent }; }''')
+            S.check(f'R2-P3-12: „{m["text"]}" in einer Zeile, überlappt den Timer nicht (Schrift {m["fs"]:.0f} px)', m['h'] <= m['fs'] * 1.35 and m['right'] <= m['timerLeft'] + 2, m)
+            S.check('Artikel + Wortlänge: keine Seitenfehler', not errs, errs[:2])
+        finally:
+            c.close()
+
+    if on('t14'):
+        S.run('14 Feinschliff', t14_small); S.run('14 Artikel + lange Wörter', t14_article_fit)
+
     if on('t12'):
         S.run('12 In-App-Teilen', t12_inapp)
 

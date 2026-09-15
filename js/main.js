@@ -1,5 +1,5 @@
 // Kalemo — Einstieg. Statische Seite, ES-Module, kein Framework, keine externen Requests.
-import { settings, saveSettings, streak, dayResult, loadProgress } from './core/store.js';
+import { settings, saveSettings, streak, dayResult, loadProgress, store } from './core/store.js';
 export { saveSettings };
 import { setUiLang, t, LANGS, LANG_CODE, ART_TEXT, FRINGE } from './core/i18n.js';
 import { planFor, berlinDate, addDays, msToBerlinMidnight } from './core/plan.js';
@@ -81,6 +81,11 @@ function renderStart() {
   $('#daily-label').textContent = done ? t('practice') : prog && prog.results.length ? t('dailyResume', { n: plan.number, i: prog.results.length + 1 }) : t('daily', { n: plan.number });
   renderTodayTile(today);
   $('.daily-hint').hidden = done; // „5 Wörter · etwa 2 Minuten" nur vor dem ersten Durchgang
+  app._shownDay = iso;
+  // R2-P3-5: nach einer Lücke verschwindet die Serie nicht mehr kommentarlos
+  const rawStreak = store.get('streak', null);
+  const lost = !done && !!rawStreak && rawStreak.count >= 2 && rawStreak.last !== iso && rawStreak.last !== addDays(iso, -1);
+  $('.daily-hint').textContent = lost ? t('streakLost') : t('dailyHint'); $('.daily-hint').classList.toggle('lost', lost); app.streakLost = lost;
   const st = streak(iso, addDays(iso, -1));
   const badge = $('#streak-badge'); badge.hidden = st < 1; badge.textContent = t('streak', { n: st });
   // „Gestern gemalt"-Kachel, sobald eine Gestern-Karte existiert
@@ -131,7 +136,7 @@ app.fpsGuard = () => {
     }
   };
   app.hooks.fpsSample = (fps) => { g.samples.push(fps); return apply(fps); };
-  const warmUntil = performance.now() + 1500; // Lade-Ruckler direkt nach dem Modellstart nicht werten
+  const warmUntil = performance.now() + 2000; // Lade-Ruckler (Seitenstart) nicht werten
   const tick = (now) => {
     if (g.switched) return;
     requestAnimationFrame(tick);
@@ -232,9 +237,10 @@ async function boot() {
   app.stage = new Stage($('#stage'));
   app.round = new RoundController(app);
   installAudio(app); installAttract(app); app.attract.start();
+  app.fpsGuard(); // P3-14 (Review 2): Wächter misst schon auf der Startseite — auch bevor die Mal-KI geladen ist
   // Review P3-13: Startseite leicht — Mal-KI (tfjs + DoodleNet ≈ 1,4 MB) und Runden-Audio erst bei Spiel-Absicht
   app.ensureClf = () => (app.clfPromise ||= createClassifier({ words, backend: Q.get('backend') || undefined })
-    .then((c) => { app.clf = c; app.fpsGuard?.(); return c; })
+    .then((c) => { app.clf = c; app.fpsGuard?.(); if (app.lowPower) c.useCpu?.().then((ok) => app.log.push('fps-guard spät → ' + (ok ? 'cpu' : 'unverändert'))); return c; })
     .catch((e) => { app.log.push('clf ' + e.message); app.clfPromise = null; throw e; }));
   app.warm = () => {
     app.ensureClf().catch(() => {});
@@ -297,6 +303,24 @@ async function boot() {
     if (Q.get('scene')) { app.t = t; await th.scene(app, Q.get('scene')); }
   }
   if (app.DEMO) (await import('./game/demo.js')).runDemo(app);
+  // R2-P3-6: offener Tab über Mitternacht → beim Zurückkommen (Sichtbarkeit/Fokus) und minütlich das Datum prüfen
+  const dayCheck = () => { const d = app.today(); if (d === app._shownDay) return; app._shownDay = d; app.attract?.refresh?.(); if (app.screen === 'start') renderStart(); };
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) dayCheck(); });
+  window.addEventListener('focus', dayCheck); setInterval(dayCheck, 60000); app.dayCheck = dayCheck;
+  // R2-P3-8: Fokus springt in jedes Sheet (Einstellungen, Teilen, Link-Karte, Rückfrage …), bleibt darin und kehrt danach zurück
+  const sheetEl = $('#sheet'); let lastFocus = null;
+  new MutationObserver(() => {
+    if (!sheetEl.hidden && sheetEl.firstElementChild && !sheetEl.contains(document.activeElement)) {
+      lastFocus ||= document.activeElement;
+      setTimeout(() => { if (sheetEl.hidden || sheetEl.contains(document.activeElement)) return; (sheetEl.querySelector('[data-k=stay], input, button, [href], summary'))?.focus({ preventScroll: true }); }, 40);
+    } else if (sheetEl.hidden && lastFocus) { const f = lastFocus; lastFocus = null; try { if (f.isConnected) f.focus({ preventScroll: true }); } catch {} }
+  }).observe(sheetEl, { attributes: true, attributeFilter: ['hidden'], childList: true });
+  sheetEl.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab') return;
+    const f = [...sheetEl.querySelectorAll('button, [href], input, summary')].filter((x) => !x.disabled && x.offsetParent !== null);
+    if (!f.length) return; const i = f.indexOf(document.activeElement);
+    if (e.shiftKey && i <= 0) { e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && i === f.length - 1) { e.preventDefault(); f[0].focus(); }
+  });
   app.ready = true;
   document.body.classList.add('ready');
 }

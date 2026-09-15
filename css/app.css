@@ -398,3 +398,11 @@ body.landing-on #screen-duel .page { max-width: none; padding: 0; min-height: 10
 /* R2-P3-13: In-App-Browser-Teilen — „Lange drücken" ist die Hauptaktion; Hinweis-Zeile mit Satzzeichen */
 .share-press { font-family: var(--hand); font-weight: 700; font-size: 1.7rem; line-height: 1.15; margin: 10px 0 2px; }
 .inapp strong::after { content: '.'; }
+
+/* Iteration 2, Punkt 14 */
+.art-noun.reveal { font-size: clamp(3.4rem, 14vw, 5rem); animation: pop2 .35s cubic-bezier(.3,1.6,.5,1); }
+.art-noun.reveal::before { content: none; }
+@keyframes pop2 { 0% { transform: scale(.7); } 100% { transform: scale(1); } }
+.seg button.locked.wobble { animation: wobble .5s ease; }
+.word { white-space: nowrap; }
+.daily-hint.lost { color: var(--die-t); }

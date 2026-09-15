@@ -29,7 +29,12 @@ export function mountPair(root, app, { onChange = () => {} } = {}) {
   const choose = (key, l) => {
     const other = key === 'native' ? 'learn' : 'native';
     if (app.settings[key] === l) return false; // aktive Sprache: nichts tun
-    if (app.settings[other] === l) { root.querySelector('[data-pair=swap]')?.classList.remove('nudge'); void root.offsetWidth; root.querySelector('[data-pair=swap]')?.classList.add('nudge'); return false; } // gesperrt → ⇄ zeigt sich
+    if (app.settings[other] === l) { // gesperrt → Knopf wackelt, ⇄ zeigt sich + Hinweis (R2-P3-7)
+      const btn = box(key).querySelector(`[data-l="${l}"]`); btn?.classList.remove('wobble'); void root.offsetWidth; btn?.classList.add('wobble');
+      root.querySelector('[data-pair=swap]')?.classList.remove('nudge'); void root.offsetWidth; root.querySelector('[data-pair=swap]')?.classList.add('nudge');
+      app.ui?.toast?.(t('swapHint'), 2200); app.lockedHint = (app.lockedHint || 0) + 1;
+      return false;
+    }
     set({ [key]: l }); return true;
   };
   for (const key of ['native', 'learn']) {

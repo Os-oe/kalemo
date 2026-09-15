@@ -1,7 +1,7 @@
 // Runden-Controller: verbindet Bühne, Klassifikator, RoundEngine, Stimme/SFX und Overlay.
 import { RoundEngine } from '../core/engine.js';
 import { HIT_FLOOR } from '../core/classifier.js';
-import { t, word, cap, strokeColor, LANGS, pluralPhrase, ART_TEXT, FRINGE, NUM } from '../core/i18n.js';
+import { t, word, cap, strokeColor, LANGS, pluralPhrase, ART_TEXT, FRINGE, NUM, nearMissLine } from '../core/i18n.js';
 import { drawStrokes } from './ink.js';
 import { mount as mountAlive, confetti, unmountAll } from './alive.js';
 
@@ -33,6 +33,15 @@ export class RoundController {
     else el.textContent = word(w, learn);
     el.style.color = '';
     sub.textContent = '';
+    this.fitWord();
+  }
+
+  /** R2-P3-12: lange Wörter („das Fahrrad", „sıcak hava balonu") in einer Zeile — Schrift schrumpft statt umzubrechen */
+  fitWord() {
+    const el = $('#word'), top = el.closest('.round-top'); if (!top) return;
+    el.style.fontSize = '';
+    const avail = top.clientWidth - 48 * 3 - 8 * 3 - 24 - 12; let size = parseFloat(getComputedStyle(el).fontSize) || 40, guard = 0;
+    while (el.getBoundingClientRect().width > avail && size > 20 && guard++ < 40) { size -= 2; el.style.fontSize = size + 'px'; }
   }
 
   /**
@@ -80,6 +89,7 @@ export class RoundController {
     try {
       const res = await clf.classify(strokes);
       if (!res || this.active !== r || r.engine.done) return;
+      r.lastRes = res;
       const tNow = performance.now();
       this._handle(r, r.engine.onPrediction(tNow, res.top, this.stage.inkLength()));
     } finally {
@@ -154,10 +164,12 @@ export class RoundController {
     setTimeout(() => { ink.classList.remove('squash'); void ink.offsetWidth; ink.classList.add('squash'); confetti(document.querySelector('#stage canvas.fx'), this.stage.color); }, 100);
     setTimeout(() => app.sfx?.play(r.w.sfx), 520);
     r.opts.onRecognized?.(r);
+    app.musicOk = true; // R2-P3-14: Musik-Loop (460 KB) lädt erst nach dem ersten Treffer
+    const near = nearMiss(r.w, r.lastRes, app.clf?.classNames, app.byId); r.nearMiss = near; // R2-P3-15
     if (r.opts.finish === false) return this._complete(r, 'hit');
     // Fertig malen: Hinweis in der Blase (UI-Sprache), „Fertig"-Knopf, Karte nach Stift-Pause bzw. Deckel
     r.finishing = true; r.recognizedAt = performance.now(); r.recognizedStrokes = this.stage.strokes.length + (this.stage.active ? 1 : 0);
-    if (!pl || pl.i === pl.n) { const s = document.createElement('small'); s.className = 'bubble-hint'; s.lang = ui; s.textContent = t('finishHint', {}, ui); this.bubble.append(s); }
+    if (!pl || pl.i === pl.n) { const s = document.createElement('small'); s.className = 'bubble-hint'; s.lang = ui; s.textContent = near ? nearMissLine(near, ui) : t('finishHint', {}, ui); this.bubble.append(s); }
     const done = document.getElementById('round-done'); done.hidden = false; done.onclick = () => { app.sfx?.play('tap'); this._complete(r, 'hit', { carry: false }); };
     app.hooks.finishNow = () => this._complete(r, 'hit');
     r.capT = setTimeout(() => this._complete(r, 'hit', { carry: !!r.opts.carryOutside }), r.opts.finishCapMs ?? FINISH.capMs);
@@ -311,6 +323,20 @@ export class RoundController {
     }
     this.app.log.push('feed-done ' + pts.length);
   }
+}
+
+/**
+ * R2-P3-15: Treffer über eine Nachbar-Klasse? → { kind: 'sibling', cls } (z. B. Palme für Baum, Scheune für Haus) oder
+ * { kind: 'word', id } (anderes Pool-Wort liegt klar vorn, z. B. Wal statt Fisch). Zählt trotzdem — nur ein ehrlicher Hinweis.
+ */
+export const NEAR_SIBLINGS = new Set(['palm_tree', 'barn', 'police_car', 'van', 'speedboat', 'cello']);
+export function nearMiss(w, res, classNames, byId) {
+  if (!res?.top?.length || !w) return null;
+  const mine = res.top.find((x) => x.id === w.id);
+  if (mine && mine.sub != null && classNames && mine.subP > (mine.ownP ?? 0) * 1.5) { const cls = classNames[mine.sub]; if (cls && cls !== w.cls && NEAR_SIBLINGS.has(cls)) return { kind: 'sibling', cls }; }
+  const top = res.top[0];
+  if (top.id !== w.id && top.p >= 0.4 && byId?.has(top.id) && (!mine || top.p > mine.p * 1.3)) return { kind: 'word', id: top.id, w: byId.get(top.id) };
+  return null;
 }
 
 /** Bounding-Box fertiger Striche in Bühnen-Pixeln (null = leer) */

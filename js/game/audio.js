@@ -141,7 +141,7 @@ export function installAudio(app) {
   const music = app.music = {
     level: 0.32, el: null, node: null,
     play() {
-      if (!ctx || !app.settings.music || app.settings.muted || app.screen === 'round' || Q.get('nomusic')) return;
+      if (!ctx || !app.settings.music || app.settings.muted || app.screen === 'round' || Q.get('nomusic') || !app.musicOk) return; // R2-P3-14: erst nach dem ersten Treffer
       if (!this.el) {
         this.el = new Audio('audio/v1/music/loop.mp3'); this.el.loop = true; this.el.crossOrigin = 'anonymous';
         this.el.addEventListener('error', () => { this.failed = true; });

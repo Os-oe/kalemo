@@ -62,10 +62,10 @@ export function rankMasked(probs, mask) {
   let sum = 0;
   const out = new Array(mask.length);
   for (let g = 0; g < mask.length; g++) {
-    let p = 0; for (const i of mask[g].idx) p += probs[i];
-    out[g] = { id: mask[g].id, p }; sum += p;
+    let p = 0, sub = null, subP = 0; for (const i of mask[g].idx) { p += probs[i]; if (probs[i] > subP) { subP = probs[i]; sub = i; } }
+    out[g] = mask[g].idx.length > 1 ? { id: mask[g].id, p, sub, subP, ownP: probs[mask[g].idx[0]] } : { id: mask[g].id, p }; sum += p;
   }
-  if (sum > 0) for (const o of out) o.p /= sum;
+  if (sum > 0) for (const o of out) { o.p /= sum; if (o.sub != null) { o.subP /= sum; o.ownP /= sum; } }
   out.sort((a, b) => b.p - a.p);
   return out;
 }

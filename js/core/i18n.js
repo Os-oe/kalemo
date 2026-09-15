@@ -35,7 +35,7 @@ export const T = {
     todayScore: 'Heute {x}/5', nextInH: 'Neue Skizze in {h} h', nextInMin: 'Neue Skizze in {m} min', challengeShort: 'Herausfordern',
     funniest: 'Lustigster KI-Tipp', share: 'Teilen', challenge: 'Jemanden herausfordern', toDict: 'Zum Bildwörterbuch', home: 'Start',
     shareText: 'Kalemo #{n} · {pair} · {x}/5 · Serie {s}', shareCopied: 'Text kopiert.', shareSave: 'Bild speichern', shareLong: 'Lange drücken zum Speichern',
-    shareCopyText: 'Text kopieren', sharePress: 'Lange auf das Bild drücken, um es zu speichern.', openBrowser: 'Im Browser öffnen', openBrowserHow: 'Link kopiert — tippe oben auf ⋯ und wähle „Im Browser öffnen“.',
+    shareCopyText: 'Text kopieren', swapHint: 'Tausche mit ⇄', streakLost: 'Serie verloren — heute neu starten', nearMiss: 'Fast — das ist eher {x}. Zählt trotzdem!', sharePress: 'Lange auf das Bild drücken, um es zu speichern.', openBrowser: 'Im Browser öffnen', openBrowserHow: 'Link kopiert — tippe oben auf ⋯ und wähle „Im Browser öffnen“.',
     airSizeT: 'Handerkennung laden (~20 MB)?', airSizeB: 'Du bist im Mobilfunk. Die Handerkennung wird einmal geladen und bleibt dann im Browser.', airSizeGo: 'Jetzt laden',
     quitT: 'Tagesskizze abbrechen?', quitB: 'Du kannst später bei Wort {i} weitermachen.', quitStay: 'Weitermachen', quitGo: 'Abbrechen', dailyResume: 'Tagesskizze #{n} · weiter bei Wort {i}',
     landingLead: 'Jemand hat dir etwas in die Luft gemalt. Rate, was es ist — dann malst du zurück.', duelDailyFirst: 'Erst Tagesskizze #{n} (2 Min) — dann das Duell', duelDirect: 'Direkt ansehen', duelNew: 'Neues Duell', duelBackToDuel: 'Zurück zum Duell',
@@ -95,7 +95,7 @@ export const T = {
     todayScore: 'Today {x}/5', nextInH: 'New sketch in {h} h', nextInMin: 'New sketch in {m} min', challengeShort: 'Challenge',
     funniest: 'Funniest AI guess', share: 'Share', challenge: 'Challenge a friend', toDict: 'Picture Dictionary', home: 'Home',
     shareText: 'Kalemo #{n} · {pair} · {x}/5 · Streak {s}', shareCopied: 'Text copied.', shareSave: 'Save image', shareLong: 'Press and hold to save',
-    shareCopyText: 'Copy text', sharePress: 'Press and hold the image to save it.', openBrowser: 'Open in browser', openBrowserHow: 'Link copied — tap ⋯ at the top and choose “Open in browser”.',
+    shareCopyText: 'Copy text', swapHint: 'Swap with ⇄', streakLost: 'Streak lost — start a new one today', nearMiss: 'Almost — that’s more like {x}. Still counts!', sharePress: 'Press and hold the image to save it.', openBrowser: 'Open in browser', openBrowserHow: 'Link copied — tap ⋯ at the top and choose “Open in browser”.',
     airSizeT: 'Load hand tracking (~20 MB)?', airSizeB: 'You seem to be on mobile data. Hand tracking downloads once and then stays in your browser.', airSizeGo: 'Load now',
     quitT: 'Stop the Daily Sketch?', quitB: 'You can pick up again at word {i} later.', quitStay: 'Keep going', quitGo: 'Stop', dailyResume: 'Daily Sketch #{n} · continue at word {i}',
     landingLead: 'Someone drew something in the air for you. Guess what it is — then draw one back.', duelDailyFirst: 'Daily Sketch #{n} first (2 min) — then the duel', duelDirect: 'Watch it now', duelNew: 'New duel', duelBackToDuel: 'Back to the duel',
@@ -155,7 +155,7 @@ export const T = {
     todayScore: 'Bugün {x}/5', nextInH: 'Yeni çizim {h} saat sonra', nextInMin: 'Yeni çizim {m} dakika sonra', challengeShort: 'Meydan oku',
     funniest: 'En komik tahmin', share: 'Paylaş', challenge: 'Arkadaşına meydan oku', toDict: 'Resimli Sözlük', home: 'Ana sayfa',
     shareText: 'Kalemo #{n} · {pair} · {x}/5 · Seri {s}', shareCopied: 'Metin kopyalandı.', shareSave: 'Resmi kaydet', shareLong: 'Kaydetmek için basılı tut',
-    shareCopyText: 'Metni kopyala', sharePress: 'Kaydetmek için resme basılı tut.', openBrowser: 'Tarayıcıda aç', openBrowserHow: 'Link kopyalandı — üstteki ⋯ simgesine dokun ve “Tarayıcıda aç” seçeneğini seç.',
+    shareCopyText: 'Metni kopyala', swapHint: '⇄ ile değiştir', streakLost: 'Seri bozuldu — bugün yeniden başla', nearMiss: 'Neredeyse — bu daha çok {x}. Yine de sayılır!', sharePress: 'Kaydetmek için resme basılı tut.', openBrowser: 'Tarayıcıda aç', openBrowserHow: 'Link kopyalandı — üstteki ⋯ simgesine dokun ve “Tarayıcıda aç” seçeneğini seç.',
     airSizeT: 'El takibi yüklensin mi (~20 MB)?', airSizeB: 'Mobil veride görünüyorsun. El takibi bir kez indirilir, sonra tarayıcında kalır.', airSizeGo: 'Şimdi yükle',
     quitT: 'Günün Çizimi’ni bırakmak istiyor musun?', quitB: 'Daha sonra {i}. kelimeden devam edebilirsin.', quitStay: 'Devam et', quitGo: 'Bırak', dailyResume: 'Günün Çizimi #{n} · {i}. kelimeden devam',
     landingLead: 'Biri senin için havaya bir şey çizdi. Ne olduğunu tahmin et — sonra sen de çiz.', duelDailyFirst: 'Önce Günün Çizimi #{n} (2 dk) — sonra düello', duelDirect: 'Hemen izle', duelNew: 'Yeni düello', duelBackToDuel: 'Düelloya dön',
@@ -276,6 +276,20 @@ export function funnyQuiz(n, guess, lang) {
     return `At first, the AI thought word ${n} was ${art}${g}. What did I draw?`;
   }
   return `Yapay zekâ ${n}. kelimeyi önce ${guess.tr.word} sandı. Ne çizdim?`;
+}
+/** R2-P3-15: Namen der Nachbar-Klassen (nur deutlich andere Dinge) */
+export const SIBLING_NAMES = {
+  palm_tree: { de: ['die', 'Palme'], en: 'palm tree', tr: 'palmiye' }, barn: { de: ['die', 'Scheune'], en: 'barn', tr: 'ahır' },
+  police_car: { de: ['das', 'Polizeiauto'], en: 'police car', tr: 'polis arabası' }, van: { de: ['der', 'Lieferwagen'], en: 'van', tr: 'minibüs' },
+  speedboat: { de: ['das', 'Schnellboot'], en: 'speedboat', tr: 'sürat teknesi' }, cello: { de: ['das', 'Cello'], en: 'cello', tr: 'çello' },
+};
+/** „Fast — das ist eher eine Palme. Zählt trotzdem!" (UI-Sprache) */
+export function nearMissLine(near, lang) {
+  let de, en, tr;
+  if (near.kind === 'sibling') { const s = SIBLING_NAMES[near.cls]; if (!s) return t('finishHint', {}, lang); [de, en, tr] = [s.de, s.en, s.tr]; }
+  else { const w = near.w; de = [w.de.art, w.de.noun]; en = w.en.word; tr = w.tr.word; }
+  const x = lang === 'de' ? `${{ der: 'ein', die: 'eine', das: 'ein' }[de[0]]} ${de[1]}` : lang === 'en' ? `${/^[aeiou]/i.test(en) ? 'an' : 'a'} ${en}` : tr;
+  return t('nearMiss', { x }, lang);
 }
 /** Satz in Anführungszeichen der UI-Sprache */
 export const quoted = (s, lang) => (lang === 'de' ? `„${s}“` : `“${s}”`);

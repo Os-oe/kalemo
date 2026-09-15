@@ -189,11 +189,17 @@ export function installFlow(app) {
       const ok = a === w.de.art;
       const btn = card.querySelector(`[data-a="${a}"]`), right = card.querySelector(`[data-a="${w.de.art}"]`);
       card.classList.add('chosen');
-      if (ok) { btn.classList.add('flash'); app.sfx?.play('articleOk'); }
-      else { btn.classList.add('wobble', 'wrong'); right.classList.add('flash'); try { navigator.vibrate?.([30, 40, 30]); } catch {} app.sfx?.play('articleNo'); card.querySelector('.hint').textContent = t('articleShow', { w: `${w.de.art} ${w.de.noun}` }); }
+      const noun = card.querySelector('.art-noun');
+      if (ok) { btn.classList.add('flash'); app.sfx?.play('articleOk'); card.querySelector('.hint').textContent = t('articleOk'); }
+      else {
+        btn.classList.add('wobble', 'wrong'); right.classList.add('flash'); try { navigator.vibrate?.([30, 40, 30]); } catch {} app.sfx?.play('articleNo');
+        card.querySelector('.hint').textContent = t('articleShow', { w: `${w.de.art} ${w.de.noun}` });
+        // R2-P3-3: das Wort mit Artikel groß in der Artikel-Farbe — genug Zeit zum Lesen und Hören
+        if (noun) { noun.innerHTML = `<span style="color:${ART_TEXT[w.de.art]}">${escapeHtml(w.de.art)}</span> ${escapeHtml(w.de.noun)}`; noun.classList.add('reveal'); }
+      }
       app.voice?.word(w.id, 'de');
       app.lastArticle = { choice: a, ok, via };
-      await sleep(ok ? 900 : 1700);
+      await sleep(ok ? 900 : 2600);
       hideCard();
       resolve({ choice: a, ok, via });
     };
