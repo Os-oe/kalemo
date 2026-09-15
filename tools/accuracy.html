@@ -1,0 +1,92 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Kalemo – Genauigkeits-Gate</title>
+<pre id="log">lädt …</pre>
+<script type="module">
+import { createClassifier, buildMask, rankMasked } from '../js/core/classifier.js';
+import { toInput, jitter, makeRng } from '../js/core/raster.js';
+
+const log = (m) => { document.getElementById('log').textContent += '\n' + m; };
+window.runAccuracy = async function ({ sigma = 2, threshold = 0.70, backend } = {}) {
+  const t0 = performance.now();
+  const words = await (await fetch('../data/words.src.json')).json();
+  const qd = await (await fetch('data/quickdraw.json')).json();
+  const clf = await createClassifier({ base: '../', words, backend });
+  log('backend ' + clf.backend);
+  const V = {};
+  const variants = {
+    clean: (d) => d,
+    air: (d, i, w) => jitter(d, sigma, makeRng(1000 + i * 7919 + w.length * 104729)),
+  };
+  const sets = { eval: 'eval', unrecognized: 'unrecognizedEval' };
+  const probsOf = {};
+  for (const [vn, fn] of Object.entries(variants)) {
+    for (const [sn, key] of Object.entries(sets)) {
+      if (sn === 'unrecognized' && vn !== 'air') continue;
+      const items = [];
+      for (const w of words) (qd[w.id]?.[key] || []).forEach((d, i) => items.push({ id: w.id, input: toInput(fn(d, i, w.id)) }));
+      const probs = [];
+      for (let i = 0; i < items.length; i += 400) probs.push(...(await clf.predictBatch(items.slice(i, i + 400).map((x) => x.input))).map((p) => Float32Array.from(p)));
+      probsOf[`${vn}/${sn}`] = items.map((x, i) => ({ id: x.id, probs: probs[i] }));
+      log(`${vn}/${sn}: ${items.length} Zeichnungen`);
+    }
+  }
+  const evalRun = (key, pool) => {
+    const mask = buildMask(clf.classNames, pool);
+    const per = {}; let t1 = 0, t3 = 0, n = 0;
+    for (const it of probsOf[key]) {
+      if (!pool.find((w) => w.id === it.id)) continue;
+      const r = rankMasked(it.probs, mask);
+      const h1 = r[0].id === it.id, h3 = r.slice(0, 3).some((x) => x.id === it.id);
+      const p = (per[it.id] ||= { n: 0, top1: 0, top3: 0, conf: {} });
+      p.n++; p.top1 += h1; p.top3 += h3; t1 += h1; t3 += h3; n++;
+      if (!h1) p.conf[r[0].id] = (p.conf[r[0].id] || 0) + 1;
+    }
+    for (const p of Object.values(per)) {
+      p.top1 = +(p.top1 / p.n).toFixed(3); p.top3 = +(p.top3 / p.n).toFixed(3);
+      p.conf = Object.entries(p.conf).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => `${k}:${v}`).join(', ');
+    }
+    return { n, top1: +(t1 / n).toFixed(4), top3: +(t3 / n).toFixed(4), per };
+  };
+  // Iterativ: Wörter < Schwelle (Top-3, air) raus, bis stabil
+  let pool = words.slice(); const removed = []; const iterations = [];
+  for (let it = 0; it < 10; it++) {
+    const r = evalRun('air/eval', pool);
+    const low = pool.filter((w) => r.per[w.id].top3 < threshold);
+    iterations.push({ iteration: it + 1, pool: pool.length, top1: r.top1, top3: r.top3, removed: low.map((w) => `${w.id} (${r.per[w.id].top3})`) });
+    if (!low.length) break;
+    low.forEach((w) => removed.push({ id: w.id, top3: r.per[w.id].top3, top1: r.per[w.id].top1, confusions: r.per[w.id].conf, iteration: it + 1 }));
+    pool = pool.filter((w) => !low.includes(w));
+  }
+  const finalAir = evalRun('air/eval', pool), finalClean = evalRun('clean/eval', pool), unrec = evalRun('air/unrecognized', pool);
+  const mask = buildMask(clf.classNames, pool);
+
+  // „So malen andere": aus dem getrennten pool-Satz 3 Zeichnungen, hohe Konfidenz + wenige Striche
+  const curated = {}, fixtures = {};
+  for (const w of pool) {
+    const cands = qd[w.id].pool;
+    const probs = await clf.predictBatch(cands.map((d) => toInput(d)));
+    const scored = cands.map((d, i) => { const r = rankMasked(probs[i], mask); const p = r.find((x) => x.id === w.id).p; return { d, i, p, top1: r[0].id === w.id, strokes: d.length, pts: d.reduce((a, s) => a + s[0].length, 0) }; })
+      .filter((s) => s.top1 && s.strokes <= 10 && s.pts >= 8);
+    scored.sort((a, b) => (b.p - b.strokes * 0.015) - (a.p - a.strokes * 0.015));
+    curated[w.id] = scored.slice(0, 3).map((s) => ({ p: +s.p.toFixed(3), strokes: s.d }));
+    // Fixtures (Tests, Duell-URL-Länge): nächste 2 Kandidaten, die auch MIT Zittern Top-1 bleiben
+    const rest = scored.slice(3);
+    const airProbs = rest.length ? await clf.predictBatch(rest.map((s) => toInput(jitter(s.d, sigma, makeRng(77 + s.i))))) : [];
+    fixtures[w.id] = rest.filter((s, i) => rankMasked(airProbs[i], mask)[0].id === w.id).slice(0, 2).map((s) => s.d);
+  }
+  const report = {
+    generated: new Date().toISOString(),
+    method: `Je Wort 50 erkannte Quick-Draw-Zeichnungen (eval-Satz, disjunkt zu Fixtures/Kuratierung), Zittern σ${sigma} + Drift + Glättung (Luft-Simulation), App-Pipeline normalize→RDP ε2→Raster 304/16→28×28, DoodleNet (${clf.backend}), Maske = Pool + Synonym-Gruppen, Treffer = Zielwort in Top-3. Iterativ: Wort < ${threshold * 100} % raus, neu messen bis stabil.`,
+    gate: { perWordMin: threshold, overallMin: 0.85, overallTop3: finalAir.top3, pass: finalAir.top3 >= 0.85 && pool.every((w) => finalAir.per[w.id].top3 >= threshold) },
+    poolSize: pool.length, removed, iterations,
+    final: { air: { top1: finalAir.top1, top3: finalAir.top3, n: finalAir.n }, clean: { top1: finalClean.top1, top3: finalClean.top3, n: finalClean.n }, airUnrecognizedInfo: { top1: unrec.top1, top3: unrec.top3, n: unrec.n } },
+    perWord: Object.fromEntries(pool.map((w) => [w.id, { air: finalAir.per[w.id], clean: { top1: finalClean.per[w.id].top1, top3: finalClean.per[w.id].top3 } }])),
+    synonyms: (await import('../js/core/classifier.js')).SYNONYMS,
+    ms: Math.round(performance.now() - t0),
+  };
+  log(`fertig: Pool ${pool.length}, air top3 ${finalAir.top3}, clean top1 ${finalClean.top1}`);
+  return { report, pool: pool.map((w) => ({ ...w, acc: finalAir.per[w.id].top3, acc1: finalAir.per[w.id].top1 })), curated, fixtures };
+};
+log('bereit');
+</script>

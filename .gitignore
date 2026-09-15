@@ -1,0 +1,8 @@
+node_modules/
+tools/data/
+.DS_Store
+*.log
+.vercel
+tools/out/
+tests/out/
+__pycache__/

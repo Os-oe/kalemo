@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kalemo — Mal’s in die Luft.</title>
+<meta name="description" content="Kalemo: Vokabeln in Deutsch, Englisch und Türkisch lernen, indem du Wörter in die Luft malst. Eine KI rät live mit. Alles läuft im Browser — kein Kamerabild verlässt dein Gerät.">
+<meta name="theme-color" content="#13203A">
+<meta property="og:title" content="Kalemo — Mal’s in die Luft.">
+<meta property="og:description" content="Wörter in die Luft malen, eine KI rät live mit. Deutsch · Englisch · Türkisch. Kostenlos im Browser, ohne Konto.">
+<meta property="og:image" content="https://kalemo.demo.osai.solutions/og.png">
+<meta property="og:url" content="https://kalemo.demo.osai.solutions/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/v1/caveat-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/v1/nunito-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body data-screen="start">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 0.12  0 0 0 0 0.16  0 0 0 0 0.23  0 0 0 0.9 0"/></filter>
+    <filter id="sketchy"><feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.2"/></filter>
+  </defs>
+</svg>
+
+<div id="inapp" class="inapp" hidden role="status"><strong data-t="inApp"></strong> <span data-t="inAppB"></span></div>
+
+<!-- START -->
+<main id="screen-start" class="screen paper" aria-labelledby="title">
+  <div class="start-wrap">
+    <header class="start-head">
+      <h1 id="title" class="logo">Kalemo</h1>
+      <p class="tagline" aria-live="polite"><span id="tagline"></span></p>
+    </header>
+    <div class="attract" aria-hidden="true"><canvas id="attract"></canvas><div class="attract-bubble" id="attract-bubble"></div></div>
+    <section class="pair" aria-label="Sprachen">
+      <label class="pair-col"><span data-t="iSpeak"></span><div class="seg" id="pair-native" role="radiogroup"></div></label>
+      <label class="pair-col"><span data-t="iLearn"></span><div class="seg" id="pair-learn" role="radiogroup"></div></label>
+    </section>
+    <nav class="start-actions">
+      <button class="btn primary big" id="btn-daily"><span id="daily-label"></span><span class="badge" id="streak-badge" hidden></span></button>
+      <div class="row2">
+        <button class="btn" id="btn-duel" data-t="duel"></button>
+        <button class="btn" id="btn-dict" data-t="dict"></button>
+      </div>
+      <button class="tile" id="btn-yesterday" hidden><canvas width="120" height="60"></canvas><span data-t="yesterday"></span></button>
+    </nav>
+    <footer class="foot">
+      <button class="linkbtn" id="btn-settings" data-t="settings"></button>
+      <a href="impressum.html" data-t="legal"></a><a href="datenschutz.html" data-t="privacy"></a><a href="credits.html" data-t="credits"></a>
+      <span class="by"><img src="img/osai-mark.png" alt="" width="18" height="18"><span data-t="byOsai"></span></span>
+    </footer>
+  </div>
+</main>
+
+<!-- RUNDE -->
+<section id="screen-round" class="screen stage-screen" hidden aria-label="Runde">
+  <div class="stage" id="stage">
+    <canvas class="cam" hidden></canvas>
+    <canvas class="ink"></canvas>
+  </div>
+  <header class="round-top">
+    <button class="icon-btn" id="round-close" aria-label="Schließen"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="slots" id="slots" aria-hidden="true"></div>
+    <div class="word-card" id="word-card"><span class="word" id="word"></span><span class="word-sub" id="word-sub"></span></div>
+    <div class="timer" id="timer" role="timer"><svg viewBox="0 0 44 44"><circle class="track" cx="22" cy="22" r="19"/><circle class="bar" cx="22" cy="22" r="19"/></svg><span id="timer-s"></span></div>
+    <button class="icon-btn" id="round-speaker" aria-label="Nochmal hören"><svg viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9c1.5 1.5 1.5 4.5 0 6M18.5 6.5c3 3 3 8 0 11"/></svg></button>
+  </header>
+  <div class="bubble" id="bubble" aria-live="polite" hidden></div>
+  <div class="mode-toggle" id="mode-toggle" hidden></div>
+  <div class="overlay" id="round-overlay" hidden></div>
+</section>
+
+<!-- TAGESENDE -->
+<section id="screen-dayend" class="screen paper" hidden aria-labelledby="dayend-title">
+  <div class="page">
+    <h2 id="dayend-title" class="h-hand"></h2>
+    <div class="dayend-grid" id="dayend-grid"></div>
+    <p class="score-line"><span id="dayend-recog"></span> · <span class="count" id="dayend-points">0</span> <span data-t="points"></span></p>
+    <p class="streak-line" id="dayend-streak"></p>
+    <p class="funny" id="dayend-funny" hidden></p>
+    <div class="actions" id="dayend-actions">
+      <button class="btn primary" id="btn-share" data-t="share"></button>
+      <button class="btn" id="btn-challenge" data-t="challenge"></button>
+      <button class="btn" id="btn-dayend-dict" data-t="toDict"></button>
+      <button class="btn ghost" id="btn-dayend-home" data-t="home"></button>
+    </div>
+  </div>
+</section>
+
+<div class="toast" id="toast" role="status" hidden></div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

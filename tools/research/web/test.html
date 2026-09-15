@@ -1,0 +1,88 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>luftmaler tech probe</title>
+<video id="v" playsinline muted autoplay width="640" height="480"></video>
+<img id="pointing_up" src="pointing_up.jpg"><img id="victory" src="victory.jpg"><img id="thumbs_up" src="thumbs_up.jpg"><img id="woman_hands" src="woman_hands.jpg"><img id="cat_and_dog" src="cat_and_dog.jpg">
+<script type="module">
+const R = { log: [] }; window.__result = R;
+const V = '1.0.1';
+const delegate = new URLSearchParams(location.search).get('delegate') || 'CPU';
+try {
+  const t0 = performance.now();
+  const { FilesetResolver, HandLandmarker, ObjectDetector } = await import(`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${V}/vision_bundle.mjs`);
+  const fileset = await FilesetResolver.forVisionTasks(`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${V}/wasm`);
+  R.filesetMs = Math.round(performance.now() - t0);
+
+  // ---------- Finger-Heuristik ----------
+  const d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y, (a.z || 0) - (b.z || 0));
+  function fingers(lm) {
+    const w = lm[0];
+    const ext = (tip, pip) => d(lm[tip], w) > d(lm[pip], w) * 1.15;
+    const index = ext(8, 6), middle = ext(12, 10), ring = ext(16, 14), pinky = ext(20, 18);
+    const thumb = d(lm[4], lm[17]) > d(lm[3], lm[17]) * 1.1 && d(lm[4], lm[5]) > d(lm[0], lm[5]) * 0.45;
+    const handSize = d(lm[0], lm[9]);
+    const pinch = d(lm[4], lm[8]) / handSize;
+    return { thumb, index, middle, ring, pinky, count: [thumb, index, middle, ring, pinky].filter(Boolean).length,
+      nonThumb: [index, middle, ring, pinky].filter(Boolean).length,
+      penDownPose: index && !middle && !ring && !pinky, pinch: +pinch.toFixed(2) };
+  }
+
+  // ---------- HandLandmarker IMAGE ----------
+  const tl = performance.now();
+  const hlImg = await HandLandmarker.createFromOptions(fileset, {
+    baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task', delegate },
+    runningMode: 'IMAGE', numHands: 2 });
+  R.handModelLoadMs = Math.round(performance.now() - tl);
+  R.images = {};
+  for (const id of ['pointing_up', 'victory', 'thumbs_up', 'woman_hands']) {
+    const img = document.getElementById(id); await img.decode();
+    const res = hlImg.detect(img);
+    R.images[id] = res.landmarks.map((lm, i) => ({ hand: res.handedness[i]?.[0]?.categoryName, score: +res.handedness[i]?.[0]?.score.toFixed(2), ...fingers(lm) }));
+  }
+  hlImg.close();
+
+  // ---------- HandLandmarker VIDEO (Fake-Kamera) ----------
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+    const v = document.getElementById('v'); v.srcObject = stream; await v.play();
+    R.camera = { label: stream.getVideoTracks()[0].label, w: v.videoWidth, h: v.videoHeight };
+    const hl = await HandLandmarker.createFromOptions(fileset, {
+      baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task', delegate },
+      runningMode: 'VIDEO', numHands: 1 });
+    let frames = 0, withHand = 0, last = -1; const times = []; const tStart = performance.now(); let tip = null;
+    while (performance.now() - tStart < 4000) {
+      await new Promise(r => requestAnimationFrame(r));
+      if (v.currentTime === last) continue; last = v.currentTime;
+      const a = performance.now(); const res = hl.detectForVideo(v, a); times.push(performance.now() - a);
+      frames++; if (res.landmarks.length) { withHand++; tip = res.landmarks[0][8]; R.videoFingers = fingers(res.landmarks[0]); }
+    }
+    times.sort((x, y) => x - y);
+    R.video = { frames, withHand, fps: +(frames / 4).toFixed(1), medianInferMs: +times[times.length >> 1]?.toFixed(1), p90InferMs: +times[Math.floor(times.length * 0.9)]?.toFixed(1), indexTip: tip && { x: +tip.x.toFixed(3), y: +tip.y.toFixed(3) } };
+    hl.close();
+  } catch (e) { R.cameraError = String(e); }
+
+  // ---------- ObjectDetector ----------
+  for (const [name, url] of [['efficientdet_lite0_int8', 'https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/int8/1/efficientdet_lite0.tflite'], ['efficientdet_lite0_f16', 'https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite']]) {
+    try {
+      const to = performance.now();
+      const od = await ObjectDetector.createFromOptions(fileset, { baseOptions: { modelAssetPath: url, delegate }, runningMode: 'IMAGE', scoreThreshold: 0.4, maxResults: 5 });
+      const lo = performance.now() - to; const img = document.getElementById('cat_and_dog');
+      const ti = performance.now(); const res = od.detect(img); const inf = performance.now() - ti;
+      R[name] = { loadMs: Math.round(lo), inferMs: Math.round(inf), dets: res.detections.map(x => `${x.categories[0].categoryName}:${x.categories[0].score.toFixed(2)}`) };
+      od.close();
+    } catch (e) { R[name] = { error: String(e).slice(0, 200) }; }
+  }
+} catch (e) { R.fatal = String(e) + ' ' + (e.stack || '').slice(0, 300); }
+
+// ---------- Browser-Fähigkeiten ----------
+const png = await new Promise(r => { const c = document.createElement('canvas'); c.width = c.height = 8; c.toBlob(r, 'image/png'); });
+const file = new File([png], 'karte.png', { type: 'image/png' });
+R.share = { share: 'share' in navigator, canShare: 'canShare' in navigator, canShareFiles: navigator.canShare ? navigator.canShare({ files: [file] }) : false, clipboardItem: 'ClipboardItem' in window };
+R.compressionStream = typeof CompressionStream !== 'undefined';
+R.webgl2 = !!document.createElement('canvas').getContext('webgl2');
+R.webgpu = 'gpu' in navigator;
+await new Promise(r => { if (speechSynthesis.getVoices().length) return r(); speechSynthesis.onvoiceschanged = r; setTimeout(r, 1500); });
+const vs = speechSynthesis.getVoices();
+R.voices = { total: vs.length, tr: vs.filter(v => /^tr/i.test(v.lang)).map(v => v.name), de: vs.filter(v => /^de/i.test(v.lang)).length, en: vs.filter(v => /^en/i.test(v.lang)).length };
+R.done = true;
+</script>

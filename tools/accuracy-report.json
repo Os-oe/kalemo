@@ -1,0 +1,1882 @@
+{
+ "generated": "2026-09-15T00:38:48.599Z",
+ "method": "Je Wort 50 erkannte Quick-Draw-Zeichnungen (eval-Satz, disjunkt zu Fixtures/Kuratierung), Zittern σ2 + Drift + Glättung (Luft-Simulation), App-Pipeline normalize→RDP ε2→Raster 304/16→28×28, DoodleNet (cpu), Maske = Pool + Synonym-Gruppen, Treffer = Zielwort in Top-3. Iterativ: Wort < 70 % raus, neu messen bis stabil.",
+ "gate": {
+  "perWordMin": 0.7,
+  "overallMin": 0.85,
+  "overallTop3": 0.9426,
+  "pass": true
+ },
+ "poolSize": 148,
+ "removed": [
+  {
+   "id": "bear",
+   "top3": 0.68,
+   "top1": 0.38,
+   "confusions": "cow:3, lion:3, frog:3",
+   "iteration": 1
+  },
+  {
+   "id": "dog",
+   "top3": 0.64,
+   "top1": 0.36,
+   "confusions": "cat:6, cow:4, elephant:3",
+   "iteration": 1
+  }
+ ],
+ "iterations": [
+  {
+   "iteration": 1,
+   "pool": 150,
+   "top1": 0.8083,
+   "top3": 0.9375,
+   "removed": [
+    "bear (0.68)",
+    "dog (0.64)"
+   ]
+  },
+  {
+   "iteration": 2,
+   "pool": 148,
+   "top1": 0.8161,
+   "top3": 0.9426,
+   "removed": []
+  }
+ ],
+ "final": {
+  "air": {
+   "top1": 0.8161,
+   "top3": 0.9426,
+   "n": 7400
+  },
+  "clean": {
+   "top1": 0.8491,
+   "top3": 0.9569,
+   "n": 7400
+  },
+  "airUnrecognizedInfo": {
+   "top1": 0.279,
+   "top3": 0.4569,
+   "n": 2935
+  }
+ },
+ "perWord": {
+  "ant": {
+   "air": {
+    "n": 50,
+    "top1": 0.86,
+    "top3": 0.96,
+    "conf": "tiger:2, scissors:1, cloud:1"
+   },
+   "clean": {
+    "top1": 0.84,
+    "top3": 0.96
+   }
+  },
+  "bat": {
+   "air": {
+    "n": 50,
+    "top1": 0.9,
+    "top3": 0.98,
+    "conf": "bird:2, sheep:1, wristwatch:1"
+   },
+   "clean": {
+    "top1": 0.92,
+    "top3": 0.94
+   }
+  },
+  "bee": {
+   "air": {
+    "n": 50,
+    "top1": 0.88,
+    "top3": 0.94,
+    "conf": "spider:2, zebra:1, wristwatch:1"
+   },
+   "clean": {
+    "top1": 0.86,
+    "top3": 0.96
+   }
+  },
+  "bird": {
+   "air": {
+    "n": 50,
+    "top1": 0.66,
+    "top3": 0.9,
+    "conf": "duck:5, bat:3, dolphin:2"
+   },
+   "clean": {
+    "top1": 0.72,
+    "top3": 0.88
+   }
+  },
+  "butterfly": {
+   "air": {
+    "n": 50,
+    "top1": 0.88,
+    "top3": 0.94,
+    "conf": "bird:1, lion:1, bee:1"
+   },
+   "clean": {
+    "top1": 0.84,
+    "top3": 0.94
+   }
+  },
+  "camel": {
+   "air": {
+    "n": 50,
+    "top1": 0.92,
+    "top3": 0.98,
+    "conf": "sheep:2, mouse:1, horse:1"
+   },
+   "clean": {
+    "top1": 0.92,
+    "top3": 0.98
+   }
+  },
+  "cat": {
+   "air": {
+    "n": 50,
+    "top1": 0.88,
+    "top3": 1,
+    "conf": "cow:2, mouse:1, monkey:1"
+   },
+   "clean": {
+    "top1": 0.92,
+    "top3": 1
+   }
+  },
+  "cow": {
+   "air": {
+    "n": 50,
+    "top1": 0.84,
+    "top3": 0.96,
+    "conf": "ant:3, zebra:2, elephant:1"
+   },
+   "clean": {
+    "top1": 0.78,
+    "top3": 0.92
+   }
+  },
+  "crocodile": {
+   "air": {
+    "n": 50,
+    "top1": 0.84,
+    "top3": 0.98,
+    "conf": "cloud:2, hedgehog:1, cow:1"
+   },
+   "clean": {
+    "top1": 0.92,
+    "top3": 0.96
+   }
+  },
+  "dolphin": {
+   "air": {
+    "n": 50,
+    "top1": 0.8,
+    "top3": 0.94,
+    "conf": "crocodile:2, bridge:1, shark:1"
+   },
+   "clean": {
+    "top1": 0.78,
+    "top3": 0.92
+   }
+  },
+  "duck": {
+   "air": {
+    "n": 50,
+    "top1": 0.72,
+    "top3": 0.94,
+    "conf": "bird:9, frog:1, cactus:1"
+   },
+   "clean": {
+    "top1": 0.7,
+    "top3": 0.98
+   }
+  },
+  "elephant": {
+   "air": {
+    "n": 50,
+    "top1": 0.82,
+    "top3": 0.98,
+    "conf": "camel:2, backpack:1, cow:1"
+   },
+   "clean": {
+    "top1": 0.82,
+    "top3": 0.96
+   }
+  },
+  "fish": {
+   "air": {
+    "n": 50,
+    "top1": 0.9,
+    "top3": 0.98,
+    "conf": "trumpet:2, mouse:1, submarine:1"
+   },
+   "clean": {
+    "top1": 0.94,
+    "top3": 0.98
+   }
+  },
+  "frog": {
+   "air": {
+    "n": 50,
+    "top1": 0.6,
+    "top3": 0.84,
+    "conf": "cow:2, octopus:2, helicopter:1"
+   },
+   "clean": {
+    "top1": 0.64,
+    "top3": 0.8
+   }
+  },
+  "giraffe": {
+   "air": {
+    "n": 50,
+    "top1": 0.92,
+    "top3": 1,
+    "conf": "zebra:1, chair:1, stairs:1"
+   },
+   "clean": {
+    "top1": 0.94,
+    "top3": 1
+   }
+  },
+  "hedgehog": {
+   "air": {
+    "n": 50,
+    "top1": 0.88,
+    "top3": 0.98,
+    "conf": "lion:2, crown:1, teapot:1"
+   },
+   "clean": {
+    "top1": 0.94,
+    "top3": 0.98
+   }
+  },
+  "horse": {
+   "air": {
+    "n": 50,
+    "top1": 0.72,
+    "top3": 0.92,
+    "conf": "camel:4, zebra:2, pig:2"
+   },
+   "clean": {
+    "top1": 0.74,
+    "top3": 0.96
+   }
+  },
+  "lion": {
+   "air": {
+    "n": 50,
+    "top1": 0.92,
+    "top3": 0.98,
+    "conf": "pig:1, beard:1, cactus:1"
+   },
+   "clean": {
+    "top1": 0.92,
+    "top3": 0.96
+   }
+  },
+  "monkey": {
+   "air": {
+    "n": 50,
+    "top1": 0.64,
+    "top3": 0.9,
+    "conf": "squirrel:4, snowflake:1, mouse:1"
+   },
+   "clean": {
+    "top1": 0.68,
+    "top3": 0.9
+   }
+  },
+  "mouse": {
+   "air": {
+    "n": 50,
+    "top1": 0.6,
+    "top3": 0.82,
+    "conf": "frog:3, clock:2, cat:2"
+   },
+   "clean": {
+    "top1": 0.6,
+    "top3": 0.78
+   }
+  },
+  "octopus": {
+   "air": {
+    "n": 50,
+    "top1": 0.92,
+    "top3": 0.96,
+    "conf": "snake:1, sun:1, zebra:1"
+   },
+   "clean": {
+    "top1": 0.94,
+    "top3": 0.98
+   }
+  },
+  "owl": {
+   "air": {
+    "n": 50,
+    "top1": 0.92,
+    "top3": 0.98,
+    "conf": "squirrel:1, toilet:1, monkey:1"
+   },
+   "clean": {
+    "top1": 0.9,
+    "top3": 0.98
+   }
+  },
+  "penguin": {
+   "air": {
+    "n": 50,
+    "top1": 0.86,
+    "top3": 0.96,
+    "conf": "owl:2, flower:2, bird:1"
+   },
+   "clean": {
+    "top1": 0.86,
+    "top3": 0.94
+   }
+  },
+  "pig": {
+   "air": {
+    "n": 50,
+    "top1": 0.66,
+    "top3": 0.88,
+    "conf": "cat:4, sheep:4, mouse:2"
+   },
+   "clean": {
+    "top1": 0.72,
+    "top3": 0.98
+   }
+  },
+  "rabbit": {
+   "air": {
+    "n": 50,
+    "top1": 0.68,
+    "top3": 0.88,
+    "conf": "mouse:3, cat:3, squirrel:2"
+   },
+   "clean": {
+    "top1": 0.76,
+    "top3": 0.92
+   }
+  },
+  "shark": {
+   "air": {
+    "n": 50,
+    "top1": 0.74,
+    "top3": 0.92,
+    "conf": "dolphin:4, fish:2, whale:2"
+   },
+   "clean": {
+    "top1": 0.7,
+    "top3": 0.94
+   }
+  },
+  "sheep": {
+   "air": {
+    "n": 50,
+    "top1": 0.94,
+    "top3": 1,
+    "conf": "cow:2, bird:1"
+   },
+   "clean": {
+    "top1": 0.94,
+    "top3": 1
+   }
+  },
+  "snail": {
+   "air": {
+    "n": 50,
+    "top1": 1,
+    "top3": 1,
+    "conf": ""
+   },
+   "clean": {
+    "top1": 1,
+    "top3": 1
+   }
+  },
+  "snake": {
+   "air": {
+    "n": 50,
+    "top1": 0.74,
+    "top3": 0.92,
+    "conf": "dolphin:3, banana:2, guitar:2"
+   },
+   "clean": {
+    "top1": 0.78,
+    "top3": 0.88
+   }
+  },
+  "spider": {
+   "air": {
+    "n": 50,
+    "top1": 0.84,
+    "top3": 0.98,
+    "conf": "hedgehog:2, octopus:1, frog:1"
+   },
+   "clean": {
+    "top1": 0.94,
+    "top3": 0.98
+   }
+  },
+  "squirrel": {
+   "air": {
+    "n": 50,
+    "top1": 0.92,
+    "top3": 0.96,
+    "conf": "mouse:2, cat:1, teapot:1"
+   },
+   "clean": {
+    "top1": 0.9,
+    "top3": 0.96
+   }
+  },
+  "tiger": {
+   "air": {
+    "n": 50,
+    "top1": 0.58,
+    "top3": 0.86,
+    "conf": "zebra:6, cat:4, cow:2"
+   },
+   "clean": {
+    "top1": 0.46,
+    "top3": 0.88
+   }
+  },
+  "whale": {
+   "air": {
+    "n": 50,
+    "top1": 0.82,
+    "top3": 0.96,
+    "conf": "fish:3, shark:2, dolphin:2"
+   },
+   "clean": {
+    "top1": 0.84,
+    "top3": 0.94
+   }
+  },
+  "zebra": {
+   "air": {
+    "n": 50,
+    "top1": 0.9,
+    "top3": 0.98,
+    "conf": "tiger:2, horse:1, hedgehog:1"
+   },
+   "clean": {
+    "top1": 0.9,
+    "top3": 0.98
+   }
+  },
+  "apple": {
+   "air": {
+    "n": 50,
+    "top1": 0.88,
+    "top3": 0.98,
+    "conf": "pear:3, whale:1, onion:1"
+   },
+   "clean": {
+    "top1": 0.9,
+    "top3": 0.98
+   }
+  },
+  "banana": {
+   "air": {
+    "n": 50,
+    "top1": 0.76,
+    "top3": 0.94,
+    "conf": "moon:6, see saw:1, pencil:1"
+   },
+   "clean": {
+    "top1": 0.84,
+    "top3": 0.94
+   }
+  },
+  "carrot": {
+   "air": {
+    "n": 50,
+    "top1": 0.9,
+    "top3": 1,
+    "conf": "candle:1, fork:1, banana:1"
+   },
+   "clean": {
+    "top1": 0.9,
+    "top3": 1
+   }
+  },
+  "grapes": {
+   "air": {
+    "n": 50,
+    "top1": 0.8,
+    "top3": 0.92,
+    "conf": "hedgehog:2, rabbit:1, lion:1"
+   },
+   "clean": {
+    "top1": 0.9,
+    "top3": 0.98
+   }
+  },
+  "mushroom": {
+   "air": {
+    "n": 50,
+    "top1": 0.84,
+    "top3": 0.98,
+    "conf": "tree:5, umbrella:1, light bulb:1"
+   },
+   "clean": {
+    "top1": 0.92,
+    "top3": 0.98
+   }
+  },
+  "onion": {
+   "air": {
+    "n": 50,
+    "top1": 0.76,
+    "top3": 0.96,
+    "conf": "moon:2, watermelon:2, rain:1"
+   },
+   "clean": {
+    "top1": 0.72,
+    "top3": 0.98
+   }
+  },
+  "pear": {
+   "air": {
+    "n": 50,
+    "top1": 0.84,
+    "top3": 0.96,
+    "conf": "violin:2, apple:1, snowman:1"
+   },
+   "clean": {
+    "top1": 0.9,
+    "top3": 0.96
+   }
+  },
+  "pineapple": {
+   "air": {
+    "n": 50,
+    "top1": 0.94,
+    "top3": 0.98,
+    "conf": "owl:1, knife:1, see saw:1"
+   },
+   "clean": {
+    "top1": 0.94,
+    "top3": 0.98
+   }
+  },
+  "potato": {
+   "air": {
+    "n": 50,
+    "top1": 0.68,
+    "top3": 0.94,
+    "conf": "cookie:5, cloud:4, sailboat:1"
+   },
+   "clean": {
+    "top1": 0.8,
+    "top3": 0.96
+   }
+  },
+  "strawberry": {
+   "air": {
+    "n": 50,
+    "top1": 0.76,
+    "top3": 0.94,
+    "conf": "pineapple:4, apple:3, clock:2"
+   },
+   "clean": {
+    "top1": 0.74,
+    "top3": 0.92
+   }
+  },
+  "watermelon": {
+   "air": {
+    "n": 50,
+    "top1": 0.52,
+    "top3": 0.8,
+    "conf": "cookie:4, onion:3, mouth:3"
+   },
+   "clean": {
+    "top1": 0.58,
+    "top3": 0.84
+   }
+  },
+  "bread": {
+   "air": {
+    "n": 50,
+    "top1": 0.62,
+    "top3": 0.84,
+    "conf": "cloud:4, potato:3, mushroom:2"
+   },
+   "clean": {
+    "top1": 0.74,
+    "top3": 0.92
+   }
+  },
+  "cake": {
+   "air": {
+    "n": 50,
+    "top1": 0.98,
+    "top3": 1,
+    "conf": "candle:1"
+   },
+   "clean": {
+    "top1": 0.98,
+    "top3": 1
+   }
+  },
+  "cookie": {
+   "air": {
+    "n": 50,
+    "top1": 0.76,
+    "top3": 0.94,
+    "conf": "soccer ball:4, face:3, brain:2"
+   },
+   "clean": {
+    "top1": 0.82,
+    "top3": 0.98
+   }
+  },
+  "hamburger": {
+   "air": {
+    "n": 50,
+    "top1": 0.74,
+    "top3": 0.96,
+    "conf": "sandwich:8, crocodile:1, sailboat:1"
+   },
+   "clean": {
+    "top1": 0.72,
+    "top3": 0.94
+   }
+  },
+  "ice cream": {
+   "air": {
+    "n": 50,
+    "top1": 0.9,
+    "top3": 0.98,
+    "conf": "diamond:1, beard:1, key:1"
+   },
+   "clean": {
+    "top1": 0.92,
+    "top3": 1
+   }
+  },
+  "pizza": {
+   "air": {
+    "n": 50,
+    "top1": 0.84,
+    "top3": 0.9,
+    "conf": "brain:2, strawberry:1, face:1"
+   },
+   "clean": {
+    "top1": 0.86,
+    "top3": 0.96
+   }
+  },
+  "sandwich": {
+   "air": {
+    "n": 50,
+    "top1": 0.7,
+    "top3": 0.92,
+    "conf": "train:3, hamburger:2, helicopter:1"
+   },
+   "clean": {
+    "top1": 0.72,
+    "top3": 0.96
+   }
+  },
+  "bed": {
+   "air": {
+    "n": 50,
+    "top1": 0.74,
+    "top3": 0.86,
+    "conf": "bridge:2, table:1, see saw:1"
+   },
+   "clean": {
+    "top1": 0.86,
+    "top3": 0.96
+   }
+  },
+  "chair": {
+   "air": {
+    "n": 50,
+    "top1": 0.84,
+    "top3": 0.96,
+    "conf": "table:3, bed:2, bird:1"
+   },
+   "clean": {
+    "top1": 0.88,
+    "top3": 0.98
+   }
+  },
+  "table": {
+   "air": {
+    "n": 50,
+    "top1": 0.64,
+    "top3": 0.96,
+    "conf": "bench:6, piano:2, sheep:2"
+   },
+   "clean": {
+    "top1": 0.74,
+    "top3": 1
+   }
+  },
+  "door": {
+   "air": {
+    "n": 50,
+    "top1": 0.76,
+    "top3": 0.92,
+    "conf": "skyscraper:3, tooth:2, bread:2"
+   },
+   "clean": {
+    "top1": 0.82,
+    "top3": 0.94
+   }
+  },
+  "clock": {
+   "air": {
+    "n": 50,
+    "top1": 0.9,
+    "top3": 0.94,
+    "conf": "onion:1, face:1, brain:1"
+   },
+   "clean": {
+    "top1": 0.9,
+    "top3": 0.94
+   }
+  },
+  "candle": {
+   "air": {
+    "n": 50,
+    "top1": 0.9,
+    "top3": 0.98,
+    "conf": "pineapple:1, castle:1, violin:1"
+   },
+   "clean": {
+    "top1": 0.96,
+    "top3": 1
+   }
+  },
+  "cup": {
+   "air": {
+    "n": 50,
+    "top1": 0.94,
+    "top3": 1,
+    "conf": "tooth:1, drums:1, backpack:1"
+   },
+   "clean": {
+    "top1": 0.96,
+    "top3": 1
+   }
+  },
+  "fork": {
+   "air": {
+    "n": 50,
+    "top1": 0.86,
+    "top3": 0.94,
+    "conf": "hand:3, foot:1, leg:1"
+   },
+   "clean": {
+    "top1": 0.9,
+    "top3": 0.98
+   }
+  },
+  "spoon": {
+   "air": {
+    "n": 50,
+    "top1": 0.74,
+    "top3": 0.9,
+    "conf": "key:3, frying pan:2, violin:2"
+   },
+   "clean": {
+    "top1": 0.84,
+    "top3": 0.94
+   }
+  },
+  "knife": {
+   "air": {
+    "n": 50,
+    "top1": 0.82,
+    "top3": 0.9,
+    "conf": "pencil:2, mountain:1, mouse:1"
+   },
+   "clean": {
+    "top1": 0.82,
+    "top3": 0.86
+   }
+  },
+  "frying pan": {
+   "air": {
+    "n": 50,
+    "top1": 0.64,
+    "top3": 0.8,
+    "conf": "guitar:3, trumpet:2, mouse:2"
+   },
+   "clean": {
+    "top1": 0.8,
+    "top3": 0.9
+   }
+  },
+  "teapot": {
+   "air": {
+    "n": 50,
+    "top1": 0.88,
+    "top3": 0.94,
+    "conf": "crown:1, cup:1, drums:1"
+   },
+   "clean": {
+    "top1": 0.94,
+    "top3": 0.94
+   }
+  },
+  "key": {
+   "air": {
+    "n": 50,
+    "top1": 0.88,
+    "top3": 0.96,
+    "conf": "eyeglasses:1, guitar:1, violin:1"
+   },
+   "clean": {
+    "top1": 0.88,
+    "top3": 1
+   }
+  },
+  "light bulb": {
+   "air": {
+    "n": 50,
+    "top1": 0.84,
+    "top3": 0.94,
+    "conf": "hot air balloon:5, cup:1, apple:1"
+   },
+   "clean": {
+    "top1": 0.92,
+    "top3": 0.96
+   }
+  },
+  "pillow": {
+   "air": {
+    "n": 50,
+    "top1": 0.68,
+    "top3": 0.86,
+    "conf": "bread:6, cloud:2, tooth:1"
+   },
+   "clean": {
+    "top1": 0.62,
+    "top3": 0.92
+   }
+  },
+  "scissors": {
+   "air": {
+    "n": 50,
+    "top1": 0.84,
+    "top3": 0.96,
+    "conf": "airplane:2, violin:1, snowman:1"
+   },
+   "clean": {
+    "top1": 0.86,
+    "top3": 0.96
+   }
+  },
+  "toothbrush": {
+   "air": {
+    "n": 50,
+    "top1": 0.58,
+    "top3": 0.82,
+    "conf": "knife:4, trumpet:3, crocodile:3"
+   },
+   "clean": {
+    "top1": 0.82,
+    "top3": 0.96
+   }
+  },
+  "umbrella": {
+   "air": {
+    "n": 50,
+    "top1": 0.94,
+    "top3": 0.96,
+    "conf": "house:1, tree:1, violin:1"
+   },
+   "clean": {
+    "top1": 0.94,
+    "top3": 0.96
+   }
+  },
+  "toilet": {
+   "air": {
+    "n": 50,
+    "top1": 0.82,
+    "top3": 0.94,
+    "conf": "chair:2, hammer:1, snowman:1"
+   },
+   "clean": {
+    "top1": 0.86,
+    "top3": 0.96
+   }
+  },
+  "book": {
+   "air": {
+    "n": 50,
+    "top1": 0.92,
+    "top3": 1,
+    "conf": "backpack:2, butterfly:1, cup:1"
+   },
+   "clean": {
+    "top1": 0.92,
+    "top3": 1
+   }
+  },
+  "pencil": {
+   "air": {
+    "n": 50,
+    "top1": 0.86,
+    "top3": 0.96,
+    "conf": "knife:2, mountain:1, cell phone:1"
+   },
+   "clean": {
+    "top1": 0.92,
+    "top3": 0.98
+   }
+  },
+  "cell phone": {
+   "air": {
+    "n": 50,
+    "top1": 0.84,
+    "top3": 0.92,
+    "conf": "owl:4, television:1, backpack:1"
+   },
+   "clean": {
+    "top1": 0.9,
+    "top3": 0.96
+   }
+  },
+  "computer": {
+   "air": {
+    "n": 50,
+    "top1": 0.84,
+    "top3": 0.9,
+    "conf": "sandwich:2, car:2, drums:2"
+   },
+   "clean": {
+    "top1": 0.9,
+    "top3": 0.94
+   }
+  },
+  "television": {
+   "air": {
+    "n": 50,
+    "top1": 0.92,
+    "top3": 0.98,
+    "conf": "computer:3, bench:1"
+   },
+   "clean": {
+    "top1": 0.94,
+    "top3": 1
+   }
+  },
+  "backpack": {
+   "air": {
+    "n": 50,
+    "top1": 0.82,
+    "top3": 0.94,
+    "conf": "sandwich:1, owl:1, house:1"
+   },
+   "clean": {
+    "top1": 0.84,
+    "top3": 0.98
+   }
+  },
+  "suitcase": {
+   "air": {
+    "n": 50,
+    "top1": 0.84,
+    "top3": 0.96,
+    "conf": "pillow:4, cloud:2, bed:1"
+   },
+   "clean": {
+    "top1": 0.98,
+    "top3": 1
+   }
+  },
+  "hammer": {
+   "air": {
+    "n": 50,
+    "top1": 0.9,
+    "top3": 0.98,
+    "conf": "umbrella:1, key:1, tree:1"
+   },
+   "clean": {
+    "top1": 0.88,
+    "top3": 0.96
+   }
+  },
+  "crown": {
+   "air": {
+    "n": 50,
+    "top1": 0.98,
+    "top3": 1,
+    "conf": "castle:1"
+   },
+   "clean": {
+    "top1": 1,
+    "top3": 1
+   }
+  },
+  "diamond": {
+   "air": {
+    "n": 50,
+    "top1": 0.94,
+    "top3": 1,
+    "conf": "tooth:2, house:1"
+   },
+   "clean": {
+    "top1": 0.98,
+    "top3": 1
+   }
+  },
+  "bench": {
+   "air": {
+    "n": 50,
+    "top1": 0.46,
+    "top3": 0.78,
+    "conf": "bed:5, bridge:4, table:4"
+   },
+   "clean": {
+    "top1": 0.62,
+    "top3": 0.94
+   }
+  },
+  "hat": {
+   "air": {
+    "n": 50,
+    "top1": 0.68,
+    "top3": 0.84,
+    "conf": "car:3, snail:2, mountain:1"
+   },
+   "clean": {
+    "top1": 0.82,
+    "top3": 0.92
+   }
+  },
+  "shoe": {
+   "air": {
+    "n": 50,
+    "top1": 0.8,
+    "top3": 0.94,
+    "conf": "foot:2, sock:2, helicopter:1"
+   },
+   "clean": {
+    "top1": 0.82,
+    "top3": 0.98
+   }
+  },
+  "sock": {
+   "air": {
+    "n": 50,
+    "top1": 0.78,
+    "top3": 0.94,
+    "conf": "leg:3, shoe:2, penguin:1"
+   },
+   "clean": {
+    "top1": 0.9,
+    "top3": 0.96
+   }
+  },
+  "t-shirt": {
+   "air": {
+    "n": 50,
+    "top1": 0.62,
+    "top3": 1,
+    "conf": "sweater:19"
+   },
+   "clean": {
+    "top1": 0.7,
+    "top3": 1
+   }
+  },
+  "pants": {
+   "air": {
+    "n": 50,
+    "top1": 0.96,
+    "top3": 1,
+    "conf": "tooth:2"
+   },
+   "clean": {
+    "top1": 1,
+    "top3": 1
+   }
+  },
+  "sweater": {
+   "air": {
+    "n": 50,
+    "top1": 0.98,
+    "top3": 1,
+    "conf": "t-shirt:1"
+   },
+   "clean": {
+    "top1": 1,
+    "top3": 1
+   }
+  },
+  "eyeglasses": {
+   "air": {
+    "n": 50,
+    "top1": 0.92,
+    "top3": 0.94,
+    "conf": "trumpet:1, see saw:1, elephant:1"
+   },
+   "clean": {
+    "top1": 0.94,
+    "top3": 0.94
+   }
+  },
+  "wristwatch": {
+   "air": {
+    "n": 50,
+    "top1": 0.88,
+    "top3": 0.94,
+    "conf": "mouse:1, key:1, sweater:1"
+   },
+   "clean": {
+    "top1": 0.88,
+    "top3": 0.94
+   }
+  },
+  "helmet": {
+   "air": {
+    "n": 50,
+    "top1": 0.76,
+    "top3": 0.86,
+    "conf": "hat:2, wristwatch:2, ice cream:1"
+   },
+   "clean": {
+    "top1": 0.84,
+    "top3": 0.98
+   }
+  },
+  "ear": {
+   "air": {
+    "n": 50,
+    "top1": 0.82,
+    "top3": 0.9,
+    "conf": "light bulb:2, potato:2, moon:1"
+   },
+   "clean": {
+    "top1": 0.8,
+    "top3": 0.94
+   }
+  },
+  "eye": {
+   "air": {
+    "n": 50,
+    "top1": 0.9,
+    "top3": 0.98,
+    "conf": "mouth:1, spider:1, mouse:1"
+   },
+   "clean": {
+    "top1": 0.92,
+    "top3": 0.98
+   }
+  },
+  "nose": {
+   "air": {
+    "n": 50,
+    "top1": 0.68,
+    "top3": 0.86,
+    "conf": "banana:2, leg:2, tent:1"
+   },
+   "clean": {
+    "top1": 0.74,
+    "top3": 0.9
+   }
+  },
+  "mouth": {
+   "air": {
+    "n": 50,
+    "top1": 0.86,
+    "top3": 0.98,
+    "conf": "brain:2, sandwich:1, soccer ball:1"
+   },
+   "clean": {
+    "top1": 0.9,
+    "top3": 0.98
+   }
+  },
+  "hand": {
+   "air": {
+    "n": 50,
+    "top1": 0.88,
+    "top3": 0.96,
+    "conf": "cactus:2, cloud:1, mouse:1"
+   },
+   "clean": {
+    "top1": 0.88,
+    "top3": 0.96
+   }
+  },
+  "foot": {
+   "air": {
+    "n": 50,
+    "top1": 0.74,
+    "top3": 0.98,
+    "conf": "sock:3, shoe:3, leg:3"
+   },
+   "clean": {
+    "top1": 0.8,
+    "top3": 0.98
+   }
+  },
+  "tooth": {
+   "air": {
+    "n": 50,
+    "top1": 0.92,
+    "top3": 0.94,
+    "conf": "soccer ball:1, pants:1, octopus:1"
+   },
+   "clean": {
+    "top1": 0.86,
+    "top3": 1
+   }
+  },
+  "leg": {
+   "air": {
+    "n": 50,
+    "top1": 0.8,
+    "top3": 0.94,
+    "conf": "skyscraper:2, foot:1, mountain:1"
+   },
+   "clean": {
+    "top1": 0.78,
+    "top3": 0.94
+   }
+  },
+  "arm": {
+   "air": {
+    "n": 50,
+    "top1": 0.7,
+    "top3": 0.86,
+    "conf": "crocodile:4, banana:3, snake:2"
+   },
+   "clean": {
+    "top1": 0.78,
+    "top3": 0.84
+   }
+  },
+  "face": {
+   "air": {
+    "n": 50,
+    "top1": 0.82,
+    "top3": 0.96,
+    "conf": "owl:3, pig:1, clock:1"
+   },
+   "clean": {
+    "top1": 0.88,
+    "top3": 0.98
+   }
+  },
+  "brain": {
+   "air": {
+    "n": 50,
+    "top1": 0.66,
+    "top3": 0.9,
+    "conf": "soccer ball:6, hedgehog:3, cloud:2"
+   },
+   "clean": {
+    "top1": 0.7,
+    "top3": 0.92
+   }
+  },
+  "beard": {
+   "air": {
+    "n": 50,
+    "top1": 0.94,
+    "top3": 1,
+    "conf": "frog:1, clock:1, lion:1"
+   },
+   "clean": {
+    "top1": 0.92,
+    "top3": 1
+   }
+  },
+  "sun": {
+   "air": {
+    "n": 50,
+    "top1": 0.82,
+    "top3": 0.9,
+    "conf": "hedgehog:2, spider:2, lion:2"
+   },
+   "clean": {
+    "top1": 0.86,
+    "top3": 0.94
+   }
+  },
+  "moon": {
+   "air": {
+    "n": 50,
+    "top1": 0.64,
+    "top3": 0.88,
+    "conf": "cookie:5, sock:2, soccer ball:2"
+   },
+   "clean": {
+    "top1": 0.64,
+    "top3": 0.9
+   }
+  },
+  "star": {
+   "air": {
+    "n": 50,
+    "top1": 0.92,
+    "top3": 0.98,
+    "conf": "sailboat:1, sun:1, airplane:1"
+   },
+   "clean": {
+    "top1": 0.98,
+    "top3": 0.98
+   }
+  },
+  "cloud": {
+   "air": {
+    "n": 50,
+    "top1": 0.96,
+    "top3": 1,
+    "conf": "camel:1, sheep:1"
+   },
+   "clean": {
+    "top1": 0.94,
+    "top3": 1
+   }
+  },
+  "rain": {
+   "air": {
+    "n": 50,
+    "top1": 0.94,
+    "top3": 0.96,
+    "conf": "ant:1, whale:1, frog:1"
+   },
+   "clean": {
+    "top1": 0.92,
+    "top3": 0.92
+   }
+  },
+  "rainbow": {
+   "air": {
+    "n": 50,
+    "top1": 0.76,
+    "top3": 0.96,
+    "conf": "bridge:6, helmet:2, dolphin:1"
+   },
+   "clean": {
+    "top1": 0.88,
+    "top3": 0.98
+   }
+  },
+  "snowflake": {
+   "air": {
+    "n": 50,
+    "top1": 0.94,
+    "top3": 0.98,
+    "conf": "moon:1, frog:1, tree:1"
+   },
+   "clean": {
+    "top1": 0.92,
+    "top3": 0.98
+   }
+  },
+  "snowman": {
+   "air": {
+    "n": 50,
+    "top1": 0.98,
+    "top3": 1,
+    "conf": "mouse:1"
+   },
+   "clean": {
+    "top1": 0.98,
+    "top3": 1
+   }
+  },
+  "lightning": {
+   "air": {
+    "n": 50,
+    "top1": 0.88,
+    "top3": 0.94,
+    "conf": "stairs:1, hammer:1, leg:1"
+   },
+   "clean": {
+    "top1": 0.92,
+    "top3": 0.96
+   }
+  },
+  "tree": {
+   "air": {
+    "n": 50,
+    "top1": 0.94,
+    "top3": 1,
+    "conf": "owl:1, lightning:1, rain:1"
+   },
+   "clean": {
+    "top1": 0.96,
+    "top3": 1
+   }
+  },
+  "flower": {
+   "air": {
+    "n": 50,
+    "top1": 0.92,
+    "top3": 1,
+    "conf": "tree:2, grapes:1, octopus:1"
+   },
+   "clean": {
+    "top1": 0.96,
+    "top3": 1
+   }
+  },
+  "leaf": {
+   "air": {
+    "n": 50,
+    "top1": 0.88,
+    "top3": 0.92,
+    "conf": "carrot:2, flower:1, leg:1"
+   },
+   "clean": {
+    "top1": 0.86,
+    "top3": 0.94
+   }
+  },
+  "cactus": {
+   "air": {
+    "n": 50,
+    "top1": 0.92,
+    "top3": 0.98,
+    "conf": "hand:2, lighthouse:1, camel:1"
+   },
+   "clean": {
+    "top1": 0.96,
+    "top3": 1
+   }
+  },
+  "mountain": {
+   "air": {
+    "n": 50,
+    "top1": 0.94,
+    "top3": 0.98,
+    "conf": "cactus:1, castle:1, tent:1"
+   },
+   "clean": {
+    "top1": 0.96,
+    "top3": 1
+   }
+  },
+  "house": {
+   "air": {
+    "n": 50,
+    "top1": 0.96,
+    "top3": 1,
+    "conf": "helmet:1, piano:1"
+   },
+   "clean": {
+    "top1": 1,
+    "top3": 1
+   }
+  },
+  "castle": {
+   "air": {
+    "n": 50,
+    "top1": 0.84,
+    "top3": 0.92,
+    "conf": "camel:1, lion:1, hand:1"
+   },
+   "clean": {
+    "top1": 0.88,
+    "top3": 0.92
+   }
+  },
+  "bridge": {
+   "air": {
+    "n": 50,
+    "top1": 0.7,
+    "top3": 0.84,
+    "conf": "tent:2, trumpet:2, bicycle:1"
+   },
+   "clean": {
+    "top1": 0.72,
+    "top3": 0.84
+   }
+  },
+  "lighthouse": {
+   "air": {
+    "n": 50,
+    "top1": 0.9,
+    "top3": 0.9,
+    "conf": "chair:2, pear:1, skyscraper:1"
+   },
+   "clean": {
+    "top1": 0.92,
+    "top3": 0.94
+   }
+  },
+  "tent": {
+   "air": {
+    "n": 50,
+    "top1": 0.9,
+    "top3": 1,
+    "conf": "mountain:2, helmet:1, swing set:1"
+   },
+   "clean": {
+    "top1": 0.94,
+    "top3": 1
+   }
+  },
+  "skyscraper": {
+   "air": {
+    "n": 50,
+    "top1": 0.78,
+    "top3": 0.94,
+    "conf": "door:3, leg:2, mountain:2"
+   },
+   "clean": {
+    "top1": 0.88,
+    "top3": 0.96
+   }
+  },
+  "hospital": {
+   "air": {
+    "n": 50,
+    "top1": 0.7,
+    "top3": 0.9,
+    "conf": "sweater:2, house:2, castle:2"
+   },
+   "clean": {
+    "top1": 0.88,
+    "top3": 0.98
+   }
+  },
+  "stairs": {
+   "air": {
+    "n": 50,
+    "top1": 0.86,
+    "top3": 0.96,
+    "conf": "shoe:1, chair:1, lightning:1"
+   },
+   "clean": {
+    "top1": 0.88,
+    "top3": 0.98
+   }
+  },
+  "traffic light": {
+   "air": {
+    "n": 50,
+    "top1": 0.88,
+    "top3": 0.94,
+    "conf": "cactus:2, mouse:1, bridge:1"
+   },
+   "clean": {
+    "top1": 0.94,
+    "top3": 0.94
+   }
+  },
+  "airplane": {
+   "air": {
+    "n": 50,
+    "top1": 0.86,
+    "top3": 0.98,
+    "conf": "star:2, frog:1, dolphin:1"
+   },
+   "clean": {
+    "top1": 0.94,
+    "top3": 1
+   }
+  },
+  "bicycle": {
+   "air": {
+    "n": 50,
+    "top1": 0.94,
+    "top3": 1,
+    "conf": "motorbike:3"
+   },
+   "clean": {
+    "top1": 0.88,
+    "top3": 0.98
+   }
+  },
+  "bus": {
+   "air": {
+    "n": 50,
+    "top1": 0.86,
+    "top3": 0.98,
+    "conf": "car:6, firetruck:1"
+   },
+   "clean": {
+    "top1": 0.9,
+    "top3": 1
+   }
+  },
+  "car": {
+   "air": {
+    "n": 50,
+    "top1": 0.94,
+    "top3": 1,
+    "conf": "truck:2, elephant:1"
+   },
+   "clean": {
+    "top1": 0.94,
+    "top3": 1
+   }
+  },
+  "helicopter": {
+   "air": {
+    "n": 50,
+    "top1": 0.86,
+    "top3": 0.92,
+    "conf": "whale:2, pineapple:1, soccer ball:1"
+   },
+   "clean": {
+    "top1": 0.92,
+    "top3": 0.98
+   }
+  },
+  "motorbike": {
+   "air": {
+    "n": 50,
+    "top1": 0.76,
+    "top3": 1,
+    "conf": "bicycle:11, car:1"
+   },
+   "clean": {
+    "top1": 0.72,
+    "top3": 1
+   }
+  },
+  "sailboat": {
+   "air": {
+    "n": 50,
+    "top1": 0.88,
+    "top3": 0.96,
+    "conf": "cake:2, mouth:1, apple:1"
+   },
+   "clean": {
+    "top1": 0.92,
+    "top3": 0.98
+   }
+  },
+  "train": {
+   "air": {
+    "n": 50,
+    "top1": 0.7,
+    "top3": 0.9,
+    "conf": "ambulance:3, car:2, cow:1"
+   },
+   "clean": {
+    "top1": 0.68,
+    "top3": 0.86
+   }
+  },
+  "truck": {
+   "air": {
+    "n": 50,
+    "top1": 0.56,
+    "top3": 0.96,
+    "conf": "car:14, train:4, bus:2"
+   },
+   "clean": {
+    "top1": 0.64,
+    "top3": 0.94
+   }
+  },
+  "ambulance": {
+   "air": {
+    "n": 50,
+    "top1": 0.64,
+    "top3": 1,
+    "conf": "car:12, frog:1, submarine:1"
+   },
+   "clean": {
+    "top1": 0.74,
+    "top3": 0.98
+   }
+  },
+  "firetruck": {
+   "air": {
+    "n": 50,
+    "top1": 0.3,
+    "top3": 0.78,
+    "conf": "ambulance:12, car:8, bus:6"
+   },
+   "clean": {
+    "top1": 0.38,
+    "top3": 0.72
+   }
+  },
+  "submarine": {
+   "air": {
+    "n": 50,
+    "top1": 0.84,
+    "top3": 0.92,
+    "conf": "whale:2, sailboat:2, snowman:1"
+   },
+   "clean": {
+    "top1": 0.9,
+    "top3": 0.96
+   }
+  },
+  "hot air balloon": {
+   "air": {
+    "n": 50,
+    "top1": 0.84,
+    "top3": 1,
+    "conf": "light bulb:5, cactus:1, helmet:1"
+   },
+   "clean": {
+    "top1": 0.8,
+    "top3": 1
+   }
+  },
+  "soccer ball": {
+   "air": {
+    "n": 50,
+    "top1": 0.92,
+    "top3": 0.98,
+    "conf": "pizza:2, cookie:1, nose:1"
+   },
+   "clean": {
+    "top1": 0.94,
+    "top3": 0.98
+   }
+  },
+  "guitar": {
+   "air": {
+    "n": 50,
+    "top1": 0.86,
+    "top3": 0.98,
+    "conf": "violin:5, trumpet:1, grapes:1"
+   },
+   "clean": {
+    "top1": 0.84,
+    "top3": 1
+   }
+  },
+  "piano": {
+   "air": {
+    "n": 50,
+    "top1": 0.7,
+    "top3": 0.88,
+    "conf": "bus:3, bridge:3, bench:2"
+   },
+   "clean": {
+    "top1": 0.76,
+    "top3": 0.94
+   }
+  },
+  "drums": {
+   "air": {
+    "n": 50,
+    "top1": 0.74,
+    "top3": 0.92,
+    "conf": "ant:4, cactus:1, motorbike:1"
+   },
+   "clean": {
+    "top1": 0.82,
+    "top3": 0.9
+   }
+  },
+  "violin": {
+   "air": {
+    "n": 50,
+    "top1": 0.62,
+    "top3": 0.94,
+    "conf": "guitar:15, grapes:1, scissors:1"
+   },
+   "clean": {
+    "top1": 0.66,
+    "top3": 0.94
+   }
+  },
+  "trumpet": {
+   "air": {
+    "n": 50,
+    "top1": 0.82,
+    "top3": 0.92,
+    "conf": "key:3, eyeglasses:1, submarine:1"
+   },
+   "clean": {
+    "top1": 0.86,
+    "top3": 0.98
+   }
+  },
+  "swing set": {
+   "air": {
+    "n": 50,
+    "top1": 0.94,
+    "top3": 0.98,
+    "conf": "mountain:1, computer:1, tent:1"
+   },
+   "clean": {
+    "top1": 0.96,
+    "top3": 0.98
+   }
+  },
+  "see saw": {
+   "air": {
+    "n": 50,
+    "top1": 0.88,
+    "top3": 0.94,
+    "conf": "key:2, bridge:1, swing set:1"
+   },
+   "clean": {
+    "top1": 0.92,
+    "top3": 0.98
+   }
+  },
+  "teddy-bear": {
+   "air": {
+    "n": 50,
+    "top1": 0.78,
+    "top3": 0.9,
+    "conf": "monkey:3, rabbit:1, owl:1"
+   },
+   "clean": {
+    "top1": 0.74,
+    "top3": 0.9
+   }
+  }
+ },
+ "synonyms": {
+  "cup": [
+   "mug",
+   "coffee_cup"
+  ],
+  "car": [
+   "police_car",
+   "van"
+  ],
+  "bus": [
+   "school_bus"
+  ],
+  "clock": [
+   "alarm_clock"
+  ],
+  "violin": [
+   "cello"
+  ],
+  "cake": [
+   "birthday_cake"
+  ],
+  "truck": [
+   "pickup_truck"
+  ],
+  "sailboat": [
+   "speedboat"
+  ],
+  "house": [
+   "barn"
+  ],
+  "computer": [
+   "laptop"
+  ],
+  "tree": [
+   "palm_tree"
+  ],
+  "face": [
+   "smiley_face"
+  ]
+ },
+ "ms": 300336
+}
