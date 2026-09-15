@@ -1,0 +1,44 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Kalemo – lesbare Beispiele („So malen andere")</title>
+<pre id="log">lädt …</pre>
+<script type="module">
+// Iteration 1 (Review P3-5): „So malen andere" nach LESBARKEIT kuratieren statt „wenige Striche".
+// Bisher (accuracy.html): höchste Konfidenz − Strafpunkte je Strich → minimalistische Kürzel (Fahrrad = 2 Kreise).
+// Jetzt: aus dem getrennten pool-Satz (40 erkannte Zeichnungen/Wort) nur Top-1-Treffer mit p ≥ 0,5, die auch mit
+// Luft-Zittern Top-3 bleiben (kanonische Form); Score = p × Detail (Striche 3–14, Tintenlänge) − Kritzel-Strafe.
+// Ausgabe nur data/examples.json — others.json (Demo-Modus, Test-Szenen) und die Test-Fixtures bleiben unverändert.
+import { createClassifier, buildMask, rankMasked } from '../js/core/classifier.js';
+import { toInput, jitter, makeRng, inkLength, bbox } from '../js/core/raster.js';
+
+const log = (m) => { document.getElementById('log').textContent += '\n' + m; };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+window.runExamples = async function () {
+  const words = await (await fetch('../data/words.json')).json();
+  const qd = await (await fetch('data/quickdraw.json')).json();
+  const clf = await createClassifier({ base: '../', words });
+  const mask = buildMask(clf.classNames, words);
+  const out = {}, stats = {};
+  for (const w of words) {
+    const cands = (qd[w.id]?.pool || []).filter((d) => d.length && d.some((s) => s[0].length > 1));
+    if (!cands.length) continue;
+    const probs = await clf.predictBatch(cands.map((d) => toInput(d)));
+    const air = await clf.predictBatch(cands.map((d, i) => toInput(jitter(d, 2, makeRng(311 + i)))));
+    const scored = cands.map((d, i) => {
+      const r = rankMasked(probs[i], mask), ra = rankMasked(air[i], mask);
+      const p = r.find((x) => x.id === w.id).p, n = d.length, L = inkLength(d), b = bbox(d);
+      const aspect = Math.max(b.w, b.h) / Math.max(1, Math.min(b.w, b.h));
+      const detail = clamp((n - 1) / 4, 0.3, 1) * clamp(L / 700, 0.35, 1);
+      const messy = (n > 14 ? (n - 14) * 0.05 : 0) + (L > 2600 ? (L - 2600) / 4000 : 0) + (aspect > 4 ? 0.2 : 0);
+      return { d, p, n, L: Math.round(L), top1: r[0].id === w.id, airTop3: ra.slice(0, 3).some((x) => x.id === w.id), score: p * detail - messy };
+    });
+    let ok = scored.filter((s) => s.top1 && s.airTop3 && s.p >= 0.5);
+    if (ok.length < 3) ok = scored.filter((s) => s.top1).length >= 3 ? scored.filter((s) => s.top1) : scored;
+    ok.sort((a, b) => b.score - a.score);
+    out[w.id] = ok.slice(0, 3).map((s) => ({ p: +s.p.toFixed(3), strokes: s.d }));
+    stats[w.id] = ok.slice(0, 3).map((s) => `${s.n}S/${s.L}L/p${s.p.toFixed(2)}`).join(' ');
+  }
+  log('fertig ' + Object.keys(out).length);
+  return { out, stats, backend: clf.backend };
+};
+</script>

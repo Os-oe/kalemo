@@ -36,6 +36,8 @@ export const app = window.__kalemo = {
   dateOverride: null, log: [],
   today() { return this.dateOverride || berlinDate(); },
   async others() { return (this._others ||= fetch('data/others.json').then((r) => r.json())); },
+  /** „So malen andere" — nach Lesbarkeit kuratiert (Review P3-5, tools/examples.py); others.json bleibt für Demo/Szenen */
+  async examples() { return (this._examples ||= fetch('data/examples.json').then((r) => (r.ok ? r.json() : this.others())).catch(() => this.others())); },
 };
 
 // ---------- UI-Helfer ----------

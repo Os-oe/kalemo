@@ -62,7 +62,7 @@ export function installDict(app) {
     box.hidden = false;
     const col = learn === 'de' ? ART_TEXT[w.de.art] : '#1E2A3A';
     mount(box.querySelector('canvas.big'), { strokes: e.strokes, color: col, style: 'pencil', width: 3.6, motion: { kind: w.motion, id: w.id } });
-    const others = (await app.others())[w.id] || [];
+    const others = (await app.examples())[w.id] || [];
     const oBox = box.querySelector('.others');
     oBox.innerHTML = others.slice(0, 3).map(() => '<canvas></canvas>').join('');
     oBox.querySelectorAll('canvas').forEach((c, i) => mount(c, { strokes: others[i].strokes, color: '#6B7280', style: 'pencil', width: 2.4, replay: 2.4 + i * 0.4, delay: i * 500, boil: 0.6, still: true, seed: i + 7 }));

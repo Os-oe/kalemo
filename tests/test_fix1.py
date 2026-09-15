@@ -760,5 +760,22 @@ with server() as base, sync_playwright() as p:
     if section('p3_14'):
         S.run('P3-14 FPS-Wächter', p3_14)
 
+    # ---------- P3-15 Tensor-Warnung · P3-5 lesbare Beispiele ----------
+    def p3_15_5():
+        c = b.new_context(viewport={'width': 1280, 'height': 800}); pg = c.new_page(); cons = []; reqs = []
+        pg.on('console', lambda m: cons.append(m.text) if m.type in ('warning', 'error') else None)
+        pg.on('request', lambda r: reqs.append(r.url))
+        pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000); pg.wait_for_timeout(500)
+        S.check('P3-15: keine Tensor-Shape-Warnung beim Laden der Mal-KI', not any('shape of the input tensor' in x for x in cons), [x[:90] for x in cons][:3])
+        ex = json.load(open(os.path.join(ROOT, 'data/examples.json'))); old = json.load(open(os.path.join(ROOT, 'data/others.json')))
+        per = lambda lst: sum(len(d['strokes']) for d in lst) / max(1, len(lst))
+        S.check('P3-5: 3 lesbare Beispiele je Wort (148), erkannt mit p ≥ 0,5', len(ex) == len(WORDS) and all(len(v) == 3 and all(d['p'] >= 0.5 for d in v) for v in ex.values()), [k for k, v in ex.items() if len(v) < 3][:5])
+        S.check('P3-5: Fahrrad-Beispiele detailreicher als vorher (Striche je Zeichnung)', per(ex['bicycle']) > per(old['bicycle']) + 2 and min(len(d['strokes']) for d in ex['bicycle']) >= 5, (per(old['bicycle']), per(ex['bicycle'])))
+        pg.goto(base + '/?test=1&scene=help'); pg.wait_for_selector('#round-overlay .card.help .others canvas', timeout=15000)
+        S.check('Hilfe-Karte + Zeit-um-Karte + Wörterbuch nutzen data/examples.json', any(u.endswith('/data/examples.json') for u in reqs))
+        c.close()
+    if section('p3_15_5'):
+        S.run('P3-15/P3-5', p3_15_5)
+
     b.close()
 S.finish()

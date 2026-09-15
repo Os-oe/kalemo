@@ -230,7 +230,7 @@ export class RoundController {
   }
 
   async _fillOthers(w, box, { replay = false } = {}) {
-    const others = await this.app.others();
+    const others = await this.app.examples();
     const list = (others[w.id] || []).slice(0, 3);
     box.innerHTML = list.map(() => '<canvas width="160" height="160"></canvas>').join('');
     [...box.querySelectorAll('canvas')].forEach((c, i) => {
