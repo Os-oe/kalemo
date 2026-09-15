@@ -123,8 +123,11 @@ export class Stage {
     const path = () => { ctx.beginPath(); ctx.moveTo(xs[0], ys[0]); if (n === 1) ctx.lineTo(xs[0] + 0.1, ys[0]); for (let i = 1; i < n; i++) { const mx = (xs[i - 1] + xs[i]) / 2, my = (ys[i - 1] + ys[i]) / 2; ctx.quadraticCurveTo(xs[i - 1], ys[i - 1], mx, my); } ctx.lineTo(xs[n - 1], ys[n - 1]); };
     // Halo: zwei weiche Schichten statt eines harten Bandes
     ctx.globalCompositeOperation = 'lighter';
-    ctx.shadowColor = rgba(color, 0.9); ctx.shadowBlur = avg * 4.5; ctx.strokeStyle = rgba(color, 0.07); ctx.lineWidth = avg * 3.8; path(); ctx.stroke();
-    ctx.shadowBlur = avg * 1.8; ctx.strokeStyle = rgba(color, 0.16); ctx.lineWidth = avg * 2.1; path(); ctx.stroke();
+    if (this.lowPower) { ctx.strokeStyle = rgba(color, 0.14); ctx.lineWidth = avg * 3.2; path(); ctx.stroke(); } // FPS-Wächter: ohne teure Unschärfe
+    else {
+      ctx.shadowColor = rgba(color, 0.9); ctx.shadowBlur = avg * 4.5; ctx.strokeStyle = rgba(color, 0.07); ctx.lineWidth = avg * 3.8; path(); ctx.stroke();
+      ctx.shadowBlur = avg * 1.8; ctx.strokeStyle = rgba(color, 0.16); ctx.lineWidth = avg * 2.1; path(); ctx.stroke();
+    }
     ctx.shadowBlur = 0; ctx.globalCompositeOperation = 'source-over';
     // Farbsaum + Kern mit variabler Breite
     for (const [col, k] of [[color, 1.25], ['#FFFBEF', 0.45]]) {
@@ -205,7 +208,7 @@ export class Stage {
     }
     ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalCompositeOperation = 'lighter';
     const t = now / 1000;
-    if (!reduce) { // wandernder Lichtschein über dem Nachtpapier
+    if (!reduce && !this.lowPower) { // wandernder Lichtschein über dem Nachtpapier
       const bx = this.w * (0.5 + 0.42 * Math.sin(t * 0.21)), by = this.h * (0.45 + 0.3 * Math.cos(t * 0.17)), R = Math.max(this.w, this.h) * 0.45;
       const g = ctx.createRadialGradient(bx, by, 0, bx, by, R); g.addColorStop(0, 'rgba(170,196,255,0.07)'); g.addColorStop(1, 'rgba(170,196,255,0)');
       ctx.fillStyle = g; ctx.fillRect(0, 0, this.w, this.h);

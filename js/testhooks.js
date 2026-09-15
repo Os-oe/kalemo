@@ -115,6 +115,7 @@ export function install(app) {
   window.__choose = (k) => { app.hooks.choose?.(k); return true; };
   window.__mode = (m) => { if (m === 'air') return window.__enableAir(); app.setMode(m === 'airsim' ? 'air' : m); return app.mode; };
   window.__settings = (patch) => { Object.assign(app.settings, patch); localStorage.setItem('kalemo.settings', JSON.stringify(app.settings)); app.applyTexts?.(); return app.settings; };
+  window.__fpsSample = async (fps) => { await app.hooks.fpsSample?.(fps); return { backend: app.clf?.backend, lowPower: !!app.lowPower, log: app.log.filter((x) => x.startsWith('fps-guard')) }; };
   window.__answer = (id, o) => { app.hooks.answer?.(id, o); return true; };
   window.__pairGo = () => { app.hooks.pairGo?.(); return true; };
   window.__home = () => { app.goHome(); return true; };

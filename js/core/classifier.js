@@ -91,7 +91,12 @@ export async function createClassifier({ base = '', words, backend } = {}) {
     return res;
   }
   return {
-    backend: tf.getBackend(),
+    get backend() { return tf.getBackend(); },
+    /** FPS-Wächter (Review P3-14): bei zu wenig Bildern pro Sekunde auf das CPU-Backend wechseln (Gewichte ziehen einmalig um) */
+    async useCpu() {
+      if (tf.getBackend() === 'cpu') return false;
+      try { await tf.setBackend('cpu'); await tf.ready(); tf.tidy(() => model.predict(tf.zeros([1, 28, 28, 1]))); return true; } catch { return false; }
+    },
     classNames,
     get mask() { return mask; },
     setWords(ws) { mask = buildMask(classNames, ws); },

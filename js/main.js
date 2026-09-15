@@ -102,6 +102,36 @@ function renderTodayTile(sum) {
   app.todaySummary = sum;
 }
 
+/**
+ * FPS-Wächter (Review P3-14): misst im Hintergrund die Bildrate (Start/Runde). Liegt sie 2 s lang unter 30 fps
+ * (Software-WebGL, geblocklistete GPU, VM), wechselt die Mal-KI auf das CPU-Backend und die Bühne spart teure
+ * Leucht-Unschärfe. Einmalig, kein Rückweg nötig.
+ */
+app.fpsGuard = () => {
+  if (app._fpsGuard) return; app._fpsGuard = { samples: [], switched: false };
+  const g = app._fpsGuard; let last = performance.now(), winStart = last, frames = 0;
+  const apply = async (fps) => {
+    g.lastFps = fps;
+    if (g.switched || fps >= 30) { g.lowSince = null; return; }
+    g.lowSince ??= performance.now();
+    if (g.samples.length >= 2 && g.samples.slice(-2).every((f) => f < 30)) {
+      g.switched = true; app.lowPower = true; document.body.classList.add('lowpower'); if (app.stage) app.stage.lowPower = true;
+      const ok = await app.clf?.useCpu?.(); app.log.push(`fps-guard ${fps} fps → ${ok ? 'cpu' : 'unverändert'}`);
+    }
+  };
+  app.hooks.fpsSample = (fps) => { g.samples.push(fps); return apply(fps); };
+  const warmUntil = performance.now() + 1500; // Lade-Ruckler direkt nach dem Modellstart nicht werten
+  const tick = (now) => {
+    if (g.switched) return;
+    requestAnimationFrame(tick);
+    if (now < warmUntil || document.hidden || (app.screen !== 'round' && app.screen !== 'start')) { last = winStart = now; frames = 0; return; }
+    frames++; if (now - last > 1000) { winStart = now; frames = 0; } // Tab-Wechsel/Pausen nicht mitzählen (echte Ruckler schon)
+    last = now;
+    if (now - winStart >= 1000) { const fps = Math.round((frames * 1000) / (now - winStart)); winStart = now; frames = 0; g.samples.push(fps); if (g.samples.length > 10) g.samples.shift(); apply(fps); }
+  };
+  requestAnimationFrame(tick);
+};
+
 app.hooks = {};
 
 app.goHome = () => {

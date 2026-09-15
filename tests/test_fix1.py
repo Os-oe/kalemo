@@ -728,5 +728,37 @@ with server() as base, sync_playwright() as p:
     if section('p3_13'):
         S.run('P3-13 Leichter Start', p3_13)
 
+    # ---------- P3-14: FPS-Wächter → CPU-Backend + sparsame Bühne ----------
+    def p3_14():
+        bw = p.chromium.launch(headless=True, args=['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'])  # Software-WebGL wie im Review
+        # (a) normale Bildrate: kein Fehlalarm
+        cn = b.new_context(viewport={'width': 1280, 'height': 800}); pn = cn.new_page()
+        pn.goto(base + '/?test=1'); wait_state(pn, 's.clfReady', 60000); pn.wait_for_timeout(3500)
+        normal = pn.evaluate('() => ({ low: !!window.__kalemo.lowPower, fps: window.__kalemo._fpsGuard && window.__kalemo._fpsGuard.lastFps, log: window.__kalemo.log.filter(x => x.startsWith("fps-guard")) })')
+        S.check('Normale Bildrate: Wächter misst ≥ 30 fps, kein Wechsel', not normal['low'] and (normal['fps'] or 0) >= 30 and not normal['log'], normal)
+        cn.close()
+        # (b) Software-WebGL (SwiftShader) wie im Review
+        c = bw.new_context(viewport={'width': 1280, 'height': 800}); pg = c.new_page(); errs = []
+        pg.on('pageerror', lambda e: errs.append(str(e)))
+        pg.goto(base + '/?test=1&backend=webgl'); wait_state(pg, 's.clfReady', 60000)
+        b0 = pg.evaluate('() => window.__state().backend')
+        pg.wait_for_timeout(5000)
+        real = pg.evaluate('() => ({ backend: window.__kalemo.clf.backend, low: !!window.__kalemo.lowPower, samples: window.__kalemo._fpsGuard && window.__kalemo._fpsGuard.samples })')
+        if real['low']:
+            S.check(f'Software-WebGL real gemessen ({real["samples"]} fps) → Wächter wechselt selbst auf CPU + sparsame Bühne', b0 == 'webgl' and real['backend'] == 'cpu', real)
+        else:
+            one = pg.evaluate('() => window.__fpsSample(24)')
+            two = pg.evaluate('() => window.__fpsSample(13)')
+            S.check(f'2 Messfenster < 30 fps (injiziert; real {real["samples"]}) → WebGL → CPU-Backend + sparsame Bühne', b0 == 'webgl' and one['backend'] == 'webgl' and not one['lowPower'] and two['backend'] == 'cpu' and two['lowPower'] and 'cpu' in ' '.join(two['log']), (one, two))
+        pg.evaluate('() => window.__settings({native: "de", learn: "tr", airOffered: true, chosenPair: true})')
+        pg.evaluate('() => window.__setDate("2026-10-09")')
+        plan, _ = play_daily(pg, 'tr', stop_before=1)
+        st = pg.evaluate('() => window.__state()')
+        S.check('Nach dem Wechsel erkennt die Mal-KI weiter (Treffer auf CPU)', st['lastResult']['result'] == 'hit' and st['backend'] == 'cpu', (st['lastResult']['result'], st['backend']))
+        S.check('P3-14: keine Seitenfehler', not errs, errs[:2])
+        c.close(); bw.close()
+    if section('p3_14'):
+        S.run('P3-14 FPS-Wächter', p3_14)
+
     b.close()
 S.finish()
