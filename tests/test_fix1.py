@@ -526,5 +526,20 @@ with server() as base, sync_playwright() as p:
     if section('p2_8'):
         S.run('P2-8 Attract-Loop', p2_8)
 
+    # ---------- P2-9: Start-Layout skaliert mit der Höhe ----------
+    def p2_9():
+        for vw, vh, mob in ((1366, 657, False), (1280, 720, False), (1366, 768, False), (1440, 900, False), (390, 844, True), (360, 640, True)):
+            c = b.new_context(viewport={'width': vw, 'height': vh}, is_mobile=mob, has_touch=mob, locale='de-DE'); pg = c.new_page()
+            pg.goto(base + '/?test=1'); pg.wait_for_function('() => window.__kalemo && window.__kalemo.ready', timeout=60000); pg.wait_for_timeout(300)
+            m = pg.evaluate('''() => { const r = (s) => { const b = document.querySelector(s).getBoundingClientRect(); return [Math.round(b.top), Math.round(b.bottom), Math.round(b.height)]; };
+              return { daily: r('#btn-daily'), pair: r('#pair'), attract: r('.attract'), ih: innerHeight, scroll: document.querySelector('#screen-start').scrollTop }; }''')
+            first_view = m['daily'][1] <= m['ih'] and m['pair'][0] >= 0 and m['pair'][1] <= m['ih']
+            cap = m['attract'][2] <= 0.455 * m['ih'] + 1
+            need = not (vw == 360 and vh == 640)  # sehr kleines Handy: Knopf darf knapp unter der Kante liegen, Sprachwahl nicht
+            S.check(f'{vw}×{vh}: Hauptknopf + Sprachwahl im ersten Bild (Bounding-Box), Demo-Karte ≤ 45vh', (first_view or (not need and m['pair'][1] <= m['ih'])) and cap, m)
+            c.close()
+    if section('p2_9'):
+        S.run('P2-9 Höhe', p2_9)
+
     b.close()
 S.finish()

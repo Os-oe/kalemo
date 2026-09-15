@@ -47,7 +47,13 @@ button { font: inherit; color: inherit; }
 .paper { box-shadow: inset 18px 0 30px -18px rgba(30,42,58,.22), inset -6px 0 14px -10px rgba(30,42,58,.12); }
 @media (min-width: 900px) { .start-wrap { max-width: 620px; } }
 .tagline { font-family: var(--hand); font-size: 1.7rem; margin: 0; text-align: center; min-height: 2.2rem; }
-.attract { position: relative; aspect-ratio: 4 / 3; border-radius: var(--r); background: var(--night); overflow: hidden; box-shadow: var(--shadow); }
+/* Review P2-9: Demo-Karte skaliert mit der Höhe (max. 45vh), Hauptknopf + Sprachwahl im ersten Bild auch bei 1366×657 */
+.attract { position: relative; aspect-ratio: 4 / 3; width: min(100%, calc(45vh * 4 / 3)); margin-inline: auto; border-radius: var(--r); background: var(--night); overflow: hidden; box-shadow: var(--shadow); }
+@media (max-height: 800px) and (min-width: 520px) {
+  .start-wrap { gap: 10px; padding-top: calc(10px + var(--safe-t)); }
+  .logo { font-size: min(5rem, 10.5vh); }
+  .tagline { font-size: 1.45rem; min-height: 1.9rem; }
+}
 .attract canvas { width: 100%; height: 100%; display: block; }
 .attract-bubble { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); background: #FFFDF7; border-radius: 16px; padding: 4px 16px 6px; font-family: var(--hand); font-weight: 700; font-size: clamp(1.3rem, 5vw, 1.7rem); white-space: nowrap; opacity: 0; transition: opacity .25s; box-shadow: 0 6px 20px rgba(0,0,0,.3); }
 .attract-bubble.pop { animation: pop .32s cubic-bezier(.3,1.6,.5,1); }
