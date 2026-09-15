@@ -50,7 +50,7 @@
   "echt": null,
   "amb": {
    "en": {
-    "de": "„bat\" heißt auch Schläger (Baseball, Cricket).",
+    "de": "„bat“ heißt auch Schläger (Baseball, Cricket).",
     "en": "“bat” can also mean a cricket or baseball bat.",
     "tr": "“bat” aynı zamanda beyzbol ya da kriket sopası demek."
    }
@@ -560,17 +560,17 @@
   "echt": null,
   "amb": {
    "de": {
-    "de": "„Maus\" heißt auch Computermaus.",
+    "de": "„Maus“ heißt auch Computermaus.",
     "en": "German “Maus” also means a computer mouse.",
     "tr": "Almanca “Maus” bilgisayar faresi anlamına da gelir."
    },
    "en": {
-    "de": "„mouse\" heißt auch Computermaus.",
+    "de": "„mouse“ heißt auch Computermaus.",
     "en": "“mouse” can also mean a computer mouse.",
     "tr": "“mouse” aynı zamanda bilgisayar faresi demek."
    },
    "tr": {
-    "de": "„fare\" heißt auch Computermaus.",
+    "de": "„fare“ heißt auch Computermaus.",
     "en": "Turkish “fare” also means a computer mouse.",
     "tr": "“fare” bilgisayar faresi anlamına da gelir."
    }
@@ -700,7 +700,13 @@
   "ambiguous": false,
   "hint": "Kinder sagen oft „der Hase\"",
   "weak": false,
-  "echt": null
+  "echt": null,
+  "amb": {
+   "de": {
+    "en": "“Kaninchen” and “Hase” (hare) look alike, but they are different animals.",
+    "tr": "“Kaninchen” (tavşan) ile “Hase” (yaban tavşanı) benzer ama farklı hayvanlar."
+   }
+  }
  },
  {
   "id": "shark",
@@ -803,7 +809,7 @@
   "echt": null,
   "amb": {
    "de": {
-    "de": "„Schlange\" heißt auch Warteschlange.",
+    "de": "„Schlange“ heißt auch Warteschlange.",
     "en": "German “Schlange” also means a queue.",
     "tr": "Almanca “Schlange” kuyruk (sıra) anlamına da gelir."
    }
@@ -1110,7 +1116,7 @@
   "echt": null,
   "amb": {
    "de": {
-    "de": "„Birne\" heißt auch Glühbirne.",
+    "de": "„Birne“ heißt auch Glühbirne.",
     "en": "German “Birne” also means a light bulb.",
     "tr": "Almanca “Birne” ampul anlamına da gelir."
    }
@@ -1268,7 +1274,7 @@
   "echt": "cake",
   "amb": {
    "tr": {
-    "de": "„pasta\" heißt Torte — nicht Nudeln!",
+    "de": "„pasta“ heißt Torte — nicht Nudeln!",
     "en": "Turkish “pasta” means cake — not noodles!",
     "tr": "“pasta” tatlı pasta demek, makarna değil."
    }
@@ -1350,7 +1356,7 @@
   "echt": null,
   "amb": {
    "de": {
-    "de": "„Eis\" ist auch gefrorenes Wasser.",
+    "de": "„Eis“ ist auch gefrorenes Wasser.",
     "en": "German “Eis” also means ice.",
     "tr": "Almanca “Eis” buz anlamına da gelir."
    }
@@ -1533,9 +1539,13 @@
   "echt": "clock",
   "amb": {
    "tr": {
-    "de": "„saat\" heißt auch Stunde und Armbanduhr.",
-    "en": "Turkish “saat” also means hour and watch.",
+    "de": "„saat“ heißt auch Stunde und Armbanduhr.",
+    "en": "Turkish “saat” also means ‘hour’ and ‘watch’.",
     "tr": "“saat” aynı zamanda zaman birimi ve kol saati demek."
+   },
+   "de": {
+    "en": "German “Uhr” also means a watch — and the time (“3 Uhr”).",
+    "tr": "Almanca “Uhr” kol saati ve saat (“3 Uhr”) anlamına da gelir."
    }
   }
  },
@@ -1562,7 +1572,12 @@
   "ambiguous": false,
   "hint": null,
   "weak": false,
-  "echt": null
+  "echt": null,
+  "amb": {
+   "tr": {
+    "en": "Turkish “mum” means candle — nothing to do with your mum!"
+   }
+  }
  },
  {
   "id": "cup",
@@ -1765,8 +1780,8 @@
   "echt": null,
   "amb": {
    "tr": {
-    "de": "„ampul\" heißt auch Ampulle.",
-    "en": "Turkish “ampul” also means an ampoule.",
+    "de": "„ampul“ heißt auch: kleines Glasröhrchen für Medizin.",
+    "en": "Turkish “ampul” also means a small glass tube for medicine.",
     "tr": "“ampul” aynı zamanda ilaç ampulü demek."
    }
   }
@@ -1969,7 +1984,12 @@
   "ambiguous": false,
   "hint": "echt (cell phone)",
   "weak": false,
-  "echt": "cell phone"
+  "echt": "cell phone",
+  "amb": {
+   "de": {
+    "en": "German “Handy” means mobile phone — not ‘handy’ (useful)."
+   }
+  }
  },
  {
   "id": "computer",
@@ -2173,9 +2193,13 @@
   "echt": null,
   "amb": {
    "de": {
-    "de": "„Bank\" heißt auch Geldinstitut (Mehrzahl dann „Banken\").",
+    "de": "„Bank“ heißt auch Geldinstitut (Mehrzahl dann „Banken“).",
     "en": "German “Bank” also means a bank for money (plural “Banken”).",
-    "tr": "Almanca “Bank” para bankası anlamına da gelir (çoğulu “Banken”)."
+    "tr": "Almanca “Bank” aynı zamanda banka demek (çoğulu “Banken”)."
+   },
+   "tr": {
+    "en": "Turkish “bank” means bench — a bank for money is “banka”.",
+    "de": "„bank“ heißt auf Türkisch Sitzbank — die Bank für Geld heißt „banka“."
    }
   }
  },
@@ -2305,7 +2329,7 @@
   "echt": null,
   "amb": {
    "en": {
-    "de": "„pants\" heißt in den USA Hose, in Großbritannien Unterhose — darum „trousers\".",
+    "de": "„pants“ heißt in den USA Hose, in Großbritannien Unterhose — darum „trousers“.",
     "en": "We use “trousers”: in British English “pants” means underwear.",
     "tr": "“trousers” kullanıyoruz: İngiliz İngilizcesinde “pants” iç çamaşırı demek."
    }
@@ -2359,7 +2383,13 @@
   "ambiguous": false,
   "hint": null,
   "weak": false,
-  "echt": null
+  "echt": null,
+  "amb": {
+   "en": {
+    "de": "„glasses“ heißt auch Trinkgläser.",
+    "tr": "“glasses” içme bardakları anlamına da gelir."
+   }
+  }
  },
  {
   "id": "wristwatch",
@@ -2663,7 +2693,7 @@
   "echt": null,
   "amb": {
    "tr": {
-    "de": "„yüz\" heißt auch hundert.",
+    "de": "„yüz“ heißt auch hundert.",
     "en": "Turkish “yüz” also means one hundred.",
     "tr": "“yüz” aynı zamanda sayı olarak yüz demek."
    }
@@ -2771,8 +2801,8 @@
   "echt": null,
   "amb": {
    "tr": {
-    "de": "„ay\" heißt auch Monat.",
-    "en": "Turkish “ay” also means month.",
+    "de": "„ay“ heißt auch Monat.",
+    "en": "Turkish “ay” also means ‘month’.",
     "tr": "“ay” aynı zamanda takvimdeki ay demek."
    }
   }
@@ -3031,7 +3061,7 @@
   "echt": null,
   "amb": {
    "de": {
-    "de": "„Blatt\" heißt auch ein Blatt Papier.",
+    "de": "„Blatt“ heißt auch ein Blatt Papier.",
     "en": "German “Blatt” also means a sheet of paper.",
     "tr": "Almanca “Blatt” kâğıt yaprağı anlamına da gelir."
    }
@@ -3138,13 +3168,13 @@
   "echt": null,
   "amb": {
    "de": {
-    "de": "„Burg\" ist nah an „Schloss\" — beides kann gemeint sein.",
-    "en": "German “Burg” is close to “Schloss” (palace).",
-    "tr": "Almanca “Burg” “Schloss” (saray) kelimesine yakın."
+    "de": "„Burg“ ist nah an „Schloss“ — beides kann gemeint sein.",
+    "en": "German has two words: a “Burg” is a fortified castle, a “Schloss” is more like a palace.",
+    "tr": "Almancada “Burg” (kale) ile “Schloss” (şato, saray) birbirine benzer."
    },
    "tr": {
-    "de": "„kale\" heißt auch Fußballtor.",
-    "en": "Turkish “kale” also means a football goal.",
+    "de": "„kale“ heißt auch Fußballtor.",
+    "en": "Turkish “kale” also means a football goal — and it’s not the vegetable kale!",
     "tr": "“kale” futbolda kale anlamına da gelir."
    }
   }
@@ -3300,8 +3330,8 @@
   "echt": null,
   "amb": {
    "tr": {
-    "de": "„merdiven\" heißt auch Leiter.",
-    "en": "Turkish “merdiven” also means ladder.",
+    "de": "„merdiven“ heißt auch Leiter.",
+    "en": "Turkish “merdiven” also means ‘ladder’.",
     "tr": "“merdiven” aynı zamanda el merdiveni demek."
    }
   }

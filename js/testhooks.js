@@ -91,7 +91,11 @@ export function install(app) {
     return { trace, strokes: st.allStrokes().map((s) => ({ n: s[0].length, t0: Math.round(s[2][0]), t1: Math.round(s[2][s[2].length - 1]) })), active: !!st.active };
   };
   window.__enableAir = async (opts = {}) => { const ok = await app.enterAir({ handCheck: false, ...opts }); return ok; };
-  window.__airStats = () => app.air ? { state: app.air.state, delegate: app.air.delegate, frames: app.air.frames, handFrames: app.air.handFrames, poseFrames: app.air.poseFrames, fps: app.air.fps, camera: app.air.cameraOn } : null;
+  window.__airStats = () => {
+    if (!app.air) return null;
+    const g = [...(app.air.gaps || [])].sort((a, b) => a - b); const q = (p) => (g.length ? +g[Math.min(g.length - 1, Math.floor(g.length * p))].toFixed(1) : null);
+    return { state: app.air.state, delegate: app.air.delegate, frames: app.air.frames, handFrames: app.air.handFrames, poseFrames: app.air.poseFrames, fps: app.air.fps, camera: app.air.cameraOn, gapMedian: q(0.5), gapP90: q(0.9), gapN: g.length, stageW: app.stage.w };
+  };
   window.__chooseArticle = (a) => { app.hooks.chooseArticle?.(a); return true; };
   window.__choose = (k) => { app.hooks.choose?.(k); return true; };
   window.__mode = (m) => { if (m === 'air') return window.__enableAir(); app.setMode(m === 'airsim' ? 'air' : m); return app.mode; };

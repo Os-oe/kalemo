@@ -144,6 +144,11 @@ export class Air {
     if (this.listeners.article) { const a = this.counter.update(lm, t); out.article = a; this.listeners.article(a); }
     const drawing = st.enabled && this.app.mode === 'air' && !this.listeners.article;
     const ev = this.pen.update(lm, t, map);
+    // Messung „Lücke Finger ↔ Linie": roher Fingerspitzen-Punkt im gezeigten Frame vs. gefilterter Stiftpunkt
+    if (lm) {
+      const [rx, ry] = map(lm[8].x, lm[8].y); const p = ev.find((e) => e.type === 'move' || e.type === 'hover');
+      if (p) { (this.gaps ||= []).push(Math.hypot(p.x - rx, p.y - ry)); if (this.gaps.length > 900) this.gaps.shift(); }
+    }
     for (const e of ev) {
       if (e.type === 'down') { if (drawing) { const [p0, ...rest] = e.pts; st.beginStroke(p0[0], p0[1], p0[2]); for (const p of rest) st.addPoint(p[0], p[1], p[2]); } }
       else if (e.type === 'move') { if (drawing) st.addPoint(e.x, e.y, e.t); else st.setCursor(e.x, e.y, 'hover'); }

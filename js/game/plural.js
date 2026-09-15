@@ -7,7 +7,7 @@ const regularEN = (w) => { const s = w.en.word; const reg = /(s|x|z|ch|sh)$/.tes
 
 /** Tipp-Karte je Lernsprache (in UI-Sprache) */
 export function pluralTip(w, learn, ui, n) {
-  if (learn === 'tr') return t('pluralTipTR', { ex: pluralPhrase(w, 'tr', n) }, ui);
+  if (learn === 'tr') return t(w.tr.tane ? 'pluralTipTRtane' : 'pluralTipTR', { ex: pluralPhrase(w, 'tr', n) }, ui);
   if (learn === 'de') return t('pluralTipDE', { sg: `${w.de.art} ${w.de.noun}`, pl: w.de.pl }, ui);
   return regularEN(w) ? t('pluralTipENreg', { sg: w.en.word, pl: w.en.pl }, ui) : t('pluralTipEN', { sg: w.en.word, pl: w.en.pl }, ui);
 }

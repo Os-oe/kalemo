@@ -33,7 +33,12 @@ with server(8797) as base, sync_playwright() as p:
             if not r.url.startswith(origin) and not r.url.startswith('data:') and not r.url.startswith('blob:'):
                 ext.append(r.url)
         page.on('response', on_resp)
-        page.on('requestfinished', lambda rq: bytes_.__setitem__('total', bytes_['total'] + (rq.sizes().get('responseBodySize', 0) or 0) + (rq.sizes().get('responseHeadersSize', 0) or 0)))
+        def on_fin(rq):
+            try:
+                sz = rq.sizes(); bytes_['total'] += (sz.get('responseBodySize', 0) or 0) + (sz.get('responseHeadersSize', 0) or 0)
+            except Exception:
+                pass
+        page.on('requestfinished', on_fin)
         t0 = time.time()
         page.goto(base + '/?test=1')
         st = wait_state(page, 's.clfReady', 90000)

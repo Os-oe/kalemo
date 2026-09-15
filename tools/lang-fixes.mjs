@@ -36,11 +36,31 @@ const PATCH = {
   'light bulb': { amb: { tr: { de: '„ampul" heißt auch Ampulle.', en: 'Turkish “ampul” also means an ampoule.', tr: '“ampul” aynı zamanda ilaç ampulü demek.' } } },
 };
 
+// Sprach-Review 2 (docs/sprach-review-2.md): Burg/Schloss, Ampulle, falsche Freunde, Uhr, Hase, banka, Anführungszeichen
+const PATCH2 = {
+  castle: { amb: { de: { en: 'German has two words: a “Burg” is a fortified castle, a “Schloss” is more like a palace.', tr: 'Almancada “Burg” (kale) ile “Schloss” (şato, saray) birbirine benzer.' },
+    tr: { en: 'Turkish “kale” also means a football goal — and it’s not the vegetable kale!' } } },
+  'light bulb': { amb: { tr: { de: '„ampul“ heißt auch: kleines Glasröhrchen für Medizin.', en: 'Turkish “ampul” also means a small glass tube for medicine.' } } },
+  moon: { amb: { tr: { en: 'Turkish “ay” also means ‘month’.' } } },
+  stairs: { amb: { tr: { en: 'Turkish “merdiven” also means ‘ladder’.' } } },
+  clock: { amb: { tr: { en: 'Turkish “saat” also means ‘hour’ and ‘watch’.' },
+    de: { en: 'German “Uhr” also means a watch — and the time (“3 Uhr”).', tr: 'Almanca “Uhr” kol saati ve saat (“3 Uhr”) anlamına da gelir.' } } },
+  rabbit: { amb: { de: { en: '“Kaninchen” and “Hase” (hare) look alike, but they are different animals.', tr: '“Kaninchen” (tavşan) ile “Hase” (yaban tavşanı) benzer ama farklı hayvanlar.' } } },
+  bench: { amb: { de: { tr: 'Almanca “Bank” aynı zamanda banka demek (çoğulu “Banken”).' },
+    tr: { en: 'Turkish “bank” means bench — a bank for money is “banka”.', de: '„bank“ heißt auf Türkisch Sitzbank — die Bank für Geld heißt „banka“.' } } },
+  candle: { amb: { tr: { en: 'Turkish “mum” means candle — nothing to do with your mum!' } } },
+  'cell phone': { amb: { de: { en: 'German “Handy” means mobile phone — not ‘handy’ (useful).' } } },
+  eyeglasses: { amb: { en: { de: '„glasses“ heißt auch Trinkgläser.', tr: '“glasses” içme bardakları anlamına da gelir.' } } },
+};
+
 function deepMerge(a, b) { for (const [k, v] of Object.entries(b)) { if (v && typeof v === 'object' && !Array.isArray(v)) { a[k] = deepMerge(a[k] && typeof a[k] === 'object' ? a[k] : {}, v); } else a[k] = v; } return a; }
 for (const f of ['data/words.src.json', 'data/words.json']) {
   const p = path.join(ROOT, f); const arr = JSON.parse(fs.readFileSync(p, 'utf8'));
   let n = 0;
   for (const w of arr) if (PATCH[w.id]) { deepMerge(w, PATCH[w.id]); n++; }
+  for (const w of arr) if (PATCH2[w.id]) deepMerge(w, PATCH2[w.id]);
+  // Deutsche Anführungszeichen „…“ (Review 2 Nr. 12): „x" → „x“
+  for (const w of arr) if (w.amb) for (const byUi of Object.values(w.amb)) for (const k of Object.keys(byUi)) byUi[k] = byUi[k].replace(/„([^"“]*)"/g, '„$1“');
   fs.writeFileSync(p, f.endsWith('src.json') ? JSON.stringify(arr, null, 1) : JSON.stringify(arr));
   console.log(f, 'gepatcht:', n);
 }
