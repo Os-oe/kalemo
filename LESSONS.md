@@ -39,5 +39,17 @@ Autonomer Build aus `CONCEPT.md` (one-prompt-kit, Autonomie-Modus). Wiederverwen
 - Subagenten für lange Produktionsläufe in kurzen Etappen arbeiten lassen; eine erste Audio-Session stand 1 h still (nicht stoppbar) — Fortsetzung mit Übernahme-Protokoll (`OWNER.txt`, Aktivitäts-Check) hat funktioniert.
 - Suno-Loop: Variante mit geringerer Lautheitsspanne (LRA 2,7 statt 4,2 LU) als Hintergrund, 3-s-Crossfade-Loop per ffmpeg-`amix`, −20 LUFS.
 
+## Ergebnis-Zahlen
+- Genauigkeits-Gate: Pool 148/150 (bear, dog raus), Luft-Simulation Top-3 94,2 %, clean Top-1 84,9 %.
+- Live: Bildschirm-Modus spielbar nach **2,07 MB** Transfer (Budget 3,5 MB), erster Treffer nach 7–9 s (Fixture-Spieler), E2E live 22/22 ×2 (Desktop, Handy, Luft-Modus unter echter CSP).
+- Suiten: phase1 20 · phase2 31 · phase3 40 · phase4 34 · e2e 22 Checks — alle je 2× grün.
+
 ## Kosten (Ist)
-Siehe Abschnitt am Ende von `BUILD-STATUS.md` (wird bei Abschluss eingetragen).
+| Posten | Ist |
+|---|---|
+| Gemini 2.5 Flash TTS + STT-Verifikation (909 Clips, inkl. Stimmproben und einer 655-s-Endlos-Ausgabe) | 0,87 € |
+| Suno V4.5 Musik-Loop (Kie) | 0,10 € |
+| DoodleNet, MediaPipe, Fonts, SFX (WebAudio), OG-Bild (Playwright), Karten/Poster (Canvas) | 0,00 € |
+| **Gesamt** | **0,97 €** (Budget 10 €, Konzept-Schätzung ≈ 0,45 €) |
+
+Der Mehrpreis gegenüber der Schätzung kam fast vollständig aus der TTS: lange Bündel dehnen Pausen (Pausen-Audio wird bezahlt), eine ungedeckelte Anfrage lief 655 s. Mit Längendeckel + Einzelclips wären ≈ 0,45 € realistisch gewesen.
