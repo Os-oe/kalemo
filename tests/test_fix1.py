@@ -236,8 +236,9 @@ with server() as base, sync_playwright() as p:
         score = pg.text_content('#today-score'); nxt = pg.text_content('#today-next')
         exp_next = f'Neue Skizze in {hours} h' if hours >= 1 else 'Neue Skizze in'
         S.check('Start nach dem Spielen: Kachel „Heute x/5" + Teilen + Herausfordern + „Neue Skizze in N h" (Mitternacht Berlin)', score == f'Heute {hits}/5' and nxt.startswith(exp_next) and pg.is_visible('#today-share') and pg.is_visible('#today-challenge'), (score, nxt, hours))
-        box = pg.evaluate("() => { const t = document.querySelector('#today-tile').getBoundingClientRect(), d = document.querySelector('#btn-daily').getBoundingClientRect(); return t.bottom <= d.top + 1; }")
-        S.check('Kachel steht über „Noch mal üben"', box and 'üben' in (pg.text_content('#daily-label') or ''))
+        pg.wait_for_timeout(700)  # Einblend-Animation (translateY) abwarten, sonst misst die Bounding-Box den Zwischenstand
+        box = pg.evaluate("() => { const t = document.querySelector('#today-tile').getBoundingClientRect(), d = document.querySelector('#btn-daily').getBoundingClientRect(); return [Math.round(t.bottom), Math.round(d.top)]; }")
+        S.check('Kachel steht über „Noch mal üben"', box[0] <= box[1] + 1 and 'üben' in (pg.text_content('#daily-label') or ''), (box, pg.text_content('#daily-label')))
         pg.reload(); wait_state(pg, 's.clfReady', 60000)
         pg.evaluate(f'() => window.__setDate("{today}")'); pg.evaluate('() => window.__home()')
         S.check('Kachel überlebt Reload (localStorage)', pg.is_visible('#today-tile') and pg.text_content('#today-score') == f'Heute {hits}/5')
@@ -837,6 +838,54 @@ with server() as base, sync_playwright() as p:
         c.close()
     if section('p3_9'):
         S.run('P3-9 Kontrast', p3_9)
+
+    # ---------- Zusatz 22: „Üb deine schwachen Wörter" ----------
+    def p22():
+        c = b.new_context(viewport={'width': 1280, 'height': 800}, locale='de-DE'); pg = c.new_page(); errs = []
+        pg.on('pageerror', lambda e: errs.append(str(e)))
+        pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000)
+        pg.evaluate('() => window.__settings({native: "de", learn: "tr", airOffered: true, chosenPair: true})')
+        today = pg.evaluate('() => window.__state().date')
+        # Tagesergebnis: Wort 1 per Hilfe, Wort 2 läuft in die Zeit → beide landen in der Liste (recordWeak über echte Runden)
+        rec = pg.evaluate('''async () => { const m = await import('/js/game/practice.js'); localStorage.removeItem('kalemo.weak');
+          m.recordWeak({ id: 'spoon', result: 'timeout' }, '2026-09-10'); m.recordWeak({ id: 'spoon', result: 'timeout' }, '2026-09-11');
+          m.recordWeak({ id: 'frog', result: 'hit', helped: true }, '2026-09-12'); m.recordWeak({ id: 'owl', result: 'timeout' }, '2026-09-12');
+          m.recordWeak({ id: 'owl', result: 'hit' }, '2026-09-13'); m.recordWeak({ id: 'cat', result: 'hit' }, '2026-09-13');
+          return { weak: JSON.parse(localStorage.getItem('kalemo.weak')), order: m.weakest(window.__kalemo, 5) }; }''')
+        S.check('Liste: „Zeit um" zählt stärker als Hilfe, saubere Treffer zählen herunter, fremde Treffer landen nicht drin', rec['order'][:2] == ['spoon', 'owl'] and 'frog' in rec['order'] and 'cat' not in rec['weak'] and rec['weak']['owl']['clean'] == 1, rec)
+        pg.evaluate('() => window.__kalemo.openDict()')
+        pg.wait_for_selector('[data-act=weak]', timeout=5000)
+        label = pg.text_content('[data-act=weak]')
+        S.check('Bildwörterbuch: Knopf „Üb deine schwachen Wörter (3)"', label == 'Üb deine schwachen Wörter (3)', label)
+        pg.click('[data-act=weak]')
+        for wid in rec['order']:
+            wait_state(pg, f's.round && s.round.target === {json.dumps(wid)}', 20000)
+            pg.evaluate('(st) => window.__feedStrokes(st, {timing: "real", ptMs: 8, gapMs: 120})', FIX[wid][0])
+            wait_state(pg, f's.lastResult && s.lastResult.id === {json.dumps(wid)} && s.overlay', 30000)
+            pg.evaluate('() => window.__next()')
+        st = wait_state(pg, 's.lastWeakRun && s.screen === "dict" && s.sheet', 20000)
+        day = pg.evaluate(f'() => localStorage.getItem("kalemo.day.{today}")')
+        S.check('Übung läuft schwächste zuerst, danach Auswertung im Wörterbuch', st['lastWeakRun']['ids'] == rec['order'] and 'Geübt:' in (pg.text_content('#sheet h3') or ''), (st['lastWeakRun'], pg.text_content('#sheet h3')))
+        S.check('Nicht Teil der Tagesskizzen-Wertung (kein Tagesergebnis, keine Serie)', day is None and pg.evaluate('() => localStorage.getItem("kalemo.streak")') is None, day)
+        w2 = st['weak']
+        S.check('Treffer in der Übung festigen: owl (2. sauberer Treffer) raus, spoon zählt 1 sauber', 'owl' not in w2 and w2.get('spoon', {}).get('clean') == 1, w2)
+        # echte Tagesskizze: Wort mit Hilfe landet automatisch in der Liste
+        pg.click('#sheet [data-act=close]'); pg.evaluate('() => window.__home()')
+        pg.evaluate('() => window.__setDate("2026-10-21")')
+        plan = pg.evaluate('() => window.__plan()'); wid = plan['slots'][0]['id']
+        pg.evaluate('() => window.__startDaily()')
+        wait_state(pg, f's.round && s.round.target === {json.dumps(wid)}', 20000)
+        pg.wait_for_selector('#round-help:not([hidden])', timeout=12000); pg.click('#round-help', force=True)
+        pg.wait_for_selector('#round-overlay [data-act=help-go]', timeout=5000); pg.click('#round-overlay [data-act=help-go]', force=True)
+        pg.evaluate('(st) => window.__feedStrokes(st, {timing: "real", ptMs: 8, gapMs: 120})', FIX[wid][0])
+        wait_state(pg, f's.lastResult && s.lastResult.id === {json.dumps(wid)} && s.overlay', 30000); pg.evaluate('() => window.__next()')
+        st = wait_state(pg, f's.weak && s.weak[{json.dumps(wid)}]', 10000)
+        S.check('Tagesskizze: Wort mit Hilfe wird automatisch als schwach gemerkt', st['weak'][wid]['helps'] == 1, st['weak'][wid])
+        pg.evaluate('() => window.__home()')
+        S.check('Zusatz 22: keine Seitenfehler', not errs, errs[:2])
+        c.close()
+    if section('p22'):
+        S.run('Zusatz 22 Schwache Wörter', p22)
 
     b.close()
 S.finish()

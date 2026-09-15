@@ -3,6 +3,7 @@ import { planFor, addDays } from '../core/plan.js';
 import { dayResult, saveDayResult, bumpStreak } from '../core/store.js';
 import { t, funnyAllowed } from '../core/i18n.js';
 import { compact } from '../core/codec.js';
+import { recordWeak } from './practice.js';
 
 export async function playDaily(app, { practice = false } = {}) {
   const iso = app.today();
@@ -19,6 +20,7 @@ export async function playDaily(app, { practice = false } = {}) {
     const res = await app.playSlot(plan.slots[i], { index: i, total: plan.slots.length });
     if (!res || app.dailyRun !== run) return null;
     run.results.push(res);
+    recordWeak(res, iso); // Zusatz 22: „Zeit um"/Hilfe merken → „Üb deine schwachen Wörter"
   }
   app.ui.slots(plan.slots.length, plan.slots.length, run.results);
   const summary = {

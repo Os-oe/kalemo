@@ -7,6 +7,7 @@ import { escapeHtml } from './round.js';
 import { poster } from './cards.js';
 import { shareImage } from './share.js';
 import { pluralTip } from './plural.js';
+import { weakest, playWeak } from './practice.js';
 
 const $ = (s) => document.querySelector(s);
 const baseCat = (c) => c.replace(/ \(.*\)$/, '');
@@ -20,14 +21,15 @@ export function installDict(app) {
     app.dictEntries = entries.map((e) => e.id);
     const { learn, native } = app.settings;
     const cats = [...new Set(entries.map((e) => baseCat(app.byId.get(e.id).category)))];
+    const weak = weakest(app, 5); app.weakIds = weak;
     unmountAll($('#screen-dict'));
     const body = $('#dict-body');
     body.innerHTML = `<header class="dict-head"><button class="icon-btn ink" data-act="home" aria-label="${escapeHtml(t('back'))}"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button><h2 class="h-hand">${escapeHtml(t('dictT'))}</h2>
       <span class="count">${escapeHtml(entries.length === 1 ? t('dictCount1') : t('dictCount', { n: entries.length }))}</span></header>
       ${entries.length ? `<div class="chips" role="tablist"><button class="chip-f" aria-pressed="${filter === 'all'}" data-f="all">${escapeHtml(t('dictAll'))}</button>${cats.map((c) => `<button class="chip-f" aria-pressed="${filter === c}" data-f="${escapeHtml(c)}">${escapeHtml(t('cats.' + c))}</button>`).join('')}</div>
       <div class="dict-grid">${entries.filter((e) => filter === 'all' || baseCat(app.byId.get(e.id).category) === filter).map((e) => { const w = app.byId.get(e.id); return `<button class="dict-cell" data-id="${escapeHtml(e.id)}"><canvas></canvas><span style="color:${learn === 'de' ? ART_TEXT[w.de.art] : '#1E2A3A'}">${escapeHtml(word(w, learn))}</span><small>${escapeHtml(word(w, native))}</small></button>`; }).join('')}</div>
-      <div class="actions"><button class="btn primary" data-act="poster">${escapeHtml(t('dictPoster'))}</button></div>`
-      : `<div class="empty"><canvas class="empty-art"></canvas><p>${escapeHtml(t('dictEmpty'))}</p><button class="btn primary" data-act="home">${escapeHtml(t('home'))}</button></div>`}`;
+      <div class="actions">${weak.length ? `<button class="btn primary weak-btn" data-act="weak">${escapeHtml(t('weakBtn', { n: weak.length }))}</button>` : ''}<button class="btn ${weak.length ? '' : 'primary'}" data-act="poster">${escapeHtml(t('dictPoster'))}</button></div>`
+      : `<div class="empty"><canvas class="empty-art"></canvas><p>${escapeHtml(t('dictEmpty'))}</p>${weak.length ? `<button class="btn primary weak-btn" data-act="weak">${escapeHtml(t('weakBtn', { n: weak.length }))}</button>` : ''}<button class="btn ${weak.length ? '' : 'primary'}" data-act="home">${escapeHtml(t('home'))}</button></div>`}`;
     body.querySelectorAll('.dict-cell').forEach((b, i) => {
       const e = entries.find((x) => x.id === b.dataset.id), w = app.byId.get(e.id);
       mount(b.querySelector('canvas'), { strokes: e.strokes, color: learn === 'de' ? ART_TEXT[w.de.art] : '#1E2A3A', style: 'pencil', width: 2.6, boil: 1, still: true, seed: i + 1 });
@@ -38,6 +40,7 @@ export function installDict(app) {
       const f = ev.target.closest('[data-f]'); if (f) { filter = f.dataset.f; app.sfx?.play('tap'); app.openDict(); return; }
       const c = ev.target.closest('.dict-cell'); if (c) { app.sfx?.play('tap'); detail(entries.find((x) => x.id === c.dataset.id)); return; }
       if (ev.target.closest('[data-act=home]')) { app.goHome(); return; }
+      if (ev.target.closest('[data-act=weak]')) { app.sfx?.play('tap'); playWeak(app); return; }
       if (ev.target.closest('[data-act=poster]')) {
         const p = await poster(app, entries); app.lastPoster = { bytes: p.blob.size, w: p.canvas.width, h: p.canvas.height, fill: p.fill };
         await shareImage(app, { blob: p.blob, filename: 'kalemo-poster.png', text: 'Kalemo', forceFallback: !!app.TEST });

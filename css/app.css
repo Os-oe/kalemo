@@ -240,6 +240,10 @@ body[data-mode="air"] .round-top { background: linear-gradient(rgba(10,16,32,.55
 .empty-art { width: 200px; height: 160px; }
 .plural-line { margin: 6px 0 0; font-size: 1.05rem; }
 .amb { background: #EEF2FF; border-radius: 12px; padding: 8px 12px; font-weight: 700; }
+.weak-list { list-style: none; padding: 0; margin: 6px 0; display: flex; flex-wrap: wrap; gap: 6px 10px; justify-content: center; font-family: var(--hand); font-size: 1.6rem; }
+.weak-list li { padding: 0 10px; border-radius: 10px; border: 2px dashed rgba(95,102,114,.5); }
+.weak-list li.ok { border: 2px solid var(--das-t); background: #DCFCE7; }
+.calib-card .progress { margin: 14px auto; max-width: 320px; }
 .toggle { display: flex; align-items: center; gap: 12px; min-height: 48px; text-align: left; font-weight: 700; cursor: pointer; }
 .toggle input { width: 22px; height: 22px; accent-color: var(--ink); }
 
