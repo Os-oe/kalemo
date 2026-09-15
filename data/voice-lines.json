@@ -1,15 +1,46 @@
 {
   "_doc": "Sprechsätze der KI (vorproduziert, Gemini TTS). Muster: Präfix-Clip + Wort-Clip. Dateien: audio/v1/<lang>/x/<key>.mp3 · UI-Sätze audio/v1/<lang>/u/<key>.mp3",
   "de": {
-    "x": { "hmm1": "Hmm …", "hmm2": "Ist das …", "hmm3": "Vielleicht …", "hit1": "Ich weiß!", "hit2": "Jetzt hab ich’s!", "timeup": "Zeit ist um — schön versucht!", "hard": "Hmm, schwierig …" },
-    "u": { "tagline": "Mal’s in die Luft.", "artq": "der, die oder das?" }
+    "x": {
+      "hmm1": "Hmm …",
+      "hmm2": "Ist das …",
+      "hmm3": "Vielleicht …",
+      "hit1": "Ich weiß!",
+      "hit2": "Jetzt hab ich’s!",
+      "timeup": "Zeit ist um — schön versucht!",
+      "hard": "Hmm, schwierig …"
+    },
+    "u": {
+      "tagline": "Mal’s in die Luft.",
+      "artq": "der, die oder das?"
+    }
   },
   "en": {
-    "x": { "hmm1": "Hmm …", "hmm2": "Is it …", "hmm3": "Maybe …", "hit1": "I know!", "hit2": "Got it!", "timeup": "Time’s up — nice try!", "hard": "Hmm, tricky …" },
-    "u": { "tagline": "Draw it in the air." }
+    "x": {
+      "hmm1": "Hmm …",
+      "hmm2": "Ooh …",
+      "hmm3": "Oh …",
+      "hit1": "I know!",
+      "hit2": "Got it!",
+      "timeup": "Time’s up — nice try!",
+      "hard": "Hmm, tricky …"
+    },
+    "u": {
+      "tagline": "Draw it in the air."
+    }
   },
   "tr": {
-    "x": { "hmm1": "Hmm …", "hmm2": "Acaba …", "hmm3": "Galiba …", "hit1": "Buldum!", "hit2": "Tamam, anladım!", "timeup": "Süre doldu — güzel denemeydi!", "hard": "Hmm, zor …" },
-    "u": { "tagline": "Havada çiz." }
+    "x": {
+      "hmm1": "Hmm …",
+      "hmm2": "Belki …",
+      "hmm3": "Galiba …",
+      "hit1": "Buldum!",
+      "hit2": "Tamam, anladım!",
+      "timeup": "Süre doldu — güzel denemeydi!",
+      "hard": "Hmm, zor …"
+    },
+    "u": {
+      "tagline": "Havada çiz."
+    }
   }
 }

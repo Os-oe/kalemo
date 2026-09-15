@@ -47,7 +47,14 @@
   "ambiguous": true,
   "hint": "[M] EN auch Schläger",
   "weak": false,
-  "echt": null
+  "echt": null,
+  "amb": {
+   "en": {
+    "de": "„bat\" heißt auch Schläger (Baseball, Cricket).",
+    "en": "“bat” can also mean a cricket or baseball bat.",
+    "tr": "“bat” aynı zamanda beyzbol ya da kriket sopası demek."
+   }
+  }
  },
  {
   "id": "bear",
@@ -333,7 +340,8 @@
   "de": {
    "art": "der",
    "noun": "Elefant",
-   "pl": "Elefanten"
+   "pl": "Elefanten",
+   "akk": "Elefanten"
   },
   "en": {
    "word": "elephant",
@@ -483,7 +491,8 @@
   "de": {
    "art": "der",
    "noun": "Löwe",
-   "pl": "Löwen"
+   "pl": "Löwen",
+   "akk": "Löwen"
   },
   "en": {
    "word": "lion",
@@ -508,7 +517,8 @@
   "de": {
    "art": "der",
    "noun": "Affe",
-   "pl": "Affen"
+   "pl": "Affen",
+   "akk": "Affen"
   },
   "en": {
    "word": "monkey",
@@ -547,7 +557,24 @@
   "ambiguous": true,
   "hint": "EN Pl. mice · [M] Computermaus",
   "weak": false,
-  "echt": null
+  "echt": null,
+  "amb": {
+   "de": {
+    "de": "„Maus\" heißt auch Computermaus.",
+    "en": "German “Maus” also means a computer mouse.",
+    "tr": "Almanca “Maus” bilgisayar faresi anlamına da gelir."
+   },
+   "en": {
+    "de": "„mouse\" heißt auch Computermaus.",
+    "en": "“mouse” can also mean a computer mouse.",
+    "tr": "“mouse” aynı zamanda bilgisayar faresi demek."
+   },
+   "tr": {
+    "de": "„fare\" heißt auch Computermaus.",
+    "en": "Turkish “fare” also means a computer mouse.",
+    "tr": "“fare” bilgisayar faresi anlamına da gelir."
+   }
+  }
  },
  {
   "id": "octopus",
@@ -558,7 +585,8 @@
   "de": {
    "art": "der",
    "noun": "Krake",
-   "pl": "Kraken"
+   "pl": "Kraken",
+   "akk": "Kraken"
   },
   "en": {
    "word": "octopus",
@@ -690,7 +718,7 @@
    "pl": "sharks"
   },
   "tr": {
-   "word": "köpekbalığı"
+   "word": "köpek balığı"
   },
   "kP": false,
   "kPReason": null,
@@ -772,7 +800,14 @@
   "ambiguous": true,
   "hint": "[M] Warteschlange",
   "weak": false,
-  "echt": null
+  "echt": null,
+  "amb": {
+   "de": {
+    "de": "„Schlange\" heißt auch Warteschlange.",
+    "en": "German “Schlange” also means a queue.",
+    "tr": "Almanca “Schlange” kuyruk (sıra) anlamına da gelir."
+   }
+  }
  },
  {
   "id": "spider",
@@ -983,17 +1018,17 @@
   "de": {
    "art": "die",
    "noun": "Traube",
-   "pl": "Trauben"
+   "pl": null
   },
   "en": {
    "word": "grapes",
-   "pl": "grapeses"
+   "pl": null
   },
   "tr": {
    "word": "üzüm"
   },
-  "kP": false,
-  "kPReason": null,
+  "kP": true,
+  "kPReason": "Sprach-Review 1 Nr. 5: grapes ist schon Mehrzahl; TR üç üzüm = drei Beeren",
   "ambiguous": false,
   "hint": null,
   "weak": false,
@@ -1072,7 +1107,14 @@
   "ambiguous": true,
   "hint": "[M] Glühbirne",
   "weak": false,
-  "echt": null
+  "echt": null,
+  "amb": {
+   "de": {
+    "de": "„Birne\" heißt auch Glühbirne.",
+    "en": "German “Birne” also means a light bulb.",
+    "tr": "Almanca “Birne” ampul anlamına da gelir."
+   }
+  }
  },
  {
   "id": "pineapple",
@@ -1187,7 +1229,8 @@
   },
   "en": {
    "word": "bread",
-   "pl": null
+   "pl": null,
+   "mass": true
   },
   "tr": {
    "word": "ekmek"
@@ -1222,7 +1265,14 @@
   "ambiguous": false,
   "hint": "echt (cake)",
   "weak": false,
-  "echt": "cake"
+  "echt": "cake",
+  "amb": {
+   "tr": {
+    "de": "„pasta\" heißt Torte — nicht Nudeln!",
+    "en": "Turkish “pasta” means cake — not noodles!",
+    "tr": "“pasta” tatlı pasta demek, makarna değil."
+   }
+  }
  },
  {
   "id": "cookie",
@@ -1297,7 +1347,14 @@
   "ambiguous": true,
   "hint": "[kP] · [M] Eis = Wassereis",
   "weak": false,
-  "echt": null
+  "echt": null,
+  "amb": {
+   "de": {
+    "de": "„Eis\" ist auch gefrorenes Wasser.",
+    "en": "German “Eis” also means ice.",
+    "tr": "Almanca “Eis” buz anlamına da gelir."
+   }
+  }
  },
  {
   "id": "pizza",
@@ -1465,14 +1522,22 @@
    "pl": "clocks"
   },
   "tr": {
-   "word": "saat"
+   "word": "saat",
+   "tane": true
   },
   "kP": false,
   "kPReason": null,
   "ambiguous": true,
   "hint": "echt (clock) · [M] TR auch Stunde",
   "weak": false,
-  "echt": "clock"
+  "echt": "clock",
+  "amb": {
+   "tr": {
+    "de": "„saat\" heißt auch Stunde und Armbanduhr.",
+    "en": "Turkish “saat” also means hour and watch.",
+    "tr": "“saat” aynı zamanda zaman birimi ve kol saati demek."
+   }
+  }
  },
  {
   "id": "candle",
@@ -1697,7 +1762,14 @@
   "ambiguous": false,
   "hint": null,
   "weak": false,
-  "echt": null
+  "echt": null,
+  "amb": {
+   "tr": {
+    "de": "„ampul\" heißt auch Ampulle.",
+    "en": "Turkish “ampul” also means an ampoule.",
+    "tr": "“ampul” aynı zamanda ilaç ampulü demek."
+   }
+  }
  },
  {
   "id": "pillow",
@@ -2058,7 +2130,8 @@
   "de": {
    "art": "der",
    "noun": "Diamant",
-   "pl": "Diamanten"
+   "pl": "Diamanten",
+   "akk": "Diamanten"
   },
   "en": {
    "word": "diamond",
@@ -2097,7 +2170,14 @@
   "ambiguous": true,
   "hint": "[M] Geldinstitut (Pl. Banken)",
   "weak": false,
-  "echt": null
+  "echt": null,
+  "amb": {
+   "de": {
+    "de": "„Bank\" heißt auch Geldinstitut (Mehrzahl dann „Banken\").",
+    "en": "German “Bank” also means a bank for money (plural “Banken”).",
+    "tr": "Almanca “Bank” para bankası anlamına da gelir (çoğulu “Banken”)."
+   }
+  }
  },
  {
   "id": "hat",
@@ -2222,7 +2302,14 @@
   "ambiguous": true,
   "hint": "[M] US pants / UK pants = Unterhose → EN „trousers\"",
   "weak": false,
-  "echt": null
+  "echt": null,
+  "amb": {
+   "en": {
+    "de": "„pants\" heißt in den USA Hose, in Großbritannien Unterhose — darum „trousers\".",
+    "en": "We use “trousers”: in British English “pants” means underwear.",
+    "tr": "“trousers” kullanıyoruz: İngiliz İngilizcesinde “pants” iç çamaşırı demek."
+   }
+  }
  },
  {
   "id": "sweater",
@@ -2565,14 +2652,22 @@
    "pl": "faces"
   },
   "tr": {
-   "word": "yüz"
+   "word": "yüz",
+   "tane": true
   },
   "kP": false,
   "kPReason": null,
   "ambiguous": true,
   "hint": "[M] TR auch „hundert\"",
   "weak": false,
-  "echt": null
+  "echt": null,
+  "amb": {
+   "tr": {
+    "de": "„yüz\" heißt auch hundert.",
+    "en": "Turkish “yüz” also means one hundred.",
+    "tr": "“yüz” aynı zamanda sayı olarak yüz demek."
+   }
+  }
  },
  {
   "id": "brain",
@@ -2665,14 +2760,22 @@
    "pl": "moons"
   },
   "tr": {
-   "word": "ay"
+   "word": "ay",
+   "tane": true
   },
   "kP": false,
   "kPReason": null,
   "ambiguous": true,
   "hint": "[M] TR auch Monat",
   "weak": false,
-  "echt": null
+  "echt": null,
+  "amb": {
+   "tr": {
+    "de": "„ay\" heißt auch Monat.",
+    "en": "Turkish “ay” also means month.",
+    "tr": "“ay” aynı zamanda takvimdeki ay demek."
+   }
+  }
  },
  {
   "id": "star",
@@ -2733,11 +2836,13 @@
   "de": {
    "art": "der",
    "noun": "Regen",
-   "pl": null
+   "pl": null,
+   "mass": true
   },
   "en": {
    "word": "rain",
-   "pl": null
+   "pl": null,
+   "mass": true
   },
   "tr": {
    "word": "yağmur"
@@ -2837,7 +2942,8 @@
   },
   "en": {
    "word": "lightning",
-   "pl": null
+   "pl": null,
+   "mass": true
   },
   "tr": {
    "word": "şimşek"
@@ -2922,7 +3028,14 @@
   "ambiguous": true,
   "hint": "EN Pl. leaves · [M] Papier",
   "weak": false,
-  "echt": null
+  "echt": null,
+  "amb": {
+   "de": {
+    "de": "„Blatt\" heißt auch ein Blatt Papier.",
+    "en": "German “Blatt” also means a sheet of paper.",
+    "tr": "Almanca “Blatt” kâğıt yaprağı anlamına da gelir."
+   }
+  }
  },
  {
   "id": "cactus",
@@ -3022,7 +3135,19 @@
   "ambiguous": true,
   "hint": "[M] Schloss",
   "weak": false,
-  "echt": null
+  "echt": null,
+  "amb": {
+   "de": {
+    "de": "„Burg\" ist nah an „Schloss\" — beides kann gemeint sein.",
+    "en": "German “Burg” is close to “Schloss” (palace).",
+    "tr": "Almanca “Burg” “Schloss” (saray) kelimesine yakın."
+   },
+   "tr": {
+    "de": "„kale\" heißt auch Fußballtor.",
+    "en": "Turkish “kale” also means a football goal.",
+    "tr": "“kale” futbolda kale anlamına da gelir."
+   }
+  }
  },
  {
   "id": "bridge",
@@ -3172,7 +3297,14 @@
   "ambiguous": false,
   "hint": null,
   "weak": false,
-  "echt": null
+  "echt": null,
+  "amb": {
+   "tr": {
+    "de": "„merdiven\" heißt auch Leiter.",
+    "en": "Turkish “merdiven” also means ladder.",
+    "tr": "“merdiven” aynı zamanda el merdiveni demek."
+   }
+  }
  },
  {
   "id": "traffic light",
@@ -3361,8 +3493,8 @@
    "pl": "Segelboote"
   },
   "en": {
-   "word": "sailboat",
-   "pl": "sailboats"
+   "word": "sailing boat",
+   "pl": "sailing boats"
   },
   "tr": {
    "word": "yelkenli"
@@ -3465,7 +3597,7 @@
    "pl": "fire engines"
   },
   "tr": {
-   "word": "itfaiye aracı"
+   "word": "itfaiye arabası"
   },
   "kP": false,
   "kPReason": null,
@@ -3733,7 +3865,8 @@
   "de": {
    "art": "der",
    "noun": "Teddybär",
-   "pl": "Teddybären"
+   "pl": "Teddybären",
+   "akk": "Teddybären"
   },
   "en": {
    "word": "teddy bear",

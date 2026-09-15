@@ -123,8 +123,7 @@ export function installFlow(app) {
   // ---------- Hol es echt ----------
   app.realStep = async (w) => {
     if (!w.echt || !app.air?.cameraOn || app.mode !== 'air') return null;
-    const art = app.settings.learn === 'de' ? `${w.de.art === 'der' ? 'einen' : w.de.art === 'die' ? 'eine' : 'ein'} ${w.de.noun}` : word(w, app.settings.native);
-    const label = ui() === 'de' ? art : word(w, ui());
+    const label = ui() === 'tr' ? word(w, 'tr') : cap(word(w, ui()), ui()); // Sprach-Review 1 Nr. 2/3/11: kasusneutral
     const card = showCard(`<h3>${escapeHtml(t('realQ', { w: label }))}</h3><div class="progress real"><i style="width:0%"></i></div><button class="btn ghost" data-act="skip">${escapeHtml(t('skip'))}</button>`, 'real');
     card.querySelector('[data-act=skip]').addEventListener('click', () => app.air.cancelHunt());
     await app.air.loadObjectDetector();
