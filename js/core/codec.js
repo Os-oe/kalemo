@@ -1,10 +1,13 @@
 // Striche-Code für das Luft-Duell (ohne Server, nur im #-Hash):
 // normieren 0..255 → Ramer-Douglas-Peucker ε≈3 → Delta → Zigzag-Varint → base64url. Deflate bringt nichts (gemessen).
 // Format v1: [ver][classIdx][senderDs][nStrokes] je Strich [nPts][gap20ms][dur20ms] Punkte als Deltas … [checksum]
-// Format v2 (Iteration 1, Duell-Stand): [ver][classIdx][senderDs][scoreSender][scoreReceiver][nStrokes] … — v1-Links bleiben lesbar (Stand 0:0)
+// Format v2 (Iteration 1, Duell-Stand): [ver][classIdx][senderDs][scoreSender][scoreReceiver][nStrokes] …
+// Format v3 (Iteration 2, R2-P3-10): … [scoreSender][scoreReceiver][fromId][toId][nStrokes] … — lokale Spieler-Kennungen
+// (zufällig, 21 Bit, nichts Persönliches), damit nur die zwei Beteiligten den Stand sehen. v1/v2 bleiben lesbar (ohne Kennung).
 import { normalize, rdp } from './raster.js';
 
-export const VERSION = 2;
+export const VERSION = 3;
+export const ID_MAX = 0x1fffff;
 const zz = (v) => (v << 1) ^ (v >> 31);
 const unzz = (u) => (u >>> 1) ^ -(u & 1);
 function pushVar(arr, v) { v >>>= 0; while (v >= 0x80) { arr.push((v & 0x7f) | 0x80); v >>>= 7; } arr.push(v); }
@@ -28,14 +31,16 @@ export function quantize(strokes, eps = 3) {
 }
 
 /**
- * encode({classIdx, senderMs, strokes:[xs,ys,ts]}) → base64url
+ * encode({classIdx, senderMs, strokes:[xs,ys,ts], score, from, to}) → base64url
  * Timing: Pause vor jedem Strich + Strichdauer (20-ms-Raster, max ~5 s je Wert).
  */
-export function encode({ classIdx, senderMs = 0, strokes, score = [0, 0] }) {
+export function encode({ classIdx, senderMs = 0, strokes, score = [0, 0], from = 0, to = 0 }) {
   const q = quantize(strokes);
   const a = [];
   pushVar(a, VERSION); pushVar(a, classIdx); pushVar(a, Math.round(Math.min(senderMs, 60000) / 100));
-  pushVar(a, Math.min(999, score[0] | 0)); pushVar(a, Math.min(999, score[1] | 0)); pushVar(a, q.length);
+  pushVar(a, Math.min(999, score[0] | 0)); pushVar(a, Math.min(999, score[1] | 0));
+  pushVar(a, Math.max(0, Math.min(ID_MAX, from | 0))); pushVar(a, Math.max(0, Math.min(ID_MAX, to | 0)));
+  pushVar(a, q.length);
   let px = 0, py = 0, prevEnd = null;
   const orig = strokes.filter((s) => s[0].length);
   q.forEach(([xs, ys], si) => {
@@ -51,7 +56,7 @@ export function encode({ classIdx, senderMs = 0, strokes, score = [0, 0] }) {
   return b64u(a);
 }
 
-/** decode(code) → {version, classIdx, senderMs, strokes:[[xs,ys],...], timing:[{gap,dur}]} · wirft bei defektem Code */
+/** decode(code) → {version, classIdx, senderMs, score, from, to, strokes:[[xs,ys],...], timing:[{gap,dur}]} · wirft bei defektem Code */
 export function decode(code) {
   const buf = unb64u(code.trim());
   if (buf.length < 5) throw new Error('short');
@@ -59,10 +64,12 @@ export function decode(code) {
   if (sum !== buf[buf.length - 1]) throw new Error('checksum');
   const pos = { i: 0 }, body = buf.subarray(0, buf.length - 1);
   const version = readVar(body, pos);
-  if (version !== 1 && version !== 2) throw new Error('version');
+  if (version < 1 || version > 3) throw new Error('version');
   const classIdx = readVar(body, pos), senderMs = readVar(body, pos) * 100;
   const score = version >= 2 ? [readVar(body, pos), readVar(body, pos)] : [0, 0];
   if (score[0] > 999 || score[1] > 999) throw new Error('score');
+  const from = version >= 3 ? readVar(body, pos) : 0, to = version >= 3 ? readVar(body, pos) : 0;
+  if (from > ID_MAX || to > ID_MAX) throw new Error('id');
   const n = readVar(body, pos);
   if (n > 200) throw new Error('strokes');
   const strokes = [], timing = []; let px = 0, py = 0;
@@ -74,7 +81,7 @@ export function decode(code) {
     strokes.push([xs, ys]); timing.push({ gap, dur });
   }
   if (pos.i !== body.length) throw new Error('trailing');
-  return { version, classIdx, senderMs, score, strokes, timing };
+  return { version, classIdx, senderMs, score, from, to, strokes, timing };
 }
 
 /** Strich-Timing [{gap, dur}] aus Strichen mit Zeitstempeln */

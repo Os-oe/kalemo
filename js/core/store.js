@@ -25,6 +25,16 @@ export function settings() {
 }
 export function saveSettings(patch) { return set('settings', { ...settings(), ...patch }); }
 
+/**
+ * Lokale Spieler-Kennung fürs Duell (Iteration 2, R2-P3-10): zufällig, 21 Bit, nichts Persönliches, verlässt das Gerät nur
+ * im Duell-Link — damit nur die zwei Beteiligten den Stand sehen.
+ */
+export function playerId() {
+  let id = get('player', 0);
+  if (!Number.isInteger(id) || id < 1 || id > 0x1fffff) { id = 1 + Math.floor(Math.random() * 0x1ffffe); set('player', id); }
+  return id;
+}
+
 /** Tagesergebnis (einmal pro Tag wertbar) */
 export function dayResult(iso) { return get('day.' + iso, null); }
 export function saveDayResult(iso, res) {

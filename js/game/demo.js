@@ -63,7 +63,7 @@ export async function runDemo(app) {
   if (scene === 'duel') {
     let t = 0; const strokes = drawing(word).map(([xs, ys]) => { const ts = xs.map((_, i) => t + i * 45); t += xs.length * 45 + 380; return [xs, ys, ts]; });
     app.settings.chosenPair = true;
-    await app.duel.receive(encode({ classIdx: app.clf.classNames.indexOf(app.byId.get(word).cls), senderMs: 11000, strokes }));
+    await app.duel.receive(encode({ classIdx: app.clf.classNames.indexOf(app.byId.get(word).cls), senderMs: 11000, strokes }), { noGate: true });
     return;
   }
   // Runden-Szenen

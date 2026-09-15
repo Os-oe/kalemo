@@ -1,6 +1,6 @@
 // Tagesende: lebende eigene Zeichnungen, „KI erkannte x/5", Punkte-Count-up, Serien-Flamme, lustigster Fehltipp.
 import { t, word, ART_TEXT, FRINGE, funnyLine, funnyAllowed, pluralPhrase } from '../core/i18n.js';
-import { streak, saveSettings } from '../core/store.js';
+import { streak, saveSettings, store } from '../core/store.js';
 import { addDays } from '../core/plan.js';
 import { mount, unmountAll } from './alive.js';
 import { escapeHtml } from './round.js';
@@ -40,6 +40,9 @@ export function installDayEnd(app) {
     const f = sum.funniest && funnyAllowed(sum.funniest.target, sum.funniest.id) ? funnyLine(app.byId.get(sum.funniest.target), app.byId.get(sum.funniest.id), native) : null;
     const fe = $('#dayend-funny'); fe.hidden = !f; fe.innerHTML = f ? `<small>${escapeHtml(t('funniest'))}</small>${escapeHtml(f)}` : '';
     app.lastSummary = sum;
+    // Punkt 2e: kam man über „Erst Tagesskizze — dann das Duell", führt ein Knopf zurück ins Duell (der Link bleibt gültig)
+    const pd = store.get('pendingDuel', null);
+    $('#btn-dayend-duel').hidden = !(pd && pd.date === sum.date && pd.code);
     $('#dayend-air').hidden = !app.shouldOfferAir?.();
     app.music?.play();
   };
@@ -63,6 +66,10 @@ export function installDayEnd(app) {
     } finally { if (btn) btn.disabled = false; }
   };
   $('#btn-share').addEventListener('click', () => app.shareToday(app.lastSummary, $('#btn-share')));
+  $('#btn-dayend-duel').addEventListener('click', () => {
+    const pd = store.get('pendingDuel', null); store.set('pendingDuel', null); $('#btn-dayend-duel').hidden = true;
+    if (pd?.code) { app.sfx?.play('tap'); app.duel.receive(pd.code); }
+  });
   $('#btn-challenge').addEventListener('click', () => app.challengeFrom(app.lastSummary));
   /** Zeichnung auswählen → Duell-Link (Tagesende + Start-Kachel) */
   app.challengeFrom = (sum) => {
@@ -76,7 +83,7 @@ export function installDayEnd(app) {
     box.onclick = (e) => {
       const b = e.target.closest('.pick');
       // P1-2: Link-Karte auf DIESEM Screen + direkt Teilen-Menü (Tipp = Nutzer-Geste)
-      if (b) { const r = sum.results[+b.dataset.i]; unmountAll(box); box.innerHTML = ''; app.sfx?.play('tap'); app.duel.sendDrawing(r.id, r.drawings?.length ? r.drawings[0] : r.strokes, r.hitAt || 20000, r.timing || null, { autoShare: true }); }
+      if (b) { const r = sum.results[+b.dataset.i]; unmountAll(box); box.innerHTML = ''; app.sfx?.play('tap'); app.duel.sendDrawing(r.id, r.drawings?.length ? r.drawings[0] : r.strokes, r.result === 'hit' ? (r.drawMs ?? r.hitAt ?? 20000) : 20000, r.timing || null, { autoShare: true }); } // Iteration 2: Malzeit ab erstem Strich
       else if (e.target === box || e.target.closest('[data-act=close]')) { box.hidden = true; box.innerHTML = ''; }
     };
   };

@@ -426,6 +426,88 @@ with server(8792) as base, sync_playwright() as p:
         finally:
             c.close()
 
+    # ---------- Aufgabe 5 (R2-P2-2 + R2-P2-3): Mehrzahl-Runde ehrlich + machbar ----------
+    START_PLURAL = '''async ([id, n, cfg]) => { const a = window.__kalemo; a.pluralTest = cfg; a.show('round'); const w = a.byId.get(id); a.round.showWord(w, { plural: n });
+      a._po = null; a._pbase = a.round.drawCount || 0; a.pluralRound(w, n).then((o) => { a._po = { result: o.result, parts: o.parts, n: o.n, partial: o.partial, drawings: o.drawings.map((d) => d.length), per: a.lastPlural.perObject }; }); return a._pbase; }'''
+
+    def t5_apples():
+        c, pg, errs = fresh(b)
+        try:
+            pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000); pg.evaluate(SETUP)
+            ok, runs = 0, []
+            for run in range(10):
+                base_n = pg.evaluate(START_PLURAL, ['apple', 3, None])
+                for k in range(3):
+                    pg.wait_for_function(f'() => (window.__kalemo.round.drawCount || 0) === {base_n + k + 1} || window.__kalemo._po', timeout=30000)
+                    if pg.evaluate('() => window.__kalemo._po'):
+                        break
+                    pg.wait_for_timeout(250)  # kurzer Blick auf „Eins!", wie ein Mensch
+                    pg.evaluate('([st]) => window.__feedStrokes(st, {timing: "real", ptMs: 8, gapMs: 140})', [EX['apple'][(run + k) % 3]['strokes']])
+                pg.wait_for_function('() => window.__kalemo._po', timeout=60000)
+                po = pg.evaluate('() => window.__kalemo._po'); runs.append((po['parts'], [p_['elapsedMs'] for p_ in po['per']]))
+                ok += po['parts'] == 3
+            S.check(f'3 saubere Äpfel → 3/3 in ≥ 8 von 10 Läufen ({ok}/10)', ok >= 8, runs)
+            S.check('Mehrzahl-Äpfel: keine Seitenfehler', not errs, errs[:2])
+        finally:
+            c.close()
+
+    def t5_carry_bonus():
+        c, pg, errs = fresh(b)
+        try:
+            pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000); pg.evaluate(SETUP)
+            base_n = pg.evaluate(START_PLURAL, ['apple', 2, None])
+            pg.wait_for_function(f'() => window.__kalemo.round.drawCount === {base_n + 1}', timeout=10000)
+            pg.evaluate('([st]) => window.__feedStrokes(st, {timing: "instant"})', [EX['apple'][0]['strokes']])
+            wait_state(pg, 's.round && s.round.recognized', 10000)
+            left1 = pg.evaluate('() => { const r = window.__kalemo.round.active; return Math.round(r.engine.duration - r.engine.elapsed(performance.now())); }')
+            # sofort ein Strich klar außerhalb des ersten Apfels → gehört schon zum zweiten Objekt (geht nicht verloren)
+            pg.evaluate('() => { const st = window.__kalemo.stage; st.beginStroke(st.w * 0.9, st.h * 0.2); for (let i = 1; i < 12; i++) st.addPoint(st.w * 0.9 - i * 3, st.h * 0.2 + i * 4); return 1; }')
+            pg.wait_for_function(f'() => window.__kalemo.round.drawCount === {base_n + 2}', timeout=3000)
+            info = pg.evaluate('() => { const r = window.__kalemo.round.active; return { duration: Math.round(r.engine.duration), active: !!window.__kalemo.stage.active, strokes: window.__kalemo.stage.strokes.length }; }')
+            pg.evaluate('() => { window.__kalemo.stage.endStroke(); return 1; }')
+            S.check('Strich außerhalb des erkannten Objekts startet sofort das nächste (mitgenommen, nicht verloren), erkanntes Objekt eingefroren', info['active'] and info['strokes'] == 0, info)
+            S.check(f'+8 s je Treffer: zweites Objekt hat Restzeit + 8 s ({info["duration"]} ms, vorher {left1} ms)', info['duration'] >= left1 + 7000, (info['duration'], left1))
+            pg.evaluate('([st]) => window.__feedStrokes(st, {timing: "real", ptMs: 6, gapMs: 120})', [EX['apple'][1]['strokes']])
+            pg.wait_for_function('() => window.__kalemo._po', timeout=30000)
+            po = pg.evaluate('() => window.__kalemo._po')
+            S.check('Zweites Objekt enthält den mitgenommenen Strich (Striche = Beispiel + 1)', po['parts'] == 2 and po['drawings'][1] == len(EX['apple'][1]['strokes']) + 1, po)
+        finally:
+            c.close()
+
+    def t5_partial_card():
+        c, pg, errs = fresh(b)
+        try:
+            pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000)
+            pg.mouse.click(5, 5)
+            pg.evaluate(SETUP, {'native': 'de', 'learn': 'tr', 'muted': False})
+            pg.evaluate('() => window.__setDate("2026-09-17")')  # Tag #3: Wort 5 = üç elma
+            pg.evaluate('() => { window.__kalemo.pluralTest = { totalMs: 9000, bonusMs: 2000 }; return 1; }')
+            plan, _ = play_daily_hooks(pg, 'tr', stop_before=4)
+            slot = plan['slots'][4]; wid = slot['id']
+            base_n = wait_state(pg, f's.round && s.round.target === {json.dumps(wid)}', 30000)['drawCount']
+            for k in range(2):
+                wait_state(pg, f's.drawCount === {base_n + k}', 30000)
+                pg.evaluate('(st) => window.__feedStrokes(st, {timing: "real", ptMs: 6, gapMs: 120})', FIX[wid][k % 2])
+            t_mark = pg.evaluate('() => performance.now()')
+            st = wait_state(pg, f's.lastResult && s.lastResult.id === {json.dumps(wid)} && s.overlay', 40000)
+            pg.wait_for_selector('#round-overlay .card h3', timeout=5000); pg.wait_for_timeout(600)
+            title = pg.text_content('#round-overlay .card h3') or ''
+            chip = pg.query_selector('#round-overlay .to-dict')
+            vl = [v for v in pg.evaluate('() => window.__state().voiceLog') if v['t'] >= t_mark]
+            bub = (st['bubble'] or {}).get('text')
+            S.check('Teilerfolg-Karte: „Fast! 2 von 3" ohne „+1 Bildwörterbuch", Zeichnungen sichtbar', title.startswith('Fast! 2 von 3') and chip is None and pg.query_selector('#round-overlay canvas.alive') is not None, (title, chip is not None))
+            S.check('Keine Widerspruchs-Kombi: Blase „Zeit ist um." + Karte ohne „Erkannt!", keine Treffer-Stimme', 'Erkannt' not in title and bub == 'Süre doldu.' and not any(any('/x/hit' in q for q in v['parts']) for v in vl), (bub, title, [v['parts'] for v in vl][-3:]))
+            pg.evaluate('() => window.__next()')
+            st = wait_state(pg, 's.screen === "dayend" && s.summary', 20000)
+            r5 = st['summary']['results'][4]
+            S.check('Tagesende: Mehrzahl zählt nicht als erkannt (2/3), Wort nicht als „+1" im Bildwörterbuch', r5['result'] != 'hit' and r5['parts'] == 2, r5)
+            S.check('Teilerfolg: keine Seitenfehler', not errs, errs[:2])
+        finally:
+            c.close()
+
+    if on('t5'):
+        S.run('5 Äpfel 3/3', t5_apples); S.run('5 Mitnahme + Bonus', t5_carry_bonus); S.run('5 Teilerfolg-Karte', t5_partial_card)
+
     if on('t4'):
         os.makedirs(os.path.join(ROOT, 'passes/fix2'), exist_ok=True)
         S.run('4 Landeseite', t4_landing); S.run('4 Erst Tagesskizze', t4_daily_first)

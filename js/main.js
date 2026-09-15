@@ -218,6 +218,12 @@ async function boot() {
     btn.disabled = false; btn.classList.remove('loading'); if (app.loadingShownAt) { app.loadingMs = Math.round(performance.now() - app.loadingShownAt); app.loadingShownAt = null; }
     await startRoundMode(); playDaily(app, { practice: !!dayResult(app.today()) });
   });
+  /** Tagesskizze starten (auch von der Duell-Landeseite: „Erst Tagesskizze — dann das Duell") */
+  app.startDaily = async () => {
+    app.warm();
+    try { await app.ensureClf(); } catch { app.ui.toast(t('modelFail'), 6000); return; }
+    await startRoundMode(); playDaily(app, { practice: !!dayResult(app.today()) });
+  };
   $('#round-close').addEventListener('click', () => app.goHome());
   app.onLowFps = () => {
     app.choice(`<h3>${escapeHtml(t('moreLight'))}</h3>`, [['screen', t('toScreen'), 'primary'], ['stay', t('next'), 'ghost']]).then((k) => { if (k === 'screen') app.leaveAir(); });

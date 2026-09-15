@@ -101,7 +101,7 @@ export async function scene(app, name) {
       setPair('de', 'tr'); app.settings.chosenPair = true; await app.ensureClf();
       const { encode } = await import('./core/codec.js');
       let tt = 0; const strokes = pick('cat').map(([xs, ys]) => { const ts = xs.map((_, i) => tt + i * 8); tt += xs.length * 8 + 60; return [xs, ys, ts]; });
-      app.duel.receive(encode({ classIdx: app.clf.classNames.indexOf('cat'), senderMs: 9000, strokes }));
+      app.duel.receive(encode({ classIdx: app.clf.classNames.indexOf('cat'), senderMs: 9000, strokes }), { noGate: true });
       break;
     }
     default: break;
