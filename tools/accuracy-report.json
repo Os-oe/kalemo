@@ -1,10 +1,10 @@
 {
- "generated": "2026-09-15T00:38:48.599Z",
+ "generated": "2026-09-15T02:36:44.237Z",
  "method": "Je Wort 50 erkannte Quick-Draw-Zeichnungen (eval-Satz, disjunkt zu Fixtures/Kuratierung), Zittern σ2 + Drift + Glättung (Luft-Simulation), App-Pipeline normalize→RDP ε2→Raster 304/16→28×28, DoodleNet (cpu), Maske = Pool + Synonym-Gruppen, Treffer = Zielwort in Top-3. Iterativ: Wort < 70 % raus, neu messen bis stabil.",
  "gate": {
   "perWordMin": 0.7,
   "overallMin": 0.85,
-  "overallTop3": 0.9426,
+  "overallTop3": 0.9424,
   "pass": true
  },
  "poolSize": 148,
@@ -28,8 +28,8 @@
   {
    "iteration": 1,
    "pool": 150,
-   "top1": 0.8083,
-   "top3": 0.9375,
+   "top1": 0.8084,
+   "top3": 0.9373,
    "removed": [
     "bear (0.68)",
     "dog (0.64)"
@@ -38,25 +38,25 @@
   {
    "iteration": 2,
    "pool": 148,
-   "top1": 0.8161,
-   "top3": 0.9426,
+   "top1": 0.8162,
+   "top3": 0.9424,
    "removed": []
   }
  ],
  "final": {
   "air": {
-   "top1": 0.8161,
-   "top3": 0.9426,
+   "top1": 0.8162,
+   "top3": 0.9424,
    "n": 7400
   },
   "clean": {
-   "top1": 0.8491,
-   "top3": 0.9569,
+   "top1": 0.8489,
+   "top3": 0.9573,
    "n": 7400
   },
   "airUnrecognizedInfo": {
    "top1": 0.279,
-   "top3": 0.4569,
+   "top3": 0.4572,
    "n": 2935
   }
  },
@@ -149,7 +149,7 @@
    "air": {
     "n": 50,
     "top1": 0.84,
-    "top3": 0.96,
+    "top3": 0.94,
     "conf": "ant:3, zebra:2, elephant:1"
    },
    "clean": {
@@ -232,7 +232,7 @@
   "giraffe": {
    "air": {
     "n": 50,
-    "top1": 0.92,
+    "top1": 0.94,
     "top3": 1,
     "conf": "zebra:1, chair:1, stairs:1"
    },
@@ -285,7 +285,7 @@
     "conf": "squirrel:4, snowflake:1, mouse:1"
    },
    "clean": {
-    "top1": 0.68,
+    "top1": 0.66,
     "top3": 0.9
    }
   },
@@ -742,7 +742,7 @@
    },
    "clean": {
     "top1": 0.9,
-    "top3": 0.94
+    "top3": 0.96
    }
   },
   "candle": {
@@ -1138,7 +1138,7 @@
    },
    "clean": {
     "top1": 0.88,
-    "top3": 0.94
+    "top3": 0.96
    }
   },
   "helmet": {
@@ -1210,7 +1210,7 @@
    },
    "clean": {
     "top1": 0.88,
-    "top3": 0.96
+    "top3": 0.98
    }
   },
   "foot": {
@@ -1240,9 +1240,9 @@
   "leg": {
    "air": {
     "n": 50,
-    "top1": 0.8,
+    "top1": 0.78,
     "top3": 0.94,
-    "conf": "skyscraper:2, foot:1, mountain:1"
+    "conf": "foot:2, skyscraper:2, mountain:1"
    },
    "clean": {
     "top1": 0.78,
@@ -1662,7 +1662,7 @@
     "n": 50,
     "top1": 0.7,
     "top3": 0.9,
-    "conf": "ambulance:3, car:2, cow:1"
+    "conf": "ambulance:3, cow:1, squirrel:1"
    },
    "clean": {
     "top1": 0.68,
@@ -1696,9 +1696,9 @@
   "firetruck": {
    "air": {
     "n": 50,
-    "top1": 0.3,
+    "top1": 0.32,
     "top3": 0.78,
-    "conf": "ambulance:12, car:8, bus:6"
+    "conf": "ambulance:12, car:8, bus:5"
    },
    "clean": {
     "top1": 0.38,
@@ -1878,5 +1878,5 @@
    "smiley_face"
   ]
  },
- "ms": 300336
+ "ms": 289673
 }

@@ -1,0 +1,7 @@
+tools/
+tests/
+docs/
+passes/
+data/words.src.json
+*.md
+.gitignore

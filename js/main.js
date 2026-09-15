@@ -146,6 +146,16 @@ async function boot() {
   $('#btn-duel').addEventListener('click', () => { app.sfx?.play('tap'); app.duel.create(); });
   $('#btn-dict').addEventListener('click', () => { app.sfx?.play('tap'); app.openDict(); });
   $('#btn-settings').addEventListener('click', openSettings);
+  $('#round-speaker').addEventListener('click', () => {
+    const r = app.round.active, w = r?.w || app.byId.get(app.dailyRun?.plan.slots[app.dailyRun.index]?.id); if (!w) return;
+    if (app.settings.learn === 'de' && document.querySelector('.article-card')) app.voice?.bare(w.id); else app.voice?.word(w.id, app.settings.learn);
+  });
+  // sanftes Papier-Parallax (Korn folgt dem Zeiger ein paar Pixel)
+  window.addEventListener('pointermove', (e) => {
+    if (app.screen === 'round' || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    document.documentElement.style.setProperty('--px', ((e.clientX / innerWidth - 0.5) * 8).toFixed(1) + 'px');
+    document.documentElement.style.setProperty('--py', ((e.clientY / innerHeight - 0.5) * 8).toFixed(1) + 'px');
+  }, { passive: true });
   $('#btn-yesterday').addEventListener('click', async () => {
     const y = app.yesterday; if (!y) return; await app.clfPromise;
     const card = await yesterdayCard(app, y); app.lastCard = { kind: 'yesterday', text: card.text, bytes: card.blob.size };
@@ -157,6 +167,7 @@ async function boot() {
     const th = await import('./testhooks.js'); th.install(app);
     if (Q.get('scene')) { app.t = t; await th.scene(app, Q.get('scene')); }
   }
+  if (app.DEMO) (await import('./game/demo.js')).runDemo(app);
   app.ready = true;
   document.body.classList.add('ready');
 }

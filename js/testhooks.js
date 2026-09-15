@@ -25,6 +25,21 @@ export async function scene(app, name) {
       app.round.showBubble('Hmm … ay?'); app.stage.setCursor(app.stage.w * 0.55, app.stage.h * 0.5, 'hover'); loop();
       break;
     }
+    case 'roundair': {
+      setPair('de', 'tr'); roundBase('cat'); app.setMode('air');
+      const cam = document.querySelector('#stage canvas.cam'); cam.hidden = false; const cctx = cam.getContext('2d');
+      const img = new Image(); img.src = 'tools/fixtures/pointing_up.jpg'; await img.decode().catch(() => {});
+      const st = app.stage;
+      await app.round.feed(pick('cat'), { timing: 'instant' });
+      const draw = (now) => {
+        cam.width = st.canvas.width; cam.height = st.canvas.height; const s = Math.max(cam.width / img.width, cam.height / img.height) * 1.4;
+        const dx = Math.sin(now / 900) * 6 * st.dpr, dy = Math.cos(now / 1300) * 4 * st.dpr; // Kamera „lebt"
+        cctx.setTransform(-1, 0, 0, 1, cam.width, 0); cctx.drawImage(img, (cam.width - img.width * s) / 2 + dx, (cam.height - img.height * s) / 2 + dy, img.width * s, img.height * s);
+        st.setCursor(st.w * 0.62 + Math.sin(now / 700) * 20, st.h * 0.3, 'hover'); requestAnimationFrame(draw);
+      };
+      requestAnimationFrame(draw); app.round.showBubble('Hmm … ay?');
+      break;
+    }
     case 'article': setPair('tr', 'de'); roundBase('cat', { learnArticle: false }); app.stage.enabled = false; app.articleStep(app.byId.get('cat')); loop(); break;
     case 'offer': setPair('de', 'tr'); roundBase('cat'); app.choice(`<h3>${app.t('airOfferT')}</h3><p>${app.t('airOfferB')}</p>`, [['yes', app.t('airYes'), 'primary'], ['no', app.t('airNo'), 'ghost']]); loop(); break;
     case 'precam': setPair('de', 'tr'); roundBase('cat'); app.settings.airOffered = false; app.offerAir(); setTimeout(() => $('.overlay [data-k="yes"]')?.click(), 50); loop(); break;
@@ -44,7 +59,7 @@ export async function scene(app, name) {
       setPair('de', 'tr');
       for (const id of ['cat', 'apple', 'sun', 'bicycle', 'fish', 'house', 'guitar', 'tree', 'moon']) await app.dict.put(id, { strokes: others[id][0].strokes.map(([x, y]) => [x, y, x.map((_, i) => i * 30)]), date: '2026-09-20' });
       await app.openDict();
-      if (location.hash === '#detail') document.querySelector('.dict-cell').click();
+      if (new URLSearchParams(location.search).get('detail')) document.querySelector('.dict-cell').click();
       break;
     }
     case 'duel': setPair('de', 'tr'); app.duel.create(); break;

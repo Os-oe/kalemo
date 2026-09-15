@@ -53,3 +53,38 @@ Motion-Gate: dayend LEBENDIG (3/9 · 8/9) · duel **LEBENDIG (4/9 · 4/9)** · d
 3. Tagesende mobil: Punkte-Abstand behoben; Häkchen-Stempel sitzt sauber in der Ecke.
 4. Wortkarten schweben versetzt, ohne zu springen — Bewegung ruhig genug für eine Auswahl.
 5. Offen für Phase 4: Wörterbuch-Detail-Sheet und Start-Screen (Attract-Loop) sind noch Greybox-nah; Papierkorn/Buchseite fehlt auf Karten.
+
+## Phase 4 · Runde 1 (alle Screen-Gruppen: Start · Runde Luft · Runde Bildschirm · Tagesende · Duell · Wörterbuch · Karten)
+Motion-Gate: start LEBENDIG (2/9 · 6/9) · roundair LEBENDIG (9/9) · round LEBENDIG (6/9 · 9/9) · dayend LEBENDIG · duel LEBENDIG · duelopts LEBENDIG · **dictdetail STILLSTAND (1/9)** · card LEBENDIG. 404 nur für noch nicht produzierte Audio-Clips.
+- Start (vorab, Einzelshot): Logo ohne Bezug zur Leuchtspur; Tagesskizze-Button ohne Symbol; Papier ohne Buchseiten-Kante; favicon fehlt → Leuchtspur-Unterstrich zeichnet sich ein + pulsiert, Stift-Icon, Innenschatten wie Buchseite, icon.svg.
+1. Start: Attract-Bühne wirkt wie ein eingebettetes Video, nicht wie eine Skizzenbuch-Seite → zwei Washi-Tape-Streifen an den Ecken.
+2. Runde Luft: hohler Cursor-Ring verschwindet auf hellem Kamerabild (weiß auf hellblau) → dunkler Außenrand + dickerer Ring.
+3. Runde Luft: Wort „kedi" und Timer stehen direkt auf dem Kamerabild ohne Kontrastfläche → Verlauf-Scrim hinter der Kopfzeile.
+4. Wörterbuch-Detail steht still, eigene Zeichnung klein → größere Zeichnung, „So malen andere" entstehen nacheinander in Schleife.
+5. Wörterbuch-Detail TR: „Mehrzahl: üç elma" und Tipp „… reicht die Zahl: üç elma" doppelt → bei TR nur der Tipp.
+6. Wörterbuch-Detail: DE-Zeile ohne Artikel-Farbe (Variable gesetzt, nie verwendet) → DE-Wort in Artikel-Textfarbe (Kontrast-Variante #1D4ED8/#B91C1C/#15803D).
+
+## Phase 4 · Runde 2 (start · roundair · dictdetail · dayend)
+Motion-Gate: start LEBENDIG (2/9 · 6/9) · roundair LEBENDIG (9/9) · dictdetail **LEBENDIG (2/9 · 5/9)** · dayend LEBENDIG (3/9 · 8/9).
+1. Start mobil: unter den Buttons ~130 px tote Fläche bis zum Footer, und niemand weiß, wie lang die Tagesskizze dauert → Mikrozeile „5 Wörter · etwa 2 Minuten · für alle gleich" (3 Sprachen).
+2. Start: Washi-Tape + Leuchtspur-Unterstrich verbinden Skizzenbuch und Licht — gut; Hand-Silhouette auf dem Katzenohr etwas blass, bleibt (soll Zeichnung nicht verdecken).
+3. Tagesende Desktop: Wortbeschriftungen unter den Zeichnungen zu klein (1,35 rem Caveat ≈ 15 px x-Höhe) → 1,7 rem fett.
+4. Tagesende: Lustig-Satz + Flamme + Punkte gut gestaffelt; grünes Häkchen und gestrichelte Karte eindeutig.
+5. Runde Luft: Kopfzeilen-Scrim + Ring mit dunklem Rand lesen sich jetzt auf dem Kamerabild.
+
+## Phase 4 · Runde 3 (alle Gruppen)
+Motion-Gate: start 2/9·6/9 · roundair 9/9 · round 6/9·9/9 · dayend 3/9·8/9 · duel 3/9·8/9 · duelopts 6/9·8/9 · dictdetail 2/9·5/9 · card 2/9·4/9 — alle **LEBENDIG**.
+1. Heute-Karte: Buchfalz-Verlauf (60 px, 10 %) liest sich in der Vorschau als grauer Balken → 36 px, 7 %.
+2. Heute-Karte (Lernsprache EN/TR): fünf identische Gold-Quadrate ohne Information → Slot-Nummer 1–5 im Farbfeld.
+3. Duell-Optionen mobil: sichtbare senkrechte Kante im Hintergrund — die CSS-Skalierung verkleinert die ganze Leinwand inkl. Lichtstaub → Verschiebung/Skalierung nur für die Striche im Renderer, weich animiert.
+4. Duell-Optionen: „?" als Kopfzeile + Frage im Sheet sind doppelt, aber das „?" hält die Spannung oben — bewusst belassen.
+5. Wörterbuch-Detail: nacheinander entstehende Beispiele + größere eigene Zeichnung wirken; Kontrast DE-Artikel-Farbe ok.
+
+## Phase 4 · Runde 4 (round · duel · duelopts · card · start — dritte Runde für diese Gruppen)
+Motion-Gate: round 6/9·9/9 · duel 3/9·8/9 · duelopts 6/9·9/9 · card 2/9·4/9 · start 2/9·6/9 — alle **LEBENDIG**.
+1. Duell-Optionen: senkrechte Kante weg; aber Glut-Partikel steigen an der alten (unverschobenen) Position unter der Katze auf → Glut aus, solange die Ansicht verschoben ist.
+2. Runde Bildschirm: Sprech-Zipfel, Leuchtspur weich, Timer + Slots lesbar — keine Befunde mehr an der Bühne.
+3. Duell-Wortwahl: schwebende Karten + Mini-Bühne tragen die Seite; Hinweistext zentriert.
+4. Heute-Karte: Slot-Nummern machen die Zeilen scanbar; Falz dezent.
+5. Start: Mikrozeile füllt die tote Zone und beantwortet „wie lange?".
+Urteil Phase 4 visuell: alle 7 Screen-Gruppen ≥ 3 Runden, letzte Runde ohne STILLSTAND.

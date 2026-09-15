@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><title>OG</title>
+<link rel="stylesheet" href="../css/app.css">
+<style>
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; background: #F7F1E3; }
+  .og { position: relative; width: 1200px; height: 630px; display: grid; grid-template-columns: 640px 1fr; }
+  .stage { position: relative; background: #13203A; }
+  canvas { position: absolute; inset: 0; width: 640px; height: 630px; }
+  .bubble2 { position: absolute; left: 50%; bottom: 44px; transform: translateX(-50%); background: #FFFDF7; color: #1E2A3A; border-radius: 22px; padding: 6px 26px 10px; font: 700 44px Caveat, cursive; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+  .side { padding: 70px 56px; display: flex; flex-direction: column; justify-content: center; box-shadow: inset 18px 0 30px -18px rgba(30,42,58,.25); }
+  h1 { font: 700 132px/0.9 Caveat, cursive; margin: 0; color: #1E2A3A; }
+  .trail { width: 330px; height: 26px; margin: 2px 0 26px; }
+  .trail path { fill: none; stroke: #FFC857; stroke-width: 7; stroke-linecap: round; filter: drop-shadow(0 0 6px rgba(255,200,87,.9)); }
+  p.t { font: 700 48px/1.15 Caveat, cursive; margin: 0; color: #1E2A3A; }
+  p.t span { color: #6B7280; }
+  .codes { margin-top: 30px; font: 800 26px Nunito, sans-serif; letter-spacing: .08em; color: #1E2A3A; }
+  .codes i { font-style: normal; color: #6B7280; font-weight: 700; letter-spacing: 0; }
+</style></head>
+<body>
+<div class="og">
+  <div class="stage"><canvas id="c" width="1280" height="1260"></canvas><div class="bubble2">Buldum! Kedi!</div></div>
+  <div class="side">
+    <h1>Kalemo</h1>
+    <svg class="trail" viewBox="0 0 330 26"><path d="M6 16c45-10 90 8 138-2s93-10 180-3"/></svg>
+    <p class="t">Mal’s in die Luft.</p>
+    <p class="t"><span>Draw it in the air.</span></p>
+    <p class="t"><span>Havada çiz.</span></p>
+    <div class="codes">DE · EN · TR <i>· im Browser</i></div>
+  </div>
+</div>
+<script type="module">
+  import { drawStrokes } from '../js/game/ink.js';
+  import { drawPointerSilhouette } from '../js/game/hands.js';
+  await document.fonts.load('700 132px Caveat', 'Kalemo ç'); await document.fonts.load('800 26px Nunito', 'DE');
+  const o = await (await fetch('../data/others.json')).json();
+  const c = document.getElementById('c'), ctx = c.getContext('2d');
+  for (let i = 0; i < 60; i++) { ctx.fillStyle = `rgba(255,236,190,${0.05 + (i % 4) * 0.03})`; ctx.beginPath(); ctx.arc((i * 211.7) % 1280, (i * 137.3) % 1260, 1.5 + (i % 3), 0, 6.28); ctx.fill(); }
+  const fit = drawStrokes(ctx, o.cat[0].strokes, { style: 'glow', color: '#FFC857', width: 11, box: { x: 200, y: 120, w: 880, h: 820 } });
+  const s = o.cat[0].strokes.at(-1); const [hx, hy] = fit.map(s[0].at(-1), s[1].at(-1));
+  drawPointerSilhouette(ctx, hx, hy, 2.2, { fill: 'rgba(255,251,239,0.16)', stroke: 'rgba(255,251,239,0.7)' });
+  window.__done = true;
+</script>
+</body></html>

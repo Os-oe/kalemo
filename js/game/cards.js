@@ -11,8 +11,8 @@ function paper(ctx, W, H, seed = 3) {
   ctx.fillStyle = PAPER; ctx.fillRect(0, 0, W, H);
   const rng = makeRng(seed);
   for (let i = 0; i < W * H / 900; i++) { ctx.fillStyle = `rgba(30,42,58,${0.025 + rng.rnd() * 0.035})`; ctx.fillRect(rng.rnd() * W, rng.rnd() * H, 1.6, 1.6); }
-  const g = ctx.createLinearGradient(0, 0, 60, 0); g.addColorStop(0, 'rgba(30,42,58,0.10)'); g.addColorStop(1, 'rgba(30,42,58,0)');
-  ctx.fillStyle = g; ctx.fillRect(0, 0, 60, H);
+  const g = ctx.createLinearGradient(0, 0, 36, 0); g.addColorStop(0, 'rgba(30,42,58,0.07)'); g.addColorStop(1, 'rgba(30,42,58,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 36, H);
 }
 function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 function check(ctx, x, y, s, ok) {
@@ -104,6 +104,7 @@ export async function todayCard(app, sum) {
     const r = sum.results[i]; if (!r) continue; const w = app.byId.get(r.id); const y = y0 + i * rowH;
     const col = slotColor(w, r, learn);
     ctx.fillStyle = col; rr(ctx, 72, y + 20, 120, 120, 26); ctx.fill();
+    ctx.fillStyle = 'rgba(30,42,58,0.78)'; ctx.font = '700 84px Caveat'; ctx.textAlign = 'center'; ctx.fillText(String(i + 1), 132, y + 110); ctx.textAlign = 'left';
     ctx.fillStyle = NIGHT; rr(ctx, 222, y + 10, 330, 140, 24); ctx.fill();
     const strokes = r.drawings?.length ? r.drawings[0] : r.strokes;
     if (strokes?.length && app.clf) {

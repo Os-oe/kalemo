@@ -1,6 +1,6 @@
 // Runden-Controller: verbindet Bühne, Klassifikator, RoundEngine, Stimme/SFX und Overlay.
 import { RoundEngine } from '../core/engine.js';
-import { t, word, cap, strokeColor, LANGS, pluralPhrase } from '../core/i18n.js';
+import { t, word, cap, strokeColor, LANGS, pluralPhrase, ART_TEXT } from '../core/i18n.js';
 import { drawStrokes } from './ink.js';
 import { mount as mountAlive, confetti } from './alive.js';
 
@@ -100,6 +100,11 @@ export class RoundController {
   showBubble(text, g = null) {
     const b = this.bubble; b.hidden = false; b.textContent = text;
     b.style.color = '';
+    // DE: getipptes Wort in Artikel-Farbe (Text-Variante, Kontrast ≥ 4,5:1)
+    if (g && this.app.settings.learn === 'de') {
+      const wd = `${g.de.art} ${g.de.noun}`, i = text.indexOf(wd);
+      if (i >= 0) { b.textContent = ''; const span = document.createElement('span'); span.textContent = wd; span.style.color = ART_TEXT[g.de.art]; b.append(text.slice(0, i), span, text.slice(i + wd.length)); }
+    }
     b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
   }
 
@@ -158,7 +163,7 @@ export class RoundController {
     const langs = this.langOrder().map((l, i) => `<button class="lang-line${i === 0 ? ' first' : ''}" data-say="${l}"><small>${l.toUpperCase()}</small><span>${escapeHtml(plural ? pluralPhrase(w, l, plural) : word(w, l))}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9c1.5 1.5 1.5 4.5 0 6"/></svg></button>`).join('');
     this.overlay.innerHTML = `<div class="card ${hit ? 'hit' : 'miss'}" role="dialog" aria-live="polite">
       <h3>${escapeHtml(hit ? t('hitTitle', {}, ui) : t('missTitle', {}, ui))}</h3>
-      ${hit ? '<canvas class="alive" width="280" height="200"></canvas>' : '<div class="others"></div>'}
+      ${hit ? `<div class="alive-wrap"><canvas class="alive" width="280" height="200"></canvas><span class="to-dict"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/></svg>+1 ${escapeHtml(t('dict', {}, ui))}</span></div>` : '<div class="others"></div>'}
       <div class="langs">${langs}</div>${extraHtml}
       <button class="btn primary big" data-act="next">${escapeHtml(t('next', {}, ui))}</button></div>`;
     this.overlay.hidden = false;
@@ -168,6 +173,7 @@ export class RoundController {
       const col = learn === 'de' ? (plural ? '#A16207' : { der: '#1D4ED8', die: '#B91C1C', das: '#15803D' }[w.de.art]) : '#1E2A3A';
       const strokes = out.drawings?.length ? out.drawings[0] : out.strokes;
       mountAlive(this.overlay.querySelector('canvas.alive'), { strokes, color: col, style: 'pencil', width: 3.6, motion: { kind: w.motion, id: w.id }, delay: 120 });
+      setTimeout(() => app.sfx?.play('glitter'), 350);
     }
     this.overlay.querySelectorAll('[data-say]').forEach((b) => b.addEventListener('click', () => app.voice?.word(w.id, b.dataset.say)));
     return new Promise((res) => {

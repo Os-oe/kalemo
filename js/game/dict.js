@@ -54,8 +54,8 @@ export function installDict(app) {
     const box = document.getElementById('sheet');
     box.innerHTML = `<div class="sheet-card dict-detail" role="dialog">
       <canvas class="big"></canvas>
-      <div class="langs">${order.map((l, i) => `<button class="lang-line${i === 0 ? ' first' : ''}" data-say="${l}" ${l === 'de' ? `style="--ac:${ART_COLOR[w.de.art]}"` : ''}><small>${l.toUpperCase()}</small><span>${escapeHtml(word(w, l))}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9c1.5 1.5 1.5 4.5 0 6"/></svg></button>`).join('')}</div>
-      ${pl ? `<p class="plural-line"><strong>${escapeHtml(t('plural'))}:</strong> ${escapeHtml(pl)}</p><p class="hint">${escapeHtml(pluralTip(w, learn, native, 3))}</p>` : ''}
+      <div class="langs">${order.map((l, i) => `<button class="lang-line${i === 0 ? ' first' : ''}" data-say="${l}" ${l === 'de' ? `style="--ac:${ART_TEXT[w.de.art]}"` : ''}><small>${l.toUpperCase()}</small><span>${escapeHtml(word(w, l))}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9c1.5 1.5 1.5 4.5 0 6"/></svg></button>`).join('')}</div>
+      ${pl ? `${learn === 'tr' ? '' : `<p class="plural-line"><strong>${escapeHtml(t('plural'))}:</strong> ${escapeHtml(pl)}</p>`}<p class="hint">${escapeHtml(pluralTip(w, learn, native, 3))}</p>` : ''}
       ${amb ? `<p class="amb">${escapeHtml(t('dictAmbig', { h: amb }))}</p>` : ''}
       <h4>${escapeHtml(t('dictOthers'))}</h4><div class="others"></div>
       <button class="btn ghost" data-act="close">${escapeHtml(t('close'))}</button></div>`;
@@ -64,8 +64,8 @@ export function installDict(app) {
     mount(box.querySelector('canvas.big'), { strokes: e.strokes, color: col, style: 'pencil', width: 3.6, motion: { kind: w.motion, id: w.id } });
     const others = (await app.others())[w.id] || [];
     const oBox = box.querySelector('.others');
-    oBox.innerHTML = others.slice(0, 3).map(() => '<canvas width="160" height="160"></canvas>').join('');
-    oBox.querySelectorAll('canvas').forEach((c, i) => drawStrokes(c.getContext('2d'), others[i].strokes, { style: 'pencil', color: '#6B7280', width: 3, box: { x: 0, y: 0, w: 160, h: 160 }, seed: i + 7 }));
+    oBox.innerHTML = others.slice(0, 3).map(() => '<canvas></canvas>').join('');
+    oBox.querySelectorAll('canvas').forEach((c, i) => mount(c, { strokes: others[i].strokes, color: '#6B7280', style: 'pencil', width: 2.4, replay: 2.4 + i * 0.4, delay: i * 500, boil: 0.6, still: true, seed: i + 7 }));
     app.voice?.word(w.id, learn);
     box.onclick = (ev) => {
       const s = ev.target.closest('[data-say]'); if (s) { app.voice?.word(w.id, s.dataset.say); return; }

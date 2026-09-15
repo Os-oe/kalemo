@@ -49,7 +49,7 @@ export class Stage {
   setColor(c) { this.color = c; this._rebuildLayer(); }
   /** Stiftbreite relativ zur Bühne */
   get penWidth() { return Math.max(5.5, Math.min(11, Math.min(this.w, this.h) / 66)); }
-  clear() { this.strokes = []; this.widths = []; this.active = null; this.activeW = null; this.crumbleAt = null; this.canvas.classList.remove('squash'); this.version++; this._rebuildLayer(); }
+  clear() { this.strokes = []; this.widths = []; this.active = null; this.activeW = null; this.crumbleAt = null; this.viewTarget = null; this.canvas.classList.remove('squash'); this.version++; this._rebuildLayer(); }
   /** Zeit um: Zeichnung zerbröselt (keine Buzzer-Strafe) */
   crumble() { this.crumbleAt = performance.now(); }
   inkLength() { return inkLength(this.active ? [...this.strokes, this.active] : this.strokes); }
@@ -145,6 +145,10 @@ export class Stage {
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     this._dust(ctx, now, dt);
     ctx.save();
+    // Ansicht (z. B. Duell-Optionen: Zeichnung rückt nach oben) — nur Striche, nicht der Staub
+    const vt = this.viewTarget || { s: 1, dy: 0 }; this.view = this.view || { s: 1, dy: 0 };
+    this.view.s += (vt.s - this.view.s) * Math.min(1, dt * 8); this.view.dy += (vt.dy - this.view.dy) * Math.min(1, dt * 8);
+    if (Math.abs(this.view.s - 1) > 0.001 || Math.abs(this.view.dy) > 0.5) { const cx = this.canvas.width / 2, cy = this.canvas.height / 2; ctx.translate(cx, cy + this.view.dy * dpr); ctx.scale(this.view.s, this.view.s); ctx.translate(-cx, -cy); }
     if (this.twitch > 0) { const k = this.twitch; ctx.translate((Math.random() - 0.5) * 5 * k * dpr, (Math.random() - 0.5) * 5 * k * dpr); this.twitch = Math.max(0, k - dt * 5); }
     if (this.shift) ctx.translate(this.shift * dpr, 0);
     if (this.crumbleAt != null) {
@@ -168,7 +172,11 @@ export class Stage {
       const { x, y, state } = this.cursor;
       ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       if (state === 'draw') { ctx.shadowColor = this.color; ctx.shadowBlur = 18; ctx.fillStyle = '#FFFBEF'; ctx.beginPath(); ctx.arc(x, y, this.penWidth * 0.9, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = rgba(this.color, 0.9); ctx.beginPath(); ctx.arc(x, y, this.penWidth * 0.45, 0, Math.PI * 2); ctx.fill(); }
-      else { ctx.strokeStyle = 'rgba(255,251,239,0.85)'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(x, y, this.penWidth * 1.5, 0, Math.PI * 2); ctx.stroke(); }
+      else { // hohler Ring = schwebt (dunkler Rand für Kontrast auf hellem Kamerabild)
+        const R = this.penWidth * 1.7;
+        ctx.strokeStyle = 'rgba(10,16,32,0.55)'; ctx.lineWidth = 5.5; ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,251,239,0.95)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, R, 0, Math.PI * 2); ctx.stroke();
+      }
       ctx.restore();
     }
   }
@@ -203,7 +211,7 @@ export class Stage {
       ctx.fillStyle = g; ctx.fillRect(0, 0, this.w, this.h);
     }
     // Glut steigt aus der Leuchtspur
-    if (!reduce && this.strokes.length && Math.random() < 0.5) {
+    if (!reduce && this.strokes.length && !this.viewTarget && Math.random() < 0.5) {
       const s = this.strokes[(Math.random() * this.strokes.length) | 0]; const i = (Math.random() * s[0].length) | 0;
       this.sparks.emit(1, () => ({ x: s[0][i] + this.shift, y: s[1][i], vx: (Math.random() - 0.5) * 14, vy: -18 - Math.random() * 26, g: 0, life: 1.4 + Math.random(), max: 2.4, size: 1.2 + Math.random() * 1.6, color: Math.random() < 0.6 ? '#FFF1C9' : this.color }));
     }

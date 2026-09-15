@@ -145,6 +145,7 @@ export function installDuel(app) {
       for (let i = opts.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [opts[i], opts[j]] = [opts[j], opts[i]]; }
       app.duelState = { ...app.duelState, phase: 'options', options: opts };
       document.body.classList.add('options'); $('#word-sub').textContent = '';
+      app.stage.viewTarget = { s: 0.78, dy: -app.stage.h * 0.15 };
       app.showCard(`<h3>${escapeHtml(t('duelWhat', {}, ui))}</h3><div class="answer-grid">${opts.map((id) => `<button class="btn answer" data-id="${escapeHtml(id)}">${escapeHtml(word(app.byId.get(id), learn))}</button>`).join('')}</div>`, 'duel');
       const card = document.querySelector('#round-overlay .card');
       const pick = async (id) => {
