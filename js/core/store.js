@@ -29,7 +29,9 @@ export function saveSettings(patch) { return set('settings', { ...settings(), ..
 export function dayResult(iso) { return get('day.' + iso, null); }
 export function saveDayResult(iso, res) {
   set('day.' + iso, res);
-  const idx = get('days', []); if (!idx.includes(iso)) { idx.push(iso); idx.sort(); set('days', idx.slice(-60)); }
+  const idx = get('days', []); if (!idx.includes(iso)) { idx.push(iso); idx.sort(); }
+  while (idx.length > 30) { const old = idx.shift(); try { localStorage.removeItem(NS + 'day.' + old); } catch {} }
+  set('days', idx);
   return res;
 }
 export function playedDays() { return get('days', []); }

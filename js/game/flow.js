@@ -1,6 +1,6 @@
 // Ablauf einer Tagesskizzen-Runde: Artikel-Schritt → Malen (bzw. Mehrzahl) → Hol es echt → Ergebnis.
 // Plus Luft-Modus-Einstieg (Onboarding-Kette) und Kamera-Fallbacks.
-import { t, word, strokeColor, ART_COLOR, ART_TEXT, cap } from '../core/i18n.js';
+import { t, word, strokeColor, ART_COLOR, ART_TEXT, cap, funnyAllowed } from '../core/i18n.js';
 import { saveSettings } from '../core/store.js';
 import { handSvg, POSES } from './hands.js';
 import { escapeHtml } from './round.js';
@@ -170,7 +170,7 @@ export function installFlow(app) {
       if (plural) app.voice?.plural(w.id, learn, plural); else app.voice?.word(w.id, learn);
     }
     let out;
-    if (plural && app.pluralRound) out = await app.pluralRound(w, plural);
+    if (plural) out = await app.pluralRound(w, plural);
     else out = await app.round.draw({ id: w.id, color: strokeColor(w, learn) });
     out.kind = slot.kind; out.n = plural; out.articleOk = articleOk;
     if (articleOk) out.points += 20;
@@ -179,8 +179,15 @@ export function installFlow(app) {
       const real = await app.realStep(w);
       out.real = !!real; if (real) out.points *= 2;
     }
+    if (out.result !== 'hit') app.voice?.announce(w.id, app.round.langOrder(), { delay: 900, plural });
+    else if (plural) app.voice?.announce(w.id, app.round.langOrder(), { delay: 500, plural });
     app.lastResult = out;
-    await app.round.resultCard(out, { plural });
+    if (out.result === 'hit' || out.parts > 0) {
+      const strokes = out.drawings?.length ? out.drawings[0] : out.strokes;
+      app.dict.put(w.id, { strokes, date: app.today(), articleOk, funny: out.bestWrong && funnyAllowed(w.id, out.bestWrong.id) ? out.bestWrong.id : null }).then(() => app.onDictChange?.());
+    }
+    const extraHtml = plural && out.tip ? `<p class="tipcard">${escapeHtml(out.tip)}</p>` : '';
+    await app.round.resultCard(out, { plural, extraHtml, forceHit: !!(plural && out.parts > 0) });
     if (out.result === 'hit' && isDesktop() && !app.settings.airOffered && app.mode === 'screen' && !app.settings.air && !app.DEMO) {
       await app.offerAir();
     }

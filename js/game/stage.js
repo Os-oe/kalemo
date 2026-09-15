@@ -1,7 +1,8 @@
 // Die Bühne: Leuchtspur-Canvas über Nachtpapier bzw. Kamerabild. Nimmt Punkte von Maus/Touch
 // (Bildschirm-Modus) oder vom Stift-Automaten (Luft-Modus) entgegen. Striche in CSS-Pixeln.
 import { inkLength } from '../core/raster.js';
-import { rgba, Particles, reducedMotion } from './ink.js';
+import { rgba, Particles, reducedMotion, drawStrokes } from './ink.js';
+const drawStrokesGlow = (ctx, strokes, box, color) => drawStrokes(ctx, strokes, { style: 'glow', color, width: Math.max(2.5, box.w / 60), box });
 import { drawPointerSilhouette } from './hands.js';
 
 /** Chaikin-Glättung (nur fürs Zeichnen; Rohdaten bleiben unverändert) */
@@ -147,6 +148,7 @@ export class Stage {
     ctx.drawImage(this.layer, 0, 0);
     if (this.active) this._drawStroke(ctx, this.active, this.activeW, false);
     ctx.restore();
+    if (this.ghosts.length) this._drawGhosts(ctx, now);
     this.sparks.update(dt);
     ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalCompositeOperation = 'lighter'; this.sparks.draw(ctx); ctx.restore();
     if (this.cursor && this.enabled) {
@@ -157,6 +159,22 @@ export class Stage {
       ctx.restore();
     }
   }
+  /** Mehrzahl-Runde: fertige Zeichnung gleitet klein an den Rand */
+  addGhost(strokes, color) { this.ghosts.push({ strokes, color, born: performance.now(), from: { w: this.w, h: this.h } }); }
+  clearGhosts() { this.ghosts = []; }
+  _drawGhosts(ctx, now) {
+    const dpr = this.dpr, n = this.ghosts.length, size = Math.min(this.w * 0.22, this.h * 0.2, 150);
+    ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    this.ghosts.forEach((g, i) => {
+      const k = Math.min(1, (now - g.born) / 450), e = 1 - (1 - k) ** 3;
+      const tx = 14 + i * (size + 8), ty = this.h - size - 110;
+      const box = { x: this.w * 0.15 * (1 - e) + tx * e, y: this.h * 0.15 * (1 - e) + ty * e, w: this.w * 0.7 * (1 - e) + size * e, h: this.h * 0.7 * (1 - e) + size * e };
+      ctx.globalAlpha = 0.55 + 0.45 * (1 - e);
+      drawStrokesGlow(ctx, g.strokes, box, g.color);
+    });
+    ctx.restore();
+  }
+
   /** Ruhe-Bewegung: treibender Lichtstaub + Mal-Hinweis, solange noch nichts gemalt ist */
   _dust(ctx, now, dt) {
     const dpr = this.dpr, reduce = reducedMotion();

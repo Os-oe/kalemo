@@ -45,10 +45,12 @@ with server() as base, sync_playwright() as p:
         page.evaluate('() => window.__startDaily()')
         hits = 0
         for i, slot in enumerate(plan['slots']):
-            wait_state(page, f's.round && s.round.target === {json.dumps(slot["id"])}', 20000)
-            strokes = FIX[slot['id']][0]
-            page.evaluate('(st) => window.__feedStrokes(st, {timing: "real"})', strokes)
-            st = wait_state(page, f's.lastResult && s.lastResult.id === {json.dumps(slot["id"])} && s.overlay', 25000)
+            base_n = wait_state(page, f's.round && s.round.target === {json.dumps(slot["id"])}', 20000)['drawCount']
+            reps = slot['n'] if slot['kind'] == 'plural' else 1  # Mehrzahl-Runde (seit Phase 3): N Zeichnungen
+            for k in range(reps):
+                wait_state(page, f's.round && s.drawCount === {base_n + k}', 30000)
+                page.evaluate('(st) => window.__feedStrokes(st, {timing: "real"})', FIX[slot['id']][k % 2])
+            st = wait_state(page, f's.lastResult && s.lastResult.id === {json.dumps(slot["id"])} && s.overlay', 40000)
             lr = st['lastResult']
             ok = lr['result'] == 'hit'
             hits += ok

@@ -1,0 +1,66 @@
+{
+  "url": "http://127.0.0.1:8820/?test=1&scene=duelopts",
+  "label": "p3-duelopts",
+  "checkedAt": "2026-09-15T01:54:31.954Z",
+  "threshold": 0.15,
+  "minCells": 2,
+  "desktop": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/phase3/p3-duelopts-desktop.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "360×225",
+      "overall": 0.5049,
+      "cells": [
+        0.0057,
+        1.0486,
+        1.5176,
+        0.0071,
+        0.3716,
+        1.2046,
+        0.0017,
+        0.0654,
+        0.3221
+      ],
+      "aliveCells": [
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-mitte",
+        "mitte-rechts",
+        "unten-rechts"
+      ],
+      "aliveCount": 5
+    }
+  },
+  "mobile": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/phase3/p3-duelopts-mobile.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "97×211",
+      "overall": 1.1518,
+      "cells": [
+        0.6179,
+        2.3492,
+        2.2581,
+        0.6108,
+        2.0827,
+        2.108,
+        0.0025,
+        0.1781,
+        0.2034
+      ],
+      "aliveCells": [
+        "oben-links",
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-links",
+        "mitte-mitte",
+        "mitte-rechts",
+        "unten-mitte",
+        "unten-rechts"
+      ],
+      "aliveCount": 8
+    }
+  },
+  "flags": [],
+  "motionVerdict": "LEBENDIG"
+}

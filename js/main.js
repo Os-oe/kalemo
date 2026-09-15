@@ -1,5 +1,6 @@
 // Kalemo — Einstieg. Statische Seite, ES-Module, kein Framework, keine externen Requests.
 import { settings, saveSettings, streak, dayResult } from './core/store.js';
+export { saveSettings };
 import { setUiLang, t, LANGS, LANG_CODE } from './core/i18n.js';
 import { planFor, berlinDate, addDays } from './core/plan.js';
 import { createClassifier } from './core/classifier.js';
@@ -8,6 +9,13 @@ import { RoundController, escapeHtml } from './game/round.js';
 import { playDaily } from './game/daily.js';
 import { drawStrokes } from './game/ink.js';
 import { installFlow, isDesktop, inAppBrowser } from './game/flow.js';
+import { installPlural } from './game/plural.js';
+import { installDayEnd } from './game/dayend.js';
+import { installDuel } from './game/duel.js';
+import { installDict } from './game/dict.js';
+import { yesterdayCard } from './game/cards.js';
+import { shareImage } from './game/share.js';
+import { mount } from './game/alive.js';
 
 /** Beim Rundenstart: Luft-Modus wieder aufnehmen, wenn früher erlaubt (Desktop, nicht abgelehnt) */
 async function startRoundMode() {
@@ -74,21 +82,39 @@ function renderStart() {
   $('#daily-label').textContent = done ? t('practice') : t('daily', { n: plan.number });
   const st = streak(iso, addDays(iso, -1));
   const badge = $('#streak-badge'); badge.hidden = st < 1; badge.textContent = t('streak', { n: st });
+  // „Gestern gemalt"-Kachel, sobald eine Gestern-Karte existiert
+  const y = dayResult(addDays(iso, -1)); const tile = $('#btn-yesterday');
+  tile.hidden = !y;
+  if (y) { const c = tile.querySelector('canvas'); const r = y.results.find((x) => x.strokes?.length); if (r) mount(c, { strokes: r.strokes, color: '#1E2A3A', style: 'pencil', width: 2, still: true }); app.yesterday = y; }
 }
 
 app.hooks = {};
 
-// ---------- Tagesende (Phase 1: schlicht) ----------
-app.showDayEnd = async function (sum) {
-  app.show('dayend');
-  $('#dayend-title').textContent = t('dayEndT', { n: sum.number });
-  $('#dayend-recog').textContent = t('aiRecognized', { x: sum.hits });
-  $('#dayend-points').textContent = sum.points;
-  $('#dayend-grid').innerHTML = sum.results.map((r) => `<figure><canvas width="200" height="200"></canvas><figcaption>${escapeHtml(app.byId.get(r.id)?.[app.settings.learn === 'de' ? 'de' : app.settings.learn]?.noun || '')}</figcaption></figure>`).join('');
-  [...document.querySelectorAll('#dayend-grid canvas')].forEach((c, i) => {
-    drawStrokes(c.getContext('2d'), sum.results[i].strokes, { style: 'pencil', color: '#1E2A3A', width: 4, box: { x: 0, y: 0, w: 200, h: 200 } });
-  });
+app.goHome = () => {
+  app.dailyRun = null; app.round.active = null; app.hideCard?.(); app.stage.enabled = false; document.body.classList.remove('replay', 'options');
+  if (app.air) app.air.stop(); app.setMode?.('screen');
+  const sheet = $('#sheet'); sheet.hidden = true; sheet.innerHTML = '';
+  app.show('start'); renderStart();
 };
+
+/** Einstellungen (Ton, Musik, Zwicken, Luft-Modus am Handy) */
+function openSettings() {
+  const s = app.settings; const sheet = $('#sheet');
+  const row = (k, label, on) => `<label class="toggle"><input type="checkbox" data-k="${k}" ${on ? 'checked' : ''}><span>${escapeHtml(label)}</span></label>`;
+  sheet.innerHTML = `<div class="sheet-card" role="dialog"><h3>${escapeHtml(t('settings'))}</h3>
+    ${row('sound', t('unmute'), !s.muted)}${row('music', t('music'), s.music)}${row('pinch', t('pinch'), s.pinch)}${row('air', t('airToggle'), s.air)}
+    <button class="btn primary" data-act="close">${escapeHtml(t('close'))}</button></div>`;
+  sheet.hidden = false;
+  sheet.onclick = (e) => { if (e.target === sheet || e.target.closest('[data-act=close]')) { sheet.hidden = true; sheet.innerHTML = ''; } };
+  sheet.onchange = (e) => {
+    const k = e.target.dataset.k, v = e.target.checked;
+    if (k === 'sound') app.settings = saveSettings({ muted: !v });
+    else if (k === 'air') app.settings = saveSettings({ air: v, airDenied: false, airOffered: true });
+    else app.settings = saveSettings({ [k]: v });
+    if (app.air) app.air.pen.pinch = app.settings.pinch;
+    app.audio?.applySettings?.();
+  };
+}
 
 // ---------- Boot ----------
 window.addEventListener('keydown', (e) => { if (e.key === 'Tab') document.body.classList.add('kbd'); });
@@ -100,17 +126,27 @@ async function boot() {
   app.words = words; app.byId = new Map(words.map((w) => [w.id, w]));
   app.stage = new Stage($('#stage'));
   app.round = new RoundController(app);
-  installFlow(app);
+  installFlow(app); installPlural(app); installDayEnd(app); installDuel(app); installDict(app);
   app.setMode('screen');
   applyTexts();
   if (inAppBrowser()) $('#inapp').hidden = false;
   app.clfPromise = createClassifier({ words, backend: Q.get('backend') || undefined }).then((c) => (app.clf = c)).catch((e) => { app.log.push('clf ' + e.message); throw e; });
   $('#btn-daily').addEventListener('click', async () => { app.sfx?.play('tap'); await startRoundMode(); await app.clfPromise; playDaily(app, { practice: !!dayResult(app.today()) }); });
-  $('#round-close').addEventListener('click', () => { app.dailyRun = null; app.round.active = null; app.hideCard(); app.stage.enabled = false; app.air?.stop(); app.setMode('screen'); app.show('start'); renderStart(); });
+  $('#round-close').addEventListener('click', () => app.goHome());
   app.onLowFps = () => {
     app.choice(`<h3>${escapeHtml(t('moreLight'))}</h3>`, [['screen', t('toScreen'), 'primary'], ['stay', t('next'), 'ghost']]).then((k) => { if (k === 'screen') app.leaveAir(); });
   };
-  $('#btn-dayend-home').addEventListener('click', () => { app.show('start'); renderStart(); });
+  $('#btn-dayend-home').addEventListener('click', () => app.goHome());
+  $('#btn-duel').addEventListener('click', () => { app.sfx?.play('tap'); app.duel.create(); });
+  $('#btn-dict').addEventListener('click', () => { app.sfx?.play('tap'); app.openDict(); });
+  $('#btn-settings').addEventListener('click', openSettings);
+  $('#btn-yesterday').addEventListener('click', async () => {
+    const y = app.yesterday; if (!y) return; await app.clfPromise;
+    const card = await yesterdayCard(app, y); app.lastCard = { kind: 'yesterday', text: card.text, bytes: card.blob.size };
+    await shareImage(app, { blob: card.blob, filename: `kalemo-${y.number}-gestern.png`, text: card.text, forceFallback: !!app.TEST });
+  });
+  const hash = location.hash.match(/^#d=([A-Za-z0-9_-]+)/);
+  if (hash) app.duel.receive(hash[1]);
   if (app.TEST) {
     const th = await import('./testhooks.js'); th.install(app);
     if (Q.get('scene')) { app.t = t; await th.scene(app, Q.get('scene')); }

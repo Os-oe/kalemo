@@ -2,6 +2,7 @@
 import { RoundEngine } from '../core/engine.js';
 import { t, word, cap, strokeColor, LANGS, pluralPhrase } from '../core/i18n.js';
 import { drawStrokes } from './ink.js';
+import { mount as mountAlive } from './alive.js';
 
 const CLASSIFY_MS = 450;
 const $ = (s, r = document) => r.querySelector(s);
@@ -37,6 +38,7 @@ export class RoundController {
    */
   draw(opts) {
     const app = this.app, w = app.byId.get(opts.id);
+    this.drawCount = (this.drawCount || 0) + 1;
     this.stage.resize();
     const minInk = Math.min(this.stage.w, this.stage.h) * 0.18;
     const engine = new RoundEngine({ target: w.id, durationMs: opts.durationMs ?? 20000, minInk });
@@ -109,7 +111,7 @@ export class RoundController {
       else this._classify(false);
       this._handle(r, r.engine.tick(now));
       const left = Math.max(0, r.engine.duration - r.engine.elapsed(now));
-      this.app.ui?.timer(left, r.engine.duration);
+      this.app.ui?.timer(left, r.opts.totalMs || r.engine.duration);
       if (left < 5000 && left > 0 && Math.floor(left / 1000) !== r.lastTickS) { r.lastTickS = Math.floor(left / 1000); this.app.sfx?.play('tick'); }
     }
     if (!r || now >= (r.frozenUntil || 0)) this.stage.render(now);
@@ -144,10 +146,10 @@ export class RoundController {
   langOrder() { const { learn, native } = this.app.settings; return [learn, native, LANGS.find((l) => l !== learn && l !== native)]; }
 
   /** Ergebnis-Karte (Treffer oder Zeit um). Löst bei „Weiter" auf. */
-  resultCard(out, { plural = null, extraHtml = '' } = {}) {
+  resultCard(out, { plural = null, extraHtml = '', forceHit = false } = {}) {
     const app = this.app, w = app.byId.get(out.id), ui = app.settings.native;
-    const hit = out.result === 'hit';
-    const langs = this.langOrder().map((l) => `<div><small>${l.toUpperCase()}</small>${escapeHtml(plural ? pluralPhrase(w, l, plural) : word(w, l))}</div>`).join('');
+    const hit = out.result === 'hit' || forceHit;
+    const langs = this.langOrder().map((l, i) => `<button class="lang-line${i === 0 ? ' first' : ''}" data-say="${l}"><small>${l.toUpperCase()}</small><span>${escapeHtml(plural ? pluralPhrase(w, l, plural) : word(w, l))}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9c1.5 1.5 1.5 4.5 0 6"/></svg></button>`).join('');
     this.overlay.innerHTML = `<div class="card ${hit ? 'hit' : 'miss'}" role="dialog" aria-live="polite">
       <h3>${escapeHtml(hit ? t('hitTitle', {}, ui) : t('missTitle', {}, ui))}</h3>
       ${hit ? '<canvas class="alive" width="280" height="200"></canvas>' : '<div class="others"></div>'}
@@ -155,6 +157,13 @@ export class RoundController {
       <button class="btn primary big" data-act="next">${escapeHtml(t('next', {}, ui))}</button></div>`;
     this.overlay.hidden = false;
     if (!hit) this._fillOthers(w, this.overlay.querySelector('.others'));
+    else {
+      const learn = app.settings.learn;
+      const col = learn === 'de' ? (plural ? '#A16207' : { der: '#1D4ED8', die: '#B91C1C', das: '#15803D' }[w.de.art]) : '#1E2A3A';
+      const strokes = out.drawings?.length ? out.drawings[0] : out.strokes;
+      mountAlive(this.overlay.querySelector('canvas.alive'), { strokes, color: col, style: 'pencil', width: 3.6, motion: { kind: w.motion, id: w.id }, delay: 120 });
+    }
+    this.overlay.querySelectorAll('[data-say]').forEach((b) => b.addEventListener('click', () => app.voice?.word(w.id, b.dataset.say)));
     return new Promise((res) => {
       const btn = this.overlay.querySelector('[data-act=next]');
       btn.addEventListener('click', () => { this.overlay.hidden = true; this.overlay.innerHTML = ''; app.sfx?.play('tap'); res(); }, { once: true });

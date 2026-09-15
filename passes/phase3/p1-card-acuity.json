@@ -1,0 +1,58 @@
+{
+  "url": "http://127.0.0.1:8820/?test=1&scene=card",
+  "label": "p1-card",
+  "checkedAt": "2026-09-15T01:48:38.494Z",
+  "threshold": 0.15,
+  "minCells": 2,
+  "desktop": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/phase3/p1-card-desktop.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "360×225",
+      "overall": 0.0824,
+      "cells": [
+        0.0712,
+        0.4918,
+        0.1789,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "aliveCells": [
+        "oben-mitte",
+        "oben-rechts"
+      ],
+      "aliveCount": 2
+    }
+  },
+  "mobile": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/phase3/p1-card-mobile.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "97×211",
+      "overall": 0.292,
+      "cells": [
+        0.7492,
+        1.2425,
+        0.6152,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "aliveCells": [
+        "oben-links",
+        "oben-mitte",
+        "oben-rechts"
+      ],
+      "aliveCount": 3
+    }
+  },
+  "flags": [],
+  "motionVerdict": "LEBENDIG"
+}

@@ -1,0 +1,61 @@
+{
+  "url": "http://127.0.0.1:8820/?test=1&scene=duel",
+  "label": "p3-duel",
+  "checkedAt": "2026-09-15T01:54:07.644Z",
+  "threshold": 0.15,
+  "minCells": 2,
+  "desktop": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/phase3/p3-duel-desktop.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "360×225",
+      "overall": 0.2535,
+      "cells": [
+        0,
+        0.5671,
+        0,
+        0.0446,
+        1.1436,
+        0.1732,
+        0.004,
+        0.3333,
+        0.0155
+      ],
+      "aliveCells": [
+        "oben-mitte",
+        "mitte-mitte",
+        "mitte-rechts",
+        "unten-mitte"
+      ],
+      "aliveCount": 4
+    }
+  },
+  "mobile": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/phase3/p3-duel-mobile.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "97×211",
+      "overall": 0.8751,
+      "cells": [
+        0.023,
+        1.5563,
+        0.0318,
+        0.8701,
+        3.1195,
+        2.2268,
+        0.114,
+        0,
+        0
+      ],
+      "aliveCells": [
+        "oben-mitte",
+        "mitte-links",
+        "mitte-mitte",
+        "mitte-rechts"
+      ],
+      "aliveCount": 4
+    }
+  },
+  "flags": [],
+  "motionVerdict": "LEBENDIG"
+}

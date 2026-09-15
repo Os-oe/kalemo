@@ -1,0 +1,57 @@
+{
+  "url": "http://127.0.0.1:8820/?test=1&scene=duel",
+  "label": "p2-duel",
+  "checkedAt": "2026-09-15T01:52:30.529Z",
+  "threshold": 0.15,
+  "minCells": 2,
+  "desktop": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/phase3/p2-duel-desktop.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "360×225",
+      "overall": 0.0483,
+      "cells": [
+        0,
+        0.4347,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "aliveCells": [
+        "oben-mitte"
+      ],
+      "aliveCount": 1
+    }
+  },
+  "mobile": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/phase3/p2-duel-mobile.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "97×211",
+      "overall": 0.1644,
+      "cells": [
+        0.0176,
+        1.4388,
+        0.0241,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "aliveCells": [
+        "oben-mitte"
+      ],
+      "aliveCount": 1
+    }
+  },
+  "flags": [
+    "MOTION-GATE: nur 1/9 Zellen über 0.15 (gefordert 2) — die Seite steht im Ruhezustand still"
+  ],
+  "motionVerdict": "STILLSTAND"
+}

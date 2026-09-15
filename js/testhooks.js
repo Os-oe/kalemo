@@ -1,5 +1,6 @@
 // Test-Hooks — nur mit ?test=1 geladen. Liefern nie Engine-/DOM-Objekte, nur serialisierbare Daten.
 import { planFor } from './core/plan.js';
+export { planFor };
 import { playDaily } from './game/daily.js';
 
 /** Szenen für Screenshots/acuity-loop: ?test=1&scene=<name> */
@@ -27,6 +28,33 @@ export async function scene(app, name) {
     case 'article': setPair('tr', 'de'); roundBase('cat', { learnArticle: false }); app.stage.enabled = false; app.articleStep(app.byId.get('cat')); loop(); break;
     case 'offer': setPair('de', 'tr'); roundBase('cat'); app.choice(`<h3>${app.t('airOfferT')}</h3><p>${app.t('airOfferB')}</p>`, [['yes', app.t('airYes'), 'primary'], ['no', app.t('airNo'), 'ghost']]); loop(); break;
     case 'precam': setPair('de', 'tr'); roundBase('cat'); app.settings.airOffered = false; app.offerAir(); setTimeout(() => $('.overlay [data-k="yes"]')?.click(), 50); loop(); break;
+    case 'dayend': case 'card': case 'ycard': {
+      setPair('de', 'tr'); await app.clfPromise;
+      const plan = planFor('2026-09-20', app.words);
+      const sum = { number: 5, date: '2026-09-20', hits: 4, points: 377, scored: true, learn: 'tr', native: 'de',
+        results: plan.slots.map((s, i) => ({ id: s.id, kind: s.kind, n: s.n, parts: s.kind === 'plural' ? s.n : undefined, result: i === 3 ? 'timeout' : 'hit', hitAt: 3000 + i * 1900, points: i === 3 ? 0 : 80, strokes: (others[s.id] || others.cat)[1 % (others[s.id] || others.cat).length].strokes })),
+        funniest: { target: plan.slots[0].id, id: 'lion', p: 0.8 } };
+      localStorage.setItem('kalemo.streak', JSON.stringify({ count: 3, last: '2026-09-20' })); app.dateOverride = '2026-09-20';
+      await app.showDayEnd(sum);
+      if (name === 'card') document.querySelector('#btn-share').click();
+      if (name === 'ycard') { const { yesterdayCard } = await import('./game/cards.js'); const { shareImage } = await import('./game/share.js'); const c = await yesterdayCard(app, sum); shareImage(app, { blob: c.blob, text: c.text, forceFallback: true }); }
+      break;
+    }
+    case 'dict': {
+      setPair('de', 'tr');
+      for (const id of ['cat', 'apple', 'sun', 'bicycle', 'fish', 'house', 'guitar', 'tree', 'moon']) await app.dict.put(id, { strokes: others[id][0].strokes.map(([x, y]) => [x, y, x.map((_, i) => i * 30)]), date: '2026-09-20' });
+      await app.openDict();
+      if (location.hash === '#detail') document.querySelector('.dict-cell').click();
+      break;
+    }
+    case 'duel': setPair('de', 'tr'); app.duel.create(); break;
+    case 'duelopts': {
+      setPair('de', 'tr'); app.settings.chosenPair = true; await app.clfPromise;
+      const { encode } = await import('./core/codec.js');
+      let tt = 0; const strokes = pick('cat').map(([xs, ys]) => { const ts = xs.map((_, i) => tt + i * 8); tt += xs.length * 8 + 60; return [xs, ys, ts]; });
+      app.duel.receive(encode({ classIdx: app.clf.classNames.indexOf('cat'), senderMs: 9000, strokes }));
+      break;
+    }
     default: break;
   }
 }
@@ -53,6 +81,9 @@ export function install(app) {
   window.__choose = (k) => { app.hooks.choose?.(k); return true; };
   window.__mode = (m) => { if (m === 'air') return window.__enableAir(); app.setMode(m === 'airsim' ? 'air' : m); return app.mode; };
   window.__settings = (patch) => { Object.assign(app.settings, patch); localStorage.setItem('kalemo.settings', JSON.stringify(app.settings)); app.applyTexts?.(); return app.settings; };
+  window.__answer = (id) => { app.hooks.answer?.(id); return true; };
+  window.__pairGo = () => { app.hooks.pairGo?.(); return true; };
+  window.__home = () => { app.goHome(); return true; };
   window.__next = () => { const b = document.querySelector('#round-overlay [data-act=next]'); if (b) b.click(); return !!b; };
   window.__state = () => {
     const r = app.round?.active;
@@ -62,6 +93,10 @@ export function install(app) {
       overlay: !document.querySelector('#round-overlay').hidden,
       overlayClass: document.querySelector('#round-overlay').className,
       lastArticle: app.lastArticle || null, toast: document.querySelector('#toast').hidden ? null : document.querySelector('#toast').textContent,
+      drawCount: app.round?.drawCount || 0, duelState: app.duelState || null, lastDuel: app.lastDuel || null, lastShare: app.lastShare || null,
+      lastCard: app.lastCard || null, lastPoster: app.lastPoster || null, dictEntries: app.dictEntries || null, sheet: !document.querySelector('#sheet').hidden,
+      summary: app.lastSummary ? { number: app.lastSummary.number, hits: app.lastSummary.hits, points: app.lastSummary.points, streak: app.lastSummary.streak, funniest: app.lastSummary.funniest, results: app.lastSummary.results.map((r) => ({ id: r.id, kind: r.kind, result: r.result, parts: r.parts, n: r.n })) } : null,
+      duelPicks: app.duelPicks || null, inapp: !document.querySelector('#inapp').hidden,
       lastResult: app.lastResult ? { ...app.lastResult, strokes: app.lastResult.strokes?.length } : null,
       daily: app.dailyRun ? { number: app.dailyRun.plan.number, index: app.dailyRun.index, results: app.dailyRun.results.map((x) => ({ id: x.id, kind: x.kind, result: x.result, points: x.points })) } : null,
       log: app.log.slice(-20),
