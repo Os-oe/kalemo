@@ -475,5 +475,52 @@ with server() as base, sync_playwright() as p:
     if section('p2_7'):
         S.run('P2-7 Launch-Tage', p2_7)
 
+    # ---------- P2-8: Attract-Loop mit Belohnung (+ P3-10 Klebeband, P3-16 Tagline, P3-7 Standbild) ----------
+    BRIGHT_BOX = '''() => { const c = document.getElementById('attract'); const x = c.getContext('2d'); const d = x.getImageData(0, 0, c.width, c.height).data;
+      let my = 1e9, My = -1; for (let y = Math.round(c.height * 0.2); y < c.height * 0.85; y += 2) for (let i = Math.round(c.width * 0.2); i < c.width * 0.8; i += 2) { const k = (y * c.width + i) * 4; if (d[k] > 230 && d[k + 1] > 190) { if (y < my) my = y; if (y > My) My = y; } }
+      return [my, My, c.height]; }'''
+
+    def p2_8():
+        for native, learn, tips in (('de', 'tr', ['ay?', 'güneş?', 'baykuş?']), ('tr', 'en', ['moon?', 'sun?', 'owl?'])):
+            c = b.new_context(viewport={'width': 1280, 'height': 800}); pg = c.new_page(); errs = []
+            pg.on('pageerror', lambda e: errs.append(str(e)))
+            pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000)
+            pg.evaluate('(p) => window.__settings(p)', {'native': native, 'learn': learn, 'chosenPair': True})
+            seen = {}
+            for sec in (2.4, 3.6, 4.7, 6.0, 8.5):
+                pg.evaluate('(s) => window.__kalemo.attract.at(s)', sec); pg.wait_for_timeout(120)
+                seen[sec] = (pg.text_content('#attract-bubble') or '').strip()
+            ok_tips = all(tip in seen[s] for tip, s in zip(tips, (2.4, 3.6, 4.7)))
+            cat = WORDS['cat']; name = {'de': 'die Katze', 'en': 'cat', 'tr': 'kedi'}
+            third = next(l for l in ('de', 'en', 'tr') if l not in (native, learn))
+            card = seen[8.5]
+            S.check(f'{native}→{learn}: Tipps nur in der Lernsprache', ok_tips, [seen[s] for s in (2.4, 3.6, 4.7)])
+            S.check(f'{native}→{learn}: Treffer-Ausruf in der Lernsprache', seen[6.0].startswith({'tr': 'Buldum', 'en': 'I know', 'de': 'Ich weiß'}[learn]), seen[6.0])
+            S.check(f'{native}→{learn}: Belohnungs-Karte „{name[learn]} · {name[native]} · {name[third]}" (Lern-, Mutter-, dritte Sprache)', card == f'{name[learn]} · {name[native]} · {name[third]}', card)
+            pg.evaluate('() => window.__kalemo.attract.at(6.05)'); pg.wait_for_timeout(60); a = pg.evaluate(BRIGHT_BOX)
+            ys = []
+            for _ in range(8):
+                pg.wait_for_timeout(90); ys.append(pg.evaluate(BRIGHT_BOX)[1])
+            S.check(f'{native}→{learn}: Katze hüpft nach dem Treffer (Leuchtspur bewegt sich vertikal)', max(ys) - min(ys) > 6, ys)
+            tape = pg.evaluate("() => { const a = document.querySelector('.attract'); const cs = getComputedStyle(a, '::before'); return [cs.right, cs.left]; }")
+            S.check('Klebeband oben rechts statt über dem Wort oben links (P3-10)', tape[0] == '-16px', tape)
+            pg.evaluate('() => window.__kalemo.attract.at(0.1)'); pg.wait_for_timeout(150)
+            tl = pg.text_content('#tagline')
+            S.check(f'{native}→{learn}: erste Tagline in der Muttersprache (P3-16)', tl == {'de': 'Mal’s in die Luft.', 'en': 'Draw it in the air.', 'tr': 'Havada çiz.'}[native], tl)
+            S.check(f'{native}→{learn}: keine Seitenfehler', not errs, errs[:2])
+            c.close()
+        # prefers-reduced-motion: Standbild mit fertiger Katze + Karte, keine Endlos-Animationen
+        c = b.new_context(viewport={'width': 1280, 'height': 800}, reduced_motion='reduce', locale='de-DE'); pg = c.new_page()
+        pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000); pg.wait_for_timeout(600)
+        f1 = pg.evaluate("() => document.getElementById('attract').toDataURL().length + ':' + document.getElementById('attract').toDataURL().slice(-80)")
+        pg.wait_for_timeout(1500)
+        f2 = pg.evaluate("() => document.getElementById('attract').toDataURL().length + ':' + document.getElementById('attract').toDataURL().slice(-80)")
+        card = (pg.text_content('#attract-bubble') or '').strip()
+        anims = pg.evaluate("() => [...document.querySelectorAll('.logo-trail path, .tagline')].map(e => getComputedStyle(e).animationIterationCount)")
+        S.check('prefers-reduced-motion: Demo als Standbild (fertige Katze + Karte), keine Endlos-Schleifen', f1 == f2 and card.startswith('kedi') and 'infinite' not in ' '.join(anims), (card, anims))
+        c.close()
+    if section('p2_8'):
+        S.run('P2-8 Attract-Loop', p2_8)
+
     b.close()
 S.finish()
