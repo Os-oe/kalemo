@@ -1,7 +1,7 @@
 // Kalemo — Einstieg. Statische Seite, ES-Module, kein Framework, keine externen Requests.
 import { settings, saveSettings, streak, dayResult } from './core/store.js';
 export { saveSettings };
-import { setUiLang, t, LANGS, LANG_CODE, ART_TEXT, ART_COLOR } from './core/i18n.js';
+import { setUiLang, t, LANGS, LANG_CODE, ART_TEXT, FRINGE } from './core/i18n.js';
 import { planFor, berlinDate, addDays, msToBerlinMidnight } from './core/plan.js';
 import { createClassifier } from './core/classifier.js';
 import { Stage } from './game/stage.js';
@@ -98,7 +98,7 @@ function renderTodayTile(sum) {
   tick(); app._countdown = setInterval(() => { if (app.screen === 'start') tick(); }, 30000);
   const hero = (sum.funniest && sum.results.find((r) => r.id === sum.funniest.target && r.strokes?.length)) || sum.results.find((r) => r.result === 'hit' && r.strokes?.length) || sum.results.find((r) => r.strokes?.length);
   const c = tile.querySelector('canvas'); unmountAll(tile);
-  if (hero) { const w = app.byId.get(hero.id); const de = (sum.learn || app.settings.learn) === 'de' && w; mount(c, { strokes: hero.drawings?.length ? hero.drawings[0] : hero.strokes, color: de ? ART_TEXT[hero.kind === 'plural' ? 'plural' : w.de.art] : '#1E2A3A', fringe: de ? ART_COLOR[hero.kind === 'plural' ? 'plural' : w.de.art] : ART_COLOR.neutral, style: 'crayon', width: 2.6, still: true }); }
+  if (hero) { const w = app.byId.get(hero.id); const de = (sum.learn || app.settings.learn) === 'de' && w; mount(c, { strokes: hero.drawings?.length ? hero.drawings[0] : hero.strokes, color: de ? ART_TEXT[hero.kind === 'plural' ? 'plural' : w.de.art] : '#1E2A3A', fringe: de ? FRINGE[hero.kind === 'plural' ? 'plural' : w.de.art] : FRINGE.neutral, style: 'crayon', width: 2.6, still: true }); }
   app.todaySummary = sum;
 }
 

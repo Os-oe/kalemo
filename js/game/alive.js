@@ -56,6 +56,8 @@ function particles(it, motion, fit, box, dt, dpr) {
   if (kind === 'weather' && id === 'snowman' && r() < dt * 8) P.emit(1, () => ({ x: r() * box.w, y: 0, vx: (r() - 0.5) * 20, vy: 30 * dpr, life: 3, max: 3, size: 2.5 * dpr, color: '#94A3B8' }));
   if (kind === 'music' && r() < dt * 3) P.emit(1, () => ({ kind: 'note', x: cx + (r() - 0.5) * box.w * 0.4, y: top + box.h * 0.2, vx: (r() - 0.5) * 30, vy: -40 * dpr, life: 1.4, max: 1.4, size: 18 * dpr, color: it.opts.color, vr: (r() - 0.5) }));
   if (kind === 'munch' && r() < dt * 2.5) P.emit(3, () => ({ x: cx + (r() - 0.5) * 30 * dpr, y: bottom - 10 * dpr, vx: (r() - 0.5) * 120, vy: -80 - r() * 60, g: 300, life: 0.7, max: 0.7, size: 2.5 * dpr, color: it.opts.color }));
+  // Fahrzeug: kleine Fahrtwind-Striche hinter der Zeichnung (Richtung folgt dem Hin-und-her)
+  if (kind === 'drive' && r() < dt * 7) { const dir = Math.cos(((performance.now() - it.t0) / 1000) * 1.7) >= 0 ? -1 : 1; P.emit(1, () => ({ kind: 'dash', x: cx + dir * box.w * (0.34 + r() * 0.08), y: box.h * (0.35 + r() * 0.35), vx: dir * 60 * dpr, vy: 0, life: 0.45, max: 0.45, size: (10 + r() * 10) * dpr, color: it.opts.fringe || it.opts.color })); }
   if (kind === 'glow' && r() < dt * 4) P.emit(1, () => ({ x: cx + (r() - 0.5) * box.w * 0.5, y: box.h * (0.3 + r() * 0.4), vx: 0, vy: -10, life: 1.2, max: 1.2, size: 3 * dpr, color: '#FACC15' }));
 }
 

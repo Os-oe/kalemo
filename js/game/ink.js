@@ -66,10 +66,10 @@ export function drawStrokes(ctx, strokes, opts = {}) {
     // Buntstift mit Farbsaum (Iteration 1, Treffer-Karte/Teilen-Karte): weicher Saum in Leuchtfarbe, körnige
     // versetzte Buntstift-Lagen, kräftiger Tinten-Kern, Papierkorn in den Strich gestanzt (ohne Transparenz-Löcher)
     const fringe = opts.fringe || color;
-    ctx.strokeStyle = rgba(fringe, 0.26); ctx.lineWidth = width * 2.7; paths.forEach(trace);
-    for (let k = 0; k < 4; k++) {
-      const dx = (hash(k, seed) - 0.5) * width * 0.7, dy = (hash(k + 9, seed) - 0.5) * width * 0.7;
-      ctx.save(); ctx.translate(dx, dy); ctx.strokeStyle = rgba(fringe, 0.5); ctx.lineWidth = width * (0.55 + k * 0.16); paths.forEach(trace); ctx.restore();
+    ctx.strokeStyle = rgba(fringe, 0.17); ctx.lineWidth = width * 2.8; paths.forEach(trace);
+    for (let k = 0; k < 5; k++) { // versetzte Buntstift-Stränge statt gleichmäßigem Leuchtsaum
+      const dx = (hash(k, seed) - 0.5) * width * 1.1, dy = (hash(k + 9, seed) - 0.5) * width * 1.1;
+      ctx.save(); ctx.translate(dx, dy); ctx.strokeStyle = rgba(fringe, 0.42 + 0.08 * (k % 2)); ctx.lineWidth = width * (0.32 + k * 0.13); paths.forEach(trace); ctx.restore();
     }
     ctx.strokeStyle = rgba(color, 0.93); ctx.lineWidth = Math.max(1.4, width * 0.62); paths.forEach(trace);
     ctx.fillStyle = opts.paper || 'rgba(255,253,247,0.55)';
@@ -108,10 +108,11 @@ function applyMotion(ctx, motion, t, a, fit, box) {
   const id = typeof motion === 'string' ? '' : motion.id || '';
   const p = (t % 1.2) / 1.2;
   switch (m) {
-    case 'hop': { const hop = Math.abs(Math.sin(t * Math.PI * 1.6)); const squash = hop < 0.15 ? 1 - (0.15 - hop) * 1.2 : 1; ctx.translate(cx, cy + H * 0.1); ctx.scale(1 / squash, squash); ctx.translate(-cx, -cy - H * 0.1); ctx.translate(Math.sin(t * 1.3) * W * 0.06 * a, -hop * H * 0.14 * a); break; }
+    case 'hop': { const hop = Math.abs(Math.sin(t * Math.PI * 1.6)); const squash = hop < 0.15 ? 1 - (0.15 - hop) * 1.2 : 1; ctx.translate(cx, cy + H * 0.1); ctx.scale(1 / squash, squash); ctx.translate(-cx, -cy - H * 0.1); ctx.translate(Math.sin(t * 1.3) * W * 0.05 * a, -hop * H * 0.1 * a); break; }
     case 'fly': ctx.translate(Math.sin(t * 1.1) * W * 0.08 * a, (Math.sin(t * 2.6) * H * 0.06 - H * 0.04) * a); ctx.translate(cx, cy); ctx.rotate(Math.sin(t * 2.6) * 0.08 * a); ctx.translate(-cx, -cy); break;
     case 'swim': ctx.translate(Math.sin(t * 1.4) * W * 0.1 * a, Math.sin(t * 2.8) * H * 0.04 * a); ctx.translate(cx, cy); ctx.rotate(Math.cos(t * 2.8) * 0.12 * a); ctx.translate(-cx, -cy); break;
-    case 'drive': { const q = (t % 3) / 3; const x = q < 0.45 ? q / 0.45 * W * 0.9 : q < 0.5 ? W * 0.9 - (q - 0.45) / 0.05 * W * 1.8 : q < 0.95 ? -W * 0.9 + (q - 0.5) / 0.45 * W * 0.9 : 0; ctx.translate(x * a, Math.abs(Math.sin(t * 18)) * -2 * a); break; }
+    // Iteration 1 (Treffer-Karte = Money-Shot): Fahrzeuge fahren hin und her IM Rahmen statt hinaus (vorher ~2/3 der Zeit unsichtbar)
+    case 'drive': { const x = Math.sin(t * 1.7) * W * 0.06, lean = Math.cos(t * 1.7) * 0.035; ctx.translate(x * a, (Math.abs(Math.sin(t * 9)) * -0.022 * H) * a); ctx.translate(cx, fit.bottom); ctx.rotate(-lean * a); ctx.translate(-cx, -fit.bottom); break; }
     case 'munch': { const s = 1 + Math.sin(t * 9) * 0.07 * a; ctx.translate(cx, fit.bottom); ctx.scale(1 + (1 - s) * 0.7, s); ctx.rotate(Math.sin(t * 4.5) * 0.05 * a); ctx.translate(-cx, -fit.bottom); break; }
     case 'weather': {
       if (id === 'sun' || id === 'snowflake') { ctx.translate(cx, cy); ctx.rotate(t * (id === 'sun' ? 0.6 : 0.9) * a); ctx.translate(-cx, -cy); }
@@ -143,6 +144,7 @@ export class Particles {
       if (p.kind === 'note') { ctx.font = `700 ${p.size}px Caveat, cursive`; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(0, 0, p.size * 0.28, p.size * 0.2, -0.4, 0, TAU); ctx.fill(); ctx.fillRect(p.size * 0.22, -p.size * 0.9, 2, p.size * 0.9); }
       else if (p.kind === 'drop') { ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, p.size); ctx.stroke(); }
       else if (p.kind === 'rect') { ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2); }
+      else if (p.kind === 'dash') { ctx.lineWidth = Math.max(1.5, p.size * 0.18); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-p.size / 2, 0); ctx.lineTo(p.size / 2, 0); ctx.stroke(); }
       else { ctx.beginPath(); ctx.arc(0, 0, p.size * a, 0, TAU); ctx.fill(); }
       ctx.restore();
     }

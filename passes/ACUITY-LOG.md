@@ -88,3 +88,29 @@ Motion-Gate: round 6/9·9/9 · duel 3/9·8/9 · duelopts 6/9·9/9 · card 2/9·4
 4. Heute-Karte: Slot-Nummern machen die Zeilen scanbar; Falz dezent.
 5. Start: Mikrozeile füllt die tote Zone und beantwortet „wie lange?".
 Urteil Phase 4 visuell: alle 7 Screen-Gruppen ≥ 3 Runden, letzte Runde ohne STILLSTAND.
+
+---
+
+# Iteration 1 (Fix-Session nach Fresh-Eyes-Review 1) — Belege `passes/fix1/`
+
+## Treffer-Moment (Money-Shot, Befund 13) · Runde 1 — Kontaktbogen 4 s (`hit-r1-sheet.png`, Desktop, Fahrrad k=2)
+1. Fahrrad bleibt über alle 12 Bilder im Rahmen (Hin-und-her statt Durchfahren) — der Hauptbefund aus `review-1/08` ist behoben.
+2. Zeichnung deutlich größer (427 statt 300 px), kräftiger Kern — liest sich jetzt als Held der Karte.
+3. Farbsaum wirkt wie ein gleichmäßiger Textmarker-Schein, nicht wie Buntstift → Saum schwächer, dafür 5 versetzte Buntstift-Stränge.
+4. Bewegung nur seitlich, wirkt steif für ein Fahrzeug → kleines Hüpfen über „Bodenwellen" + Fahrtwind-Striche hinter dem Fahrzeug.
+5. Leerraum zwischen „Erkannt!" und Zeichnung (~60 px) → Titelabstand 0, Zeichnung rückt 6 px hoch.
+
+## Treffer-Moment · Runde 2 — Kontaktbogen mobil DE (`hit-r2-sheet-mobile.png`)
+1. Mobil: Rad berührte bei voller Ausladung den Kartenrand (±9 %) → Amplitude ±6 %, Fit-Rand 13 %.
+2. Buntstift-Stränge in Grün sichtbar, Kern dunkelgrün — Artikel-Farbe bleibt eindeutig.
+3. Fahrtwind-Striche sichtbar, erklären die Bewegung ohne Worte.
+4. Gold-Saum (EN/TR-Lernende) wäre auf Creme zu blass (Auto-Probe) → eigener Papier-Saum `FRINGE.neutral` #F4A62A (Bernstein), auch Tagesende/Start-Kachel/Teilen-Karte.
+5. „+1 Bildwörterbuch"-Chip unten rechts kollidiert nicht mehr mit der größeren Zeichnung.
+
+## Treffer-Moment · Runde 3 — Kontaktbogen Auto EN/TR (`hit-r3-sheet-car.png`) + acuity-shot `hit-r3`
+Motion-Gate: **LEBENDIG** (Desktop 7/9 Zellen, motion 2,37 · mobil 4,96), 0 JS-Fehler.
+1. Bernstein-Saum sichtbar, Auto über 4 s immer ganz im Rahmen, Hüpfen + Striche.
+2. Karte wirkt nicht mehr leer: Zeichnung füllt ~70 % der Kartenbreite.
+3. Tagesende-Kacheln als Standbild (ganze Zeichnung, Line-Boil) — Fahrrad-Fragment-Problem weg (`test_fix1 p13`).
+4. Kein weiterer Befund an der Karte; offen bleibt nur die Qualität der Datensatz-Beispiele (P3-5, eigener Punkt).
+5. Messbar: `test_fix1.py p13` 9/9 (Größe ≥ 1,35×, Bewegung im Rahmen über 4 s, Tagesende still).

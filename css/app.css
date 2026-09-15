@@ -171,6 +171,11 @@ body[data-mode="air"] .stage canvas.ink, body[data-mode="air"] .stage canvas.fx 
 .lang-line svg { width: 22px; height: 22px; fill: none; stroke: var(--pencil); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .card .langs { gap: 0; }
 .card canvas.alive, .dict-detail canvas.big { width: min(300px, 78%); aspect-ratio: 4 / 3; display: block; margin: 0 auto; }
+/* Treffer-Karte = Money-Shot: Zeichnung ~1,5× (Breite bis 460 px bzw. volle Kartenbreite, höhenbegrenzt) */
+.card.hit canvas.alive { width: min(460px, 100%, calc(40vh * 4 / 3)); }
+.card.hit .alive-wrap { margin: -6px -8px 0; }
+.card.hit h3 { margin-bottom: 0; }
+@media (max-width: 520px) { .card.hit { padding-inline: 12px; } }
 .lang-line[data-say="de"][style] span { color: var(--ac); }
 .attract::before, .attract::after { content: ''; position: absolute; z-index: 2; width: 74px; height: 22px; background: rgba(255,200,87,.55); box-shadow: 0 1px 2px rgba(0,0,0,.15); }
 /* Review P3-10: Klebeband oben RECHTS + unten LINKS — nie über dem Wort oben links */

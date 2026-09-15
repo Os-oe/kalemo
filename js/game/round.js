@@ -1,7 +1,7 @@
 // Runden-Controller: verbindet Bühne, Klassifikator, RoundEngine, Stimme/SFX und Overlay.
 import { RoundEngine } from '../core/engine.js';
 import { HIT_FLOOR } from '../core/classifier.js';
-import { t, word, cap, strokeColor, LANGS, pluralPhrase, ART_TEXT } from '../core/i18n.js';
+import { t, word, cap, strokeColor, LANGS, pluralPhrase, ART_TEXT, FRINGE } from '../core/i18n.js';
 import { drawStrokes } from './ink.js';
 import { mount as mountAlive, confetti, unmountAll } from './alive.js';
 
@@ -206,9 +206,12 @@ export class RoundController {
     if (!hit) this._fillOthers(w, this.overlay.querySelector('.others'));
     else {
       const learn = app.settings.learn;
-      const col = learn === 'de' ? (plural ? '#A16207' : { der: '#1D4ED8', die: '#B91C1C', das: '#15803D' }[w.de.art]) : '#1E2A3A';
+      // Money-Shot (Iteration 1): Leuchtspur „landet" als kräftiger Buntstift mit Farbsaum, groß, Bewegung bleibt im Rahmen
+      const key = plural ? 'plural' : w.de.art;
+      const col = learn === 'de' ? ART_TEXT[key] : '#1E2A3A';
+      const fringe = learn === 'de' ? FRINGE[key] : FRINGE.neutral;
       const strokes = out.drawings?.length ? out.drawings[0] : out.strokes;
-      mountAlive(this.overlay.querySelector('canvas.alive'), { strokes, color: col, style: 'pencil', width: 3.6, motion: { kind: w.motion, id: w.id }, delay: 120 });
+      mountAlive(this.overlay.querySelector('canvas.alive'), { strokes, color: col, fringe, style: 'crayon', width: 5.2, padding: 0.13, motion: { kind: w.motion, id: w.id }, delay: 120, seed: 4 });
       setTimeout(() => app.sfx?.play('glitter'), 350);
     }
     this.overlay.querySelectorAll('[data-say]').forEach((b) => b.addEventListener('click', () => app.voice?.word(w.id, b.dataset.say)));

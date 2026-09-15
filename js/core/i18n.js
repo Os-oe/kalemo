@@ -164,6 +164,8 @@ export function t(key, vars = {}, lang = ui) {
 export const NUM = { de: ['', 'eins', 'zwei', 'drei', 'vier', 'fünf'], en: ['', 'one', 'two', 'three', 'four', 'five'], tr: ['', 'bir', 'iki', 'üç', 'dört', 'beş'] };
 export const ART_COLOR = { der: '#3B82F6', die: '#EF4444', das: '#22C55E', plural: '#FACC15', neutral: '#FFC857' };
 export const ART_TEXT = { der: '#1D4ED8', die: '#B91C1C', das: '#15803D', plural: '#A16207', neutral: '#1E2A3A' };
+/** Buntstift-Farbsaum auf Papier (Gold wäre auf Creme zu blass → kräftigeres Bernstein) */
+export const FRINGE = { ...ART_COLOR, plural: '#EAB308', neutral: '#F4A62A' };
 
 /** Wort in einer Sprache. article: DE mit Artikel (Default true) */
 export function word(w, lang, { article = true } = {}) {

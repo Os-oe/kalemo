@@ -8,6 +8,7 @@ BASE = os.environ.get('KALEMO_URL')  # gesetzt → gegen Live/andere URL testen
 
 @contextlib.contextmanager
 def server(port=8799):
+    port = int(os.environ.get('KALEMO_PORT', port))  # parallele Läufe auf eigenem Port
     if BASE:
         yield BASE.rstrip('/')
         return

@@ -1,5 +1,5 @@
 // Teilen-Karten (PNG, 0 €): Heute-Karte spoilerfrei (+ Spoiler-Gate per Klassifikator), Gestern-Karte, Poster.
-import { t, word, ART_COLOR, ART_TEXT, LANG_CODE, funnyLine, funnyAllowed, quoted } from '../core/i18n.js';
+import { t, word, ART_COLOR, ART_TEXT, FRINGE, LANG_CODE, funnyLine, funnyAllowed, quoted } from '../core/i18n.js';
 import { drawStrokes } from './ink.js';
 import { makeRng } from '../core/raster.js';
 
@@ -183,7 +183,7 @@ export async function todayCard(app, sum) {
     ctx.save(); ctx.translate(hx + hw / 2, hy + hh / 2); ctx.rotate(-0.025); ctx.translate(-(hx + hw / 2), -(hy + hh / 2));
     ctx.save(); ctx.shadowColor = 'rgba(30,42,58,0.28)'; ctx.shadowBlur = 26; ctx.shadowOffsetY = 10; ctx.fillStyle = '#FFFDF7'; rr(ctx, hx, hy, hw, hh, 22); ctx.fill(); ctx.restore();
     const core = learn === 'de' ? ART_TEXT[r.kind === 'plural' ? 'plural' : wd.de.art] : INK;
-    const fringe = learn === 'de' ? ART_COLOR[r.kind === 'plural' ? 'plural' : wd.de.art] : ART_COLOR.neutral;
+    const fringe = learn === 'de' ? FRINGE[r.kind === 'plural' ? 'plural' : wd.de.art] : FRINGE.neutral;
     drawStrokes(ctx, strokes, { style: 'crayon', color: core, fringe, paper: 'rgba(255,253,247,0.6)', width: 11, box: { x: hx + 30, y: hy + 24, w: hw - 60, h: hh - 48 }, seed: 11 });
     check(ctx, hx + hw - 86, hy + 24, 54, okOf(r));
     ctx.restore();

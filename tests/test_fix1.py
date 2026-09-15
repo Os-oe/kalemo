@@ -541,5 +541,35 @@ with server() as base, sync_playwright() as p:
     if section('p2_9'):
         S.run('P2-9 Höhe', p2_9)
 
+    # ---------- 13: Treffer-Karte = Money-Shot ----------
+    INK_BOX = '''(sel) => { const c = document.querySelector(sel); const x = c.getContext('2d'); const d = x.getImageData(0, 0, c.width, c.height).data;
+      let mx = 1e9, my = 1e9, Mx = -1, My = -1, n = 0; for (let y = 0; y < c.height; y += 2) for (let i = 0; i < c.width; i += 2) { const k = (y * c.width + i) * 4; if (d[k + 3] > 200 && d[k] + d[k + 1] + d[k + 2] < 260) { n++; if (i < mx) mx = i; if (i > Mx) Mx = i; if (y < my) my = y; if (y > My) My = y; } }
+      return { mx, my, Mx, My, n, w: c.width, h: c.height, cssW: Math.round(c.getBoundingClientRect().width) }; }'''
+
+    def p13():
+        for label, kw, old_w in (('Desktop', {'viewport': {'width': 1280, 'height': 800}}, 300), ('Handy', {'viewport': {'width': 390, 'height': 844}, 'is_mobile': True, 'has_touch': True, 'device_scale_factor': 2}, 0.78 * (358 - 40))):
+            for wid in ('bicycle', 'car'):
+                c = b.new_context(**kw); pg = c.new_page()
+                pg.goto(base + f'/?test=1&scene=hit&word={wid}&k=2'); pg.wait_for_selector('#round-overlay canvas.alive', timeout=30000); pg.wait_for_timeout(700)
+                boxes = []
+                for _ in range(12):
+                    boxes.append(pg.evaluate(INK_BOX, '#round-overlay canvas.alive')); pg.wait_for_timeout(330)
+                w0 = boxes[0]
+                inside = all(bx['mx'] > bx['w'] * 0.02 and bx['Mx'] < bx['w'] * 0.98 and bx['my'] > bx['h'] * 0.02 and bx['My'] < bx['h'] * 0.98 and bx['n'] > 50 for bx in boxes)
+                moved = max(bx['mx'] for bx in boxes) - min(bx['mx'] for bx in boxes) + max(bx['My'] for bx in boxes) - min(bx['My'] for bx in boxes)
+                S.check(f'{label} {wid}: Zeichnung ≥ 1,35× so groß wie vorher ({w0["cssW"]} px statt {round(old_w)} px)', w0['cssW'] >= old_w * 1.35, w0['cssW'])
+                S.check(f'{label} {wid}: Bewegung bleibt 4 s lang IM Rahmen und ist sichtbar', inside and moved > 4, (moved, [(bx['mx'], bx['Mx']) for bx in boxes[:4]]))
+                c.close()
+        c = b.new_context(viewport={'width': 1280, 'height': 800}); pg = c.new_page()
+        pg.goto(base + '/?test=1&scene=dayend'); wait_state(pg, 's.screen === "dayend"', 30000); pg.wait_for_timeout(1600)
+        a = [pg.evaluate(INK_BOX, f'#dayend-grid figure:nth-child({i}) canvas') for i in range(1, 6)]
+        pg.wait_for_timeout(1200)
+        a2 = [pg.evaluate(INK_BOX, f'#dayend-grid figure:nth-child({i}) canvas') for i in range(1, 6)]
+        still = all(abs(x['mx'] - y['mx']) <= 6 and abs(x['My'] - y['My']) <= 6 and x['n'] > 30 and x['mx'] > 0 and x['Mx'] < x['w'] - 1 for x, y in zip(a, a2))
+        S.check('Tagesende-Kacheln als Standbild: ganze Zeichnung sichtbar, keine Fahr-/Hüpfbewegung', still, [(x['mx'], y['mx']) for x, y in zip(a, a2)])
+        c.close()
+    if section('p13'):
+        S.run('13 Money-Shot', p13)
+
     b.close()
 S.finish()

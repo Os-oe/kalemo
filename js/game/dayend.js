@@ -1,5 +1,5 @@
 // Tagesende: lebende eigene Zeichnungen, „KI erkannte x/5", Punkte-Count-up, Serien-Flamme, lustigster Fehltipp.
-import { t, word, ART_TEXT, funnyLine, funnyAllowed } from '../core/i18n.js';
+import { t, word, ART_TEXT, FRINGE, funnyLine, funnyAllowed } from '../core/i18n.js';
 import { streak } from '../core/store.js';
 import { addDays } from '../core/plan.js';
 import { mount, unmountAll } from './alive.js';
@@ -27,7 +27,9 @@ export function installDayEnd(app) {
       const r = sum.results[i], w = app.byId.get(r.id); const ok = r.result === 'hit' || r.parts > 0;
       const strokes = r.drawings?.length ? r.drawings[0] : r.strokes;
       const col = learn === 'de' ? ART_TEXT[r.kind === 'plural' ? 'plural' : w.de.art] : '#1E2A3A';
-      mount(c, { strokes, color: col, style: 'pencil', width: 3, motion: ok ? { kind: w.motion, id: w.id } : null, still: !ok, delay: 300 + i * 160, seed: i + 2 });
+      // Tagesende-Kachel als Standbild (Iteration 1): ganze Zeichnung immer sichtbar, Line-Boil als leise Bewegung
+      const fringe = learn === 'de' ? FRINGE[r.kind === 'plural' ? 'plural' : w.de.art] : FRINGE.neutral;
+      mount(c, { strokes, color: col, fringe: ok ? fringe : '#C9CED6', style: 'crayon', width: 3.4, boil: 0.9, still: true, delay: 300 + i * 160, seed: i + 2 });
     });
     // Punkte zählen hoch
     const pts = $('#dayend-points'); const start = performance.now(); const dur = 1200;

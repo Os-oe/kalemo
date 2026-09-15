@@ -1,0 +1,69 @@
+{
+  "url": "http://127.0.0.1:8794/?test=1&scene=hit&word=bicycle",
+  "label": "hit-r3",
+  "checkedAt": "2026-09-15T13:55:00.345Z",
+  "threshold": 0.15,
+  "minCells": 2,
+  "desktop": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix1/hit-r3-desktop.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "360×225",
+      "overall": 2.368,
+      "cells": [
+        0.0072,
+        1.5143,
+        0.8294,
+        0.1096,
+        15.1752,
+        1.4802,
+        0.1771,
+        0.8331,
+        1.1862
+      ],
+      "aliveCells": [
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-mitte",
+        "mitte-rechts",
+        "unten-links",
+        "unten-mitte",
+        "unten-rechts"
+      ],
+      "aliveCount": 7
+    }
+  },
+  "mobile": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix1/hit-r3-mobile.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "97×211",
+      "overall": 4.9557,
+      "cells": [
+        0.1787,
+        3.4155,
+        1.0709,
+        11.5462,
+        14.4493,
+        12.6354,
+        0.6975,
+        0.4793,
+        0.353
+      ],
+      "aliveCells": [
+        "oben-links",
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-links",
+        "mitte-mitte",
+        "mitte-rechts",
+        "unten-links",
+        "unten-mitte",
+        "unten-rechts"
+      ],
+      "aliveCount": 9
+    }
+  },
+  "flags": [],
+  "motionVerdict": "LEBENDIG"
+}

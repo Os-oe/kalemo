@@ -41,6 +41,13 @@ export async function scene(app, name) {
       requestAnimationFrame(draw); app.round.showBubble('Hmm … ay?');
       break;
     }
+    case 'hit': { // Iteration 1: Treffer-Karte (Money-Shot) für acuity-loop, ?word=bicycle&learn=tr|de
+      const learn = Q('learn') || 'tr'; setPair(learn === 'de' ? 'tr' : 'de', learn); const id = Q('word') || 'bicycle';
+      roundBase(id); app.stage.enabled = false;
+      const k = +(Q('k') || 0); const strokes = (others[id] || others.cat)[k % 3].strokes.map(([x, y]) => [x, y, x.map((_, i) => i * 20)]);
+      app.round.resultCard({ id, result: 'hit', strokes, points: 90 });
+      loop(); break;
+    }
     case 'help': { // Iteration 1: Hilfe-Karte „So malen es andere — jetzt du!" über laufender Runde
       setPair('de', 'tr'); await app.clfPromise; roundBase(Q('word') || 'bicycle');
       app.round.draw({ id: Q('word') || 'bicycle' });
