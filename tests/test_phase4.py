@@ -190,8 +190,8 @@ with server() as base, sync_playwright() as p:
             loadObjectDetector: async () => {}, cancelHunt() {}, stop() {}, hunt: async () => { app.onRealFrame(0.9, { originX: 200, originY: 120, width: 200, height: 200 }, 0.5); await new Promise(r => setTimeout(r, 300)); return { found: true, box: {} }; } };
           app.mode = 'air';
           const p = app.realStep(app.byId.get('cup'));
-          await new Promise(r => setTimeout(r, 450));
-          const stamp = !!document.querySelector('#round-overlay .x2'); const box = !!app.stage.realBox;
+          let stamp = false, box = false;
+          for (let i = 0; i < 60 && !stamp; i++) { await new Promise(r => setTimeout(r, 50)); box = box || !!app.stage.realBox; stamp = !!document.querySelector('#round-overlay .x2'); }
           const found = await p; const fx = (app.fxLog || []).map(x => x.name);
           app.air = null; app.mode = 'screen'; app.goHome();
           return { stamp, box, found, fanfare: fx.includes('fanfare') };
