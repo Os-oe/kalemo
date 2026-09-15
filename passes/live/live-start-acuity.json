@@ -1,0 +1,61 @@
+{
+  "url": "https://kalemo.demo.osai.solutions/",
+  "label": "live-start",
+  "checkedAt": "2026-09-15T05:01:55.188Z",
+  "threshold": 0.15,
+  "minCells": 2,
+  "desktop": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/live/live-start-desktop.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "360×225",
+      "overall": 2.7801,
+      "cells": [
+        0.0016,
+        8.3937,
+        0.0033,
+        0.0158,
+        16.535,
+        0.0095,
+        0,
+        0.0616,
+        0
+      ],
+      "aliveCells": [
+        "oben-mitte",
+        "mitte-mitte"
+      ],
+      "aliveCount": 2
+    }
+  },
+  "mobile": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/live/live-start-mobile.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "97×211",
+      "overall": 5.165,
+      "cells": [
+        2.1,
+        19.9608,
+        2.8238,
+        4.3429,
+        13.6113,
+        3.796,
+        0,
+        0,
+        0
+      ],
+      "aliveCells": [
+        "oben-links",
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-links",
+        "mitte-mitte",
+        "mitte-rechts"
+      ],
+      "aliveCount": 6
+    }
+  },
+  "flags": [],
+  "motionVerdict": "LEBENDIG"
+}
