@@ -40,7 +40,7 @@ export function installFlow(app) {
     }
     air.start(); setMode('air');
     app.settings = saveSettings({ air: true, airDenied: false });
-    if (handCheck) await app.handCheck();
+    if (handCheck) { if (!app.round.active) app.stage.clear(); await app.handCheck(); }
     else hideCard();
     return true;
   };
@@ -85,6 +85,8 @@ export function installFlow(app) {
     app.settings = saveSettings({ airOffered: true });
     const yes = await choice(`<h3>${escapeHtml(t('airOfferT'))}</h3><p>${escapeHtml(t('airOfferB'))}</p>`, [['yes', t('airYes'), 'primary'], ['no', t('airNo'), 'ghost']]);
     if (yes !== 'yes') { app.settings = saveSettings({ airDeclined: true }); return false; }
+    // Review P2-6: alte Leuchttinte weg, bevor Kamera-Onboarding und Hand-Check darüber liegen
+    app.stage.clear(); app.stage.clearGhosts(); app.round.bubble.hidden = true;
     const go = await choice(`<div class="precam">${handSvg(POSES.draw, { size: 84, accent: '#FFC857' })}<p class="pose">${escapeHtml(t('poseDraw'))}</p>${handSvg(POSES.open, { size: 84 })}<p class="pose">${escapeHtml(t('posePause'))}</p></div><h3>${escapeHtml(t('preCamT'))}</h3><p>${escapeHtml(t('preCamB'))}</p>`,
       [['go', t('preCamGo'), 'primary'], ['no', t('airNo'), 'ghost']], 'precam-card');
     if (go !== 'go') { app.settings = saveSettings({ airDeclined: true }); return false; }

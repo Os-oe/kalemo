@@ -399,5 +399,40 @@ with server() as base, sync_playwright() as p:
     if section('p2_5'):
         S.run('P2-5 Sprachwahl', p2_5)
 
+    # ---------- P2-6: Luft-Onboarding — Tinte weg + unter der Dialog-Ebene ----------
+    def p2_6():
+        c = b.new_context(viewport={'width': 1280, 'height': 800}); pg = c.new_page(); errs = []
+        pg.on('pageerror', lambda e: errs.append(str(e)))
+        pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000)
+        # Luft-Modus (ohne Kamera) mit großer roter Leuchttinte genau unter der Dialog-Mitte
+        pg.evaluate('''async () => { const app = window.__kalemo; app.show('round'); app.setMode('air'); app.stage.clear(); app.stage.enabled = true; app.stage.setColor('#EF4444');
+          const st = app.stage; const cx = st.w / 2, cy = st.h / 2; const xs = [], ys = [];
+          for (let k = 0; k < 14; k++) { xs.length = 0; ys.length = 0; const y = cy - 170 + k * 26; st.beginStroke(cx - 330, y); for (let x = cx - 330; x <= cx + 330; x += 12) st.addPoint(x, y + Math.sin(x / 30) * 8); st.endStroke(); }
+          app.choice('<h3>Test</h3><p>Dialog über Tinte</p>', [['a', 'Auf dem Bildschirm malen', 'primary'], ['b', 'Weiter', 'ghost']]); return 1; }''')
+        pg.wait_for_timeout(400)
+        hit = pg.evaluate(HIT_TEST, '#round-overlay [data-k="a"]'); hit2 = pg.evaluate(HIT_TEST, '#round-overlay [data-k="b"]')
+        z = pg.evaluate("() => [getComputedStyle(document.querySelector('#stage canvas.ink')).zIndex, getComputedStyle(document.querySelector('#round-overlay')).zIndex]")
+        box = pg.locator('#round-overlay .card').bounding_box()
+        png = pg.screenshot(clip=box)
+        from PIL import Image
+        import io
+        im = Image.open(io.BytesIO(png)).convert('RGB'); px = list(im.getdata())
+        red = sum(1 for (r, g, bb) in px if r > 190 and g < 120 and bb < 120) / len(px)
+        S.check('Luft-Modus: Dialog-Knöpfe liegen über der Tinte (elementFromPoint + z-index)', hit['ok'] and hit2['ok'] and int(z[1]) > int(z[0] if z[0] != 'auto' else 0), (hit, hit2, z))
+        S.check('Pixelprobe über der Dialog-Karte: keine rote Leuchttinte (< 0,3 %)', red < 0.003, f'{red * 100:.2f} % rote Pixel')
+        pg.evaluate('() => window.__choose("b")')
+        # Onboarding-Kette: nach „Ja, in die Luft" ist die alte Tinte gelöscht
+        pg.evaluate('() => { const app = window.__kalemo; app.setMode("screen"); app.settings.airOffered = false; app.offerAir(); return 1; }')
+        pg.wait_for_selector('#round-overlay [data-k="yes"]', timeout=5000)
+        before = pg.evaluate('() => window.__state().stageFx.strokes')
+        pg.click('#round-overlay [data-k="yes"]')
+        pg.wait_for_selector('.precam-card [data-k="go"]', timeout=5000)
+        after = pg.evaluate('() => window.__state().stageFx.strokes')
+        S.check('„Ja, in die Luft" → Tinte der vorigen Zeichnung geleert, bevor Vorab-Karte/Kamera kommen', before >= 10 and after == 0, (before, after))
+        S.check('P2-6: keine Seitenfehler', not errs, errs[:2])
+        c.close()
+    if section('p2_6'):
+        S.run('P2-6 Luft-Onboarding', p2_6)
+
     b.close()
 S.finish()
