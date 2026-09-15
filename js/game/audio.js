@@ -74,6 +74,8 @@ export function installAudio(app) {
     if (my !== seq) return 0;
     let t = ctx.currentTime + 0.02 + delay, total = 0;
     duck(true);
+    // Notfall: fehlen Clips komplett, spricht die Browser-Stimme (nur wenn eine passende Stimme existiert)
+    if (bufs.every((b) => typeof b === 'number' || !b) && bufs.some((b) => b === null)) { speakFallback(parts.filter((p, i) => typeof p === 'string' && !bufs[i])); return 0; }
     for (const b of bufs) {
       if (typeof b === 'number') { t += b; total += b; continue; }
       if (!b) continue;
@@ -85,6 +87,27 @@ export function installAudio(app) {
     return total;
   }
   const pickHmm = () => `hmm${1 + Math.floor(Math.random() * 3)}`;
+  let lines = null; fetch('data/voice-lines.json').then((r) => r.json()).then((j) => (lines = j)).catch(() => {});
+  const NUMS = { de: ['', 'eins', 'zwei', 'drei', 'vier', 'fünf'], en: ['', 'one', 'two', 'three', 'four', 'five'], tr: ['', 'bir', 'iki', 'üç', 'dört', 'beş'] };
+  function speakFallback(paths) {
+    try {
+      if (!('speechSynthesis' in window) || app.settings.muted || !paths.length || navigator.webdriver) return; // headless: Sprachausgabe blockiert
+      const voices = speechSynthesis.getVoices(); speechSynthesis.cancel();
+      const groups = []; for (const p of paths) { const l = p.split('/')[0]; if (groups.length && groups[groups.length - 1].l === l) groups[groups.length - 1].ps.push(p); else groups.push({ l, ps: [p] }); }
+      for (const { l: lang, ps } of groups) {
+      const v = voices.find((x) => x.lang?.toLowerCase().startsWith(lang)); if (!v) continue;
+      const text = ps.map((p) => {
+        const [l, kind, key] = p.split('/'); const w = app.words.find((x) => x.cls === key);
+        if (kind === 'w' && w) return l === 'de' ? `${w.de.art} ${w.de.noun}` : l === 'en' ? w.en.word : w.tr.word;
+        if (kind === 'b' && w) return w.de.noun;
+        if (kind === 'p' && w) return l === 'de' ? w.de.pl : w.en.pl;
+        if (kind === 'n') return key === 'tane' ? 'tane' : NUMS[l][+key];
+        return lines?.[l]?.[kind]?.[key] || '';
+      }).join(' ');
+      const u = new SpeechSynthesisUtterance(text); u.voice = v; u.lang = v.lang; u.rate = 0.95; speechSynthesis.speak(u);
+      }
+    } catch {}
+  }
 
   app.voice = {
     word: (id, l) => sequence([P.word(id, l)]),

@@ -1,5 +1,6 @@
 // Runden-Controller: verbindet Bühne, Klassifikator, RoundEngine, Stimme/SFX und Overlay.
 import { RoundEngine } from '../core/engine.js';
+import { HIT_FLOOR } from '../core/classifier.js';
 import { t, word, cap, strokeColor, LANGS, pluralPhrase, ART_TEXT } from '../core/i18n.js';
 import { drawStrokes } from './ink.js';
 import { mount as mountAlive, confetti } from './alive.js';
@@ -41,7 +42,7 @@ export class RoundController {
     this.drawCount = (this.drawCount || 0) + 1;
     this.stage.resize();
     const minInk = Math.min(this.stage.w, this.stage.h) * 0.18;
-    const engine = new RoundEngine({ target: w.id, durationMs: opts.durationMs ?? 20000, minInk });
+    const engine = new RoundEngine({ target: w.id, durationMs: opts.durationMs ?? 20000, minInk, floor: HIT_FLOOR[w.id] || 0 });
     this.stage.clear();
     this.stage.setColor(opts.color || strokeColor(w, app.settings.learn));
     this.stage.enabled = true;
@@ -118,6 +119,8 @@ export class RoundController {
       this._handle(r, r.engine.tick(now));
       const left = Math.max(0, r.engine.duration - r.engine.elapsed(now));
       this.app.ui?.timer(left, r.opts.totalMs || r.engine.duration);
+      // Hilfe nach 8 s: „So malen es andere" (beendet die Runde freundlich, auch per Tastatur erreichbar)
+      if (!r.helpShown && r.engine.elapsed(now) > 8000 && !r.opts.totalMs) { r.helpShown = true; const hb = document.getElementById('round-help'); hb.hidden = false; hb.onclick = () => { if (this.active === r && !r.engine.done) { this.app.sfx?.play('tap'); this._handle(r, r.engine.finish(performance.now(), 'timeout')); } }; }
       if (left < 5000 && left > 0 && Math.floor(left / 1000) !== r.lastTickS) { r.lastTickS = Math.floor(left / 1000); this.app.sfx?.play('tick'); }
     }
     if (!r || now >= (r.frozenUntil || 0)) this.stage.render(now);
@@ -136,6 +139,7 @@ export class RoundController {
       stage: { w: this.stage.w, h: this.stage.h },
     };
     app.sfx?.scribbleStop();
+    document.getElementById('round-help').hidden = true;
     const ink = this.stage.canvas;
     if (result === 'hit') {
       r.frozenUntil = performance.now() + 100; // Freeze 80–120 ms

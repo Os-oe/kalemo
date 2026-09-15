@@ -12,7 +12,7 @@ export const T = {
     next: 'Weiter', skip: 'Überspringen', start: 'Los geht’s', finish: 'Fertig',
     slot: 'Wort {i} von {n}', review: 'Wiederholung', plural: 'Mehrzahl',
     guessHmm: 'Hmm … {w}?', guessHit: 'Ich weiß! {w}!', guessHard: 'Hmm, schwierig …', timeUp: 'Zeit ist um.',
-    missTitle: 'Ich hab’s nicht erkannt — so malen es andere:',
+    missTitle: 'Ich hab’s nicht erkannt — so malen es andere:', helpOthers: 'Zeig mir, wie andere es malen',
     hitTitle: 'Erkannt!', youDrew: 'Du hast gemalt:',
     articleQ: 'der, die oder das?', articleHintAir: 'Zeig 1, 2 oder 3 Finger — oder tippe.', articleHintTap: 'Tippe auf der, die oder das.',
     articleOk: 'Genau!', articleShow: 'Es heißt: {w}',
@@ -46,7 +46,7 @@ export const T = {
     legal: 'Impressum', privacy: 'Datenschutz', credits: 'Credits', byOsai: 'von OsAI',
     doDont: 'Bewegung beim Lernen: Gesten können helfen, sich Wörter zu merken.',
     cats: { Tier: 'Tiere', Essen: 'Essen', Haus: 'Zuhause', Küche: 'Küche', Ding: 'Dinge', Draußen: 'Draußen', Kleidung: 'Kleidung', Körper: 'Körper', 'Wetter/Himmel': 'Himmel & Wetter', Natur: 'Natur', Gebäude: 'Gebäude', Straße: 'Straße', Fahrzeug: 'Fahrzeuge', Spiel: 'Spielen', Musik: 'Musik' },
-    reduced: 'Weniger Bewegung', loading: 'Lädt …', offlineModel: 'Die Mal-KI lädt noch …',
+    reduced: 'Weniger Bewegung', loading: 'Lädt …', offlineModel: 'Die Mal-KI lädt noch …', modelFail: 'Die Mal-KI konnte nicht laden. Bitte lade die Seite neu.',
   },
   en: {
     langName: { de: 'German', en: 'English', tr: 'Turkish' },
@@ -57,7 +57,7 @@ export const T = {
     next: 'Next', skip: 'Skip', start: 'Let’s go', finish: 'Done',
     slot: 'Word {i} of {n}', review: 'Review', plural: 'Plural',
     guessHmm: 'Hmm … {w}?', guessHit: 'I know! {w}!', guessHard: 'Hmm, tricky …', timeUp: 'Time’s up.',
-    missTitle: 'I couldn’t tell — this is how others draw it:',
+    missTitle: 'I couldn’t tell — this is how others draw it:', helpOthers: 'Show me how others draw it',
     hitTitle: 'Got it!', youDrew: 'You drew:',
     articleQ: 'der, die or das?', articleHintAir: 'Show 1, 2 or 3 fingers — or tap.', articleHintTap: 'Tap der, die or das.',
     articleOk: 'Exactly!', articleShow: 'It’s {w}.',
@@ -91,7 +91,7 @@ export const T = {
     legal: 'Legal notice', privacy: 'Privacy', credits: 'Credits', byOsai: 'by OsAI',
     doDont: 'Moving while learning: gestures can help you remember words.',
     cats: { Tier: 'Animals', Essen: 'Food', Haus: 'Home', Küche: 'Kitchen', Ding: 'Things', Draußen: 'Outdoors', Kleidung: 'Clothes', Körper: 'Body', 'Wetter/Himmel': 'Sky & weather', Natur: 'Nature', Gebäude: 'Buildings', Straße: 'Street', Fahrzeug: 'Vehicles', Spiel: 'Play', Musik: 'Music' },
-    reduced: 'Reduce motion', loading: 'Loading …', offlineModel: 'The drawing AI is still loading …',
+    reduced: 'Reduce motion', modelFail: 'The drawing AI couldn’t load. Please reload the page.', loading: 'Loading …', offlineModel: 'The drawing AI is still loading …',
   },
   tr: {
     langName: { de: 'Almanca', en: 'İngilizce', tr: 'Türkçe' },
@@ -102,7 +102,7 @@ export const T = {
     next: 'Devam', skip: 'Geç', start: 'Haydi başla', finish: 'Bitti',
     slot: 'Kelime {i}/{n}', review: 'Tekrar', plural: 'Çoğul',
     guessHmm: 'Hmm… {w}?', guessHit: 'Buldum! {w}!', guessHard: 'Hmm, zor…', timeUp: 'Süre doldu.',
-    missTitle: 'Anlayamadım — başkaları böyle çiziyor:',
+    missTitle: 'Anlayamadım — başkaları böyle çiziyor:', helpOthers: 'Başkaları nasıl çiziyor, göster',
     hitTitle: 'Tanıdım!', youDrew: 'Senin çizimin:',
     articleQ: 'der mi, die mi, das mı?', articleHintAir: '1, 2 ya da 3 parmak göster — ya da dokun.', articleHintTap: 'der, die ya da das’a dokun.',
     articleOk: 'Aynen öyle!', articleShow: 'Artikeliyle: {w}',
@@ -136,7 +136,7 @@ export const T = {
     legal: 'Künye', privacy: 'Gizlilik', credits: 'Emeği geçenler', byOsai: 'OsAI yapımı',
     doDont: 'Hareket ederek öğrenmek: jestler kelimeleri akılda tutmaya yardımcı olabilir.',
     cats: { Tier: 'Hayvanlar', Essen: 'Yiyecekler', Haus: 'Ev', Küche: 'Mutfak', Ding: 'Eşyalar', Draußen: 'Dışarıda', Kleidung: 'Giysiler', Körper: 'Vücut', 'Wetter/Himmel': 'Gökyüzü ve hava', Natur: 'Doğa', Gebäude: 'Binalar', Straße: 'Sokak', Fahrzeug: 'Taşıtlar', Spiel: 'Oyun', Musik: 'Müzik' },
-    reduced: 'Daha az hareket', loading: 'Yükleniyor…', offlineModel: 'Çizim yapay zekâsı hâlâ yükleniyor…',
+    reduced: 'Daha az hareket', modelFail: 'Çizim yapay zekâsı yüklenemedi. Lütfen sayfayı yenile.', loading: 'Yükleniyor…', offlineModel: 'Çizim yapay zekâsı hâlâ yükleniyor…',
   },
 };
 

@@ -18,6 +18,12 @@ export const SYNONYMS = {
   face: ['smiley_face'],
 };
 
+/**
+ * Mindest-Wahrscheinlichkeit für einen Treffer bei Wörtern, die Zufallskritzel besonders oft in die Top-3 bringen
+ * (Excellence-Pass, gemessen: 600 Zufallskritzel → nose 32 % → 20 %, bird 16 % → 8 %; Luft-Sim-Trefferquote bleibt ≥ 80 %).
+ */
+export const HIT_FLOOR = { nose: 0.15, bird: 0.15, leg: 0.15, lightning: 0.15, snake: 0.15, rain: 0.15, face: 0.15, stairs: 0.15, foot: 0.15 };
+
 let tfReady = null;
 export function loadScript(src) {
   return new Promise((res, rej) => {

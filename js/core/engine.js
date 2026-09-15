@@ -18,8 +18,8 @@ export class RoundEngine {
    * @param {number} [o.durationMs=20000]
    * @param {number} [o.minInk]  Mindest-Strichlänge (gleiche Einheit wie ink in onPrediction)
    */
-  constructor({ target, durationMs = 20000, minInk = 0, rules = {} }) {
-    this.target = target; this.duration = durationMs; this.minInk = minInk;
+  constructor({ target, durationMs = 20000, minInk = 0, rules = {}, floor = 0 }) {
+    this.target = target; this.duration = durationMs; this.minInk = minInk; this.floor = floor;
     this.r = { ...RULES, ...rules };
     this.reset();
   }
@@ -43,7 +43,7 @@ export class RoundEngine {
     this.predictions++;
     this.lastTop = top.slice(0, 5).map((x) => ({ id: x.id, p: +x.p.toFixed(3) }));
     const inkOk = ink >= this.minInk;
-    const inTop = top.slice(0, this.r.topK).some((x) => x.id === this.target);
+    const inTop = top.slice(0, this.r.topK).some((x) => x.id === this.target && x.p >= this.floor);
     // Treffer: Zielwort in Top-3, ≥ confirmMs stabil (erst ab Mindest-Strichlänge)
     if (inTop && inkOk) {
       if (this.targetSince == null) { this.targetSince = t; ev.push({ type: 'confirm', at: t + this.r.confirmMs }); }

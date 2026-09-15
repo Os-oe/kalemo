@@ -9,9 +9,12 @@ const W = new WeakMap();
  * mount(canvas, {strokes, color, style, motion:{kind,id}, width, boil, delay})
  * Canvas-Größe wird aus CSS gemessen (DPR-scharf).
  */
+// Nur sichtbare Zeichnungen animieren (Wörterbuch mit vielen Einträgen am Handy)
+const io = typeof IntersectionObserver !== 'undefined' ? new IntersectionObserver((entries) => { for (const e of entries) { const it = W.get(e.target); if (it) it.visible = e.isIntersecting; } }, { rootMargin: '80px' }) : null;
+
 export function mount(canvas, opts) {
-  const it = { canvas, ctx: canvas.getContext('2d'), opts, t0: performance.now() + (opts.delay || 0), particles: new Particles(), last: performance.now() };
-  W.set(canvas, it); items.add(it);
+  const it = { canvas, ctx: canvas.getContext('2d'), opts, t0: performance.now() + (opts.delay || 0), particles: new Particles(), last: performance.now(), visible: true, drawn: false };
+  W.set(canvas, it); items.add(it); io?.observe(canvas);
   if (!raf) raf = requestAnimationFrame(loop);
   return it;
 }
@@ -30,6 +33,8 @@ function loop(now) {
   for (const it of items) {
     if (!it.canvas.isConnected) { items.delete(it); continue; }
     if (it.canvas.offsetParent === null && !it.opts.offscreen) continue;
+    if (!it.visible && it.drawn) continue; // außerhalb des Bildschirms: letzten Frame stehen lassen
+    it.drawn = true;
     const { w, h, dpr } = size(it); const o = it.opts, ctx = it.ctx;
     const t = Math.max(0, (now - it.t0) / 1000), dt = Math.min(0.05, (now - it.last) / 1000); it.last = now;
     ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, w, h);

@@ -137,7 +137,14 @@ async function boot() {
   applyTexts();
   if (inAppBrowser()) $('#inapp').hidden = false;
   app.clfPromise = createClassifier({ words, backend: Q.get('backend') || undefined }).then((c) => (app.clf = c)).catch((e) => { app.log.push('clf ' + e.message); throw e; });
-  $('#btn-daily').addEventListener('click', async () => { app.sfx?.play('tap'); await startRoundMode(); await app.clfPromise; playDaily(app, { practice: !!dayResult(app.today()) }); });
+  $('#btn-daily').addEventListener('click', async () => {
+    app.sfx?.play('tap');
+    const btn = $('#btn-daily'), label = $('#daily-label');
+    if (!app.clf) { btn.disabled = true; btn.classList.add('loading'); label.textContent = t('offlineModel'); }
+    try { await app.clfPromise; } catch { btn.disabled = false; btn.classList.remove('loading'); renderStart(); app.ui.toast(t('modelFail'), 6000); return; }
+    btn.disabled = false; btn.classList.remove('loading');
+    await startRoundMode(); playDaily(app, { practice: !!dayResult(app.today()) });
+  });
   $('#round-close').addEventListener('click', () => app.goHome());
   app.onLowFps = () => {
     app.choice(`<h3>${escapeHtml(t('moreLight'))}</h3>`, [['screen', t('toScreen'), 'primary'], ['stay', t('next'), 'ghost']]).then((k) => { if (k === 'screen') app.leaveAir(); });
