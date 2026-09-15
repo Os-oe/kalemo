@@ -10,6 +10,9 @@ const $ = (s, r = document) => r.querySelector(s);
 const ARTS = ['der', 'die', 'das'];
 export const isDesktop = () => { try { return matchMedia('(pointer: fine)').matches && !matchMedia('(hover: none)').matches && !('ontouchstart' in window && navigator.maxTouchPoints > 0); } catch { return true; } };
 export const inAppBrowser = () => /Instagram|FBAN|FBAV|LinkedInApp/i.test(navigator.userAgent);
+/** Mobilfunk / Datensparen / langsames Netz (navigator.connection; unbekannt = nicht getaktet) */
+export const metered = () => { try { const c = navigator.connection; return !!c && (!!c.saveData || c.type === 'cellular' || /(^|-)(2g|3g)$/.test(c.effectiveType || '')); } catch { return false; } };
+export const AIR_ASSETS = ['vendor/v1/mediapipe/vision_bundle.mjs', 'vendor/v1/mediapipe/vision_wasm_internal.wasm', 'models/v1/mediapipe/hand_landmarker.task'];
 
 export function installFlow(app) {
   const ov = () => app.round.overlay;
@@ -65,14 +68,52 @@ export function installFlow(app) {
       ? `<button class="chip locked" data-m="air" aria-pressed="false" title="${escapeHtml(t('inApp'))}">${escapeHtml(t('airToggle'))}<small>${escapeHtml(t('inAppChip'))}</small></button>`
       : `<button class="chip" data-m="air" aria-pressed="${app.mode === 'air'}">${escapeHtml(t('airToggle'))}</button>`;
     el.innerHTML = `<button class="chip" data-m="screen" aria-pressed="${app.mode === 'screen'}">${escapeHtml(t('screenToggle'))}</button>${air}`;
+    if (!el.hidden && !app._airPreloadT && app.mode === 'screen') app._airPreloadT = setTimeout(() => { if (app.screen === 'round') app.preloadAir(); else app._airPreloadT = null; }, 2500);
   }
   app.renderToggle = renderToggle;
   $('#mode-toggle').addEventListener('click', async (e) => {
     const b = e.target.closest('button'); if (!b || b.dataset.m === app.mode) return;
     app.sfx?.play('tap');
-    if (b.dataset.m === 'air') { const wasEnabled = app.stage.enabled; app.stage.enabled = false; await app.enterAir({ handCheck: false }); app.stage.enabled = wasEnabled; }
+    if (b.dataset.m === 'air') await app.airFromToggle();
     else app.leaveAir();
   });
+
+  /**
+   * Iteration 2 (R2-P2-9): Umschalter „In die Luft" mitten in der Runde — die Uhr steht, bis die Handerkennung läuft;
+   * beim ersten Mal dieselbe Onboarding-Kette wie am Tagesende (Gesten + Datenschutz-Satz → Kamera → Hand-Check →
+   * Kalibrierungs-Angebot); auf Mobilfunk erst die Größe ansagen.
+   */
+  app.airFromToggle = async () => {
+    if (inAppBrowser()) { app.ui.toast(`${t('inApp')} — ${t('inAppB')}`, 4200); return false; }
+    const r = app.round.active, wasEnabled = app.stage.enabled;
+    const paused = !!(r && !r.engine.done && !r.engine.paused);
+    if (paused) { r.engine.pause(performance.now()); if (app.stage.active) app.stage.endStroke(); }
+    app.stage.enabled = false;
+    app.airToggle = { paused, elapsedBefore: r ? Math.round(r.engine.elapsed(performance.now())) : null };
+    let ok = false;
+    try {
+      if (metered() && !app.air?.landmarker) {
+        const k = await choice(`<h3>${escapeHtml(t('airSizeT'))}</h3><p>${escapeHtml(t('airSizeB'))}</p>`, [['load', t('airSizeGo'), 'primary'], ['no', t('airNo'), 'ghost']], 'airsize');
+        if (k !== 'load') return false;
+      }
+      ok = app.settings.airOnboarded ? await app.enterAir({ handCheck: false }) : await app.offerAir({ skipAsk: true, keepInk: true });
+    } finally {
+      if (app.round.active === r) { app.stage.enabled = wasEnabled; app.stage.pointerOn = app.mode === 'screen'; }
+      if (paused && app.round.active === r && !r.engine.done) r.engine.resume(performance.now());
+      app.airToggle = { ...app.airToggle, ok, elapsedAfter: r && app.round.active === r ? Math.round(r.engine.elapsed(performance.now())) : null };
+      renderToggle();
+    }
+    return ok;
+  };
+
+  /** Handerkennung im Hintergrund vorladen (nur Bytes in den HTTP-Cache, kein Kompilieren): Laptop, WLAN/unbekannt, nicht In-App */
+  app.preloadAir = () => {
+    if (app._airPreload || app.air?.landmarker || inAppBrowser() || metered() || !isDesktop()) return null;
+    if (app.TEST && new URLSearchParams(location.search).get('preload') !== '1') return null; // Test-Suiten laden die 20 MB nur auf Wunsch
+    app._airPreload = Promise.all(AIR_ASSETS.map((u) => fetch(u, { priority: 'low' }).then((res) => res.arrayBuffer()).then((b) => b.byteLength).catch(() => 0)));
+    app.log.push('air-preload');
+    return app._airPreload;
+  };
 
   /** Hand-Check: Hand ≥ 0,5 s sichtbar → grün → weiter */
   app.handCheck = () => new Promise((resolve) => {
@@ -101,9 +142,15 @@ export function installFlow(app) {
     air.listeners.calib = (lm, tt) => frames[phase].push({ lm, t: tt });
     for (const [ph, key] of [['index', 'calibIndex'], ['pinch', 'calibPinch']]) {
       phase = ph; app.calibPhase = ph;
-      const card = showCard(`<div class="hc-ring calib-ring${ph === 'pinch' ? ' pinch' : ''}">${handSvg(POSES.draw, { size: 90, ink: '#FFFBEF', fill: 'rgba(255,251,239,.08)', accent: '#FFC857' })}</div><h3>${escapeHtml(t(key))}</h3><div class="progress"><i style="width:0%"></i></div>`, 'clear');
+      const card = showCard(`<div class="hc-ring calib-ring${ph === 'pinch' ? ' pinch' : ''}">${handSvg(POSES.draw, { size: 90, ink: '#FFFBEF', fill: 'rgba(255,251,239,.08)', accent: '#FFC857' })}</div><h3>${escapeHtml(t(key))}</h3><div class="progress"><i style="width:0%"></i></div><button class="btn calib-skip" data-act="calib-skip">${escapeHtml(t('skip'))}</button>`, 'clear');
+      card.querySelector('[data-act=calib-skip]').addEventListener('click', () => { app.sfx?.play('tap'); app.calibPhase = 'skipped'; });
+      app.hooks.calibSkip = () => { app.calibPhase = 'skipped'; };
       const t0 = performance.now(), bar = card.querySelector('.progress i');
       await new Promise((res) => { const step = () => { const k = Math.min(1, (performance.now() - t0) / phaseMs); if (bar) bar.style.width = Math.round(k * 100) + '%'; if (k < 1 && app.calibPhase === ph) requestAnimationFrame(step); else res(); }; requestAnimationFrame(step); });
+      if (app.calibPhase === 'skipped') { // REVIEW-2 Zusatz 23: Überspringen während der Messung
+        air.listeners.calib = null; app.settings = saveSettings({ penCalib: { skipped: true, at: app.today() } }); hideCard();
+        return null;
+      }
     }
     air.listeners.calib = null;
     const res = chooseGesture(frames.index, frames.pinch, { w: air.video?.videoWidth || 640, h: air.video?.videoHeight || 480 });
@@ -115,15 +162,16 @@ export function installFlow(app) {
   };
 
   /** Angebot → Vorab-Karte → Abfrage → Hand-Check. skipAsk: Frage wurde schon beantwortet (Tagesende-Kachel) */
-  app.offerAir = async ({ skipAsk = false } = {}) => {
+  app.offerAir = async ({ skipAsk = false, keepInk = false } = {}) => {
     app.settings = saveSettings({ airOffered: true });
     const yes = skipAsk ? 'yes' : await choice(`<h3>${escapeHtml(t('airOfferT'))}</h3><p>${escapeHtml(t('airOfferB'))}</p>`, [['yes', t('airYes'), 'primary'], ['no', t('airNo'), 'ghost']]);
     if (yes !== 'yes') { app.settings = saveSettings({ airDeclined: true }); return false; }
     // Review P2-6: alte Leuchttinte weg, bevor Kamera-Onboarding und Hand-Check darüber liegen
-    app.stage.clear(); app.stage.clearGhosts(); app.round.bubble.hidden = true;
+    if (!keepInk) { app.stage.clear(); app.stage.clearGhosts(); } app.round.bubble.hidden = true; // in der Runde (Umschalter) bleibt die Zeichnung
     const go = await choice(`<div class="precam">${handSvg(POSES.draw, { size: 84, accent: '#FFC857' })}<p class="pose">${escapeHtml(t('poseDraw'))}</p>${handSvg(POSES.open, { size: 84 })}<p class="pose">${escapeHtml(t('posePause'))}</p></div><h3>${escapeHtml(t('preCamT'))}</h3><p>${escapeHtml(t('preCamB'))}</p>`,
       [['go', t('preCamGo'), 'primary'], ['no', t('airNo'), 'ghost']], 'precam-card');
     if (go !== 'go') { app.settings = saveSettings({ airDeclined: true }); return false; }
+    app.settings = saveSettings({ airOnboarded: true });
     return app.enterAir({ handCheck: true });
   };
 

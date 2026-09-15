@@ -44,6 +44,7 @@ export function installDayEnd(app) {
     const pd = store.get('pendingDuel', null);
     $('#btn-dayend-duel').hidden = !(pd && pd.date === sum.date && pd.code);
     $('#dayend-air').hidden = !app.shouldOfferAir?.();
+    if (!$('#dayend-air').hidden) app.preloadAir?.(); // R2-P2-9: Angebot „Jetzt in die Luft?“ sichtbar → Handerkennung vorladen
     app.music?.play();
   };
   $('#dayend-air').addEventListener('click', async (e) => {

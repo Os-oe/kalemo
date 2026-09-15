@@ -609,6 +609,47 @@ with server(8792) as base, sync_playwright() as p:
         finally:
             c.close()
 
+    # ---------- Aufgabe 8 (R2-P2-7 + R2-P3-16): Gestern-Karte-Raster + Poster-Glanz ----------
+    def t8_grid_glint():
+        c, pg, errs = fresh(b)
+        try:
+            pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000); pg.evaluate(SETUP, {'native': 'de', 'learn': 'de'})
+            pg.evaluate('() => window.__setDate("2026-11-20")')
+            ids = ['butterfly', 'strawberry', 'hot air balloon', 'traffic light', 'watermelon']  # lange Wörter
+            res = pg.evaluate('''async (ids) => { const app = window.__kalemo; const o = await app.examples(); const m = await import('/js/game/cards.js'); const out = {};
+              for (let n = 1; n <= 5; n++) { const sum = { number: 30, date: '2026-11-19', hits: n, points: 80 * n, scored: true, learn: 'de', native: 'de',
+                  results: ids.slice(0, n).map((id) => ({ id, kind: 'new', result: 'hit', hitAt: 3000, points: 80, strokes: o[id][0].strokes, tips: [{ id: 'moon', p: 0.6 }] })), funniest: { target: ids[0], id: 'moon', p: 0.6, idx: 0 } };
+                const card = await m.yesterdayCard(app, sum); out[n] = { tiles: card.tiles, q: card.quoteRect, W: card.canvas.width, H: card.canvas.height };
+                if (n === 5) window.__ycard = card.canvas.toDataURL('image/png'); }
+              return out; }''', ids)
+            def overlap(a, b_):
+                return not (a['x'] + a['w'] <= b_['x'] or b_['x'] + b_['w'] <= a['x'] or a['y'] + a['h'] <= b_['y'] or b_['y'] + b_['h'] <= a['y'])
+            for n, r in res.items():
+                tl = r['tiles']
+                pairs = [(i, j) for i in range(len(tl)) for j in range(i + 1, len(tl)) if overlap(tl[i], tl[j])]
+                caps = [t_['label'] for t_ in tl if not (t_['cap']['w'] <= t_['w'] - 20 and t_['cap']['x'] >= t_['x'] and t_['cap']['y'] + t_['cap']['h'] <= t_['y'] + t_['h'] + 1)]
+                inside = all(t_['x'] >= 0 and t_['y'] >= 0 and t_['x'] + t_['w'] <= r['W'] and t_['y'] + t_['h'] <= r['H'] - 90 for t_ in tl)
+                qo = [t_['label'] for t_ in tl if r['q'] and overlap(r['q'], t_)]
+                S.check(f'Gestern-Karte {n} Wort/Wörter: Überlappung = 0, Beschriftungen vollständig in der Kachel, Zitat frei, alles auf der Karte', not pairs and not caps and inside and not qo and len(tl) == int(n), (pairs, caps, inside, qo))
+            import base64
+            png = pg.evaluate('() => window.__ycard')
+            os.makedirs(os.path.join(ROOT, 'passes/fix2'), exist_ok=True)
+            open(os.path.join(ROOT, 'passes/fix2/yesterday-5.png'), 'wb').write(base64.b64decode(png.split(',', 1)[1]))
+            # Poster-Vorschau: Glanz nur am Rand, nie über Bild/Beschriftung
+            pg.goto(base + '/?test=1&scene=dict'); pg.wait_for_selector('.dict-cell', timeout=15000)
+            pg.click('[data-act=poster]'); pg.wait_for_selector('#sheet .share-wrap img', timeout=15000); pg.wait_for_timeout(600)
+            g = pg.evaluate('''() => { const w = document.querySelector('#sheet .share-wrap'), img = w.querySelector('img'); const cs = getComputedStyle(w), after = getComputedStyle(w, '::after');
+              const a = w.getBoundingClientRect(), i = img.getBoundingClientRect();
+              return { after: after.content, pad: parseFloat(cs.paddingTop), rim: Math.round(i.left - a.left), anim: cs.animationName, imgOnTop: document.elementFromPoint(i.left + 20, i.top + 20) === img }; }''')
+            S.check('Poster-Vorschau: kein Glanz über dem Bild (::after aus), schimmernder Rand ≥ 6 px, Bild oben', g['after'] in ('none', 'normal') and g['pad'] >= 6 and g['rim'] >= 6 and g['imgOnTop'] and 'rimglint' in g['anim'], g)
+            pg.screenshot(path=os.path.join(ROOT, 'passes/fix2/poster-preview.png'))
+            S.check('Raster + Glanz: keine Seitenfehler', not errs, errs[:2])
+        finally:
+            c.close()
+
+    if on('t8'):
+        S.run('8 Gestern-Raster + Poster-Glanz', t8_grid_glint)
+
     if on('t7'):
         S.run('7 Umschalter in der Runde', t7_toggle); S.run('7 Mobilfunk + Vorladen', t7_metered_preload)
 
