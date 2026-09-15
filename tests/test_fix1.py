@@ -818,5 +818,25 @@ with server() as base, sync_playwright() as p:
     if section('p3_8'):
         S.run('P3-8 Tastatur', p3_8)
 
+    # ---------- P3-9: Grautöne ≥ 4,5:1 ----------
+    CONTRAST = '''() => { const lum = (c) => { const m = c.match(/[\\d.]+/g).map(Number); return m.slice(0, 3).map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; }).reduce((a, v, i) => a + v * [0.2126, 0.7152, 0.0722][i], 0); };
+      const bgOf = (el) => { for (let e = el; e; e = e.parentElement) { const b = getComputedStyle(e).backgroundColor; if (b && !/rgba\\(0, 0, 0, 0\\)|transparent/.test(b) && !/, 0\\)$/.test(b)) return b; } return 'rgb(247, 241, 227)'; };
+      const out = []; for (const el of document.querySelectorAll('.daily-hint, .foot a, .foot button, .foot .by, .today-main span, .dict-head .count, .dict-cell small, .hint, .times, .funny small, .art-card .art-n')) {
+        const r = el.getBoundingClientRect(); if (!r.width || getComputedStyle(el).visibility === 'hidden') continue; const cs = getComputedStyle(el);
+        const fg = lum(cs.color), bg = lum(bgOf(el)); const ratio = (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05); out.push([el.className || el.tagName, +ratio.toFixed(2), cs.fontSize]); }
+      return out; }'''
+
+    def p3_9():
+        c = b.new_context(viewport={'width': 1280, 'height': 800}, locale='de-DE'); pg = c.new_page()
+        pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000)
+        r1 = pg.evaluate(CONTRAST)
+        pg.goto(base + '/?test=1&scene=dict'); pg.wait_for_selector('.dict-cell', timeout=15000)
+        r2 = pg.evaluate(CONTRAST)
+        low = [x for x in r1 + r2 if x[1] < 4.5]
+        S.check('Graue Kleintexte (Start-Hinweis, Footer, Wörterbuch-Zähler/Unterzeilen) ≥ 4,5:1', r1 and r2 and not low, (low, len(r1), len(r2), min(x[1] for x in r1 + r2)))
+        c.close()
+    if section('p3_9'):
+        S.run('P3-9 Kontrast', p3_9)
+
     b.close()
 S.finish()

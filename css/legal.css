@@ -2,7 +2,7 @@
 @font-face { font-family: 'Caveat'; font-weight: 400 700; font-display: swap; src: url(../fonts/v1/caveat-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+1E00-1E9F; }
 @font-face { font-family: 'Nunito'; font-weight: 200 1000; font-display: swap; src: url(../fonts/v1/nunito-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F; }
 @font-face { font-family: 'Nunito'; font-weight: 200 1000; font-display: swap; src: url(../fonts/v1/nunito-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+1E00-1E9F; }
-:root { --paper: #F7F1E3; --ink: #1E2A3A; --pencil: #6B7280; --gold: #FFC857; }
+:root { --paper: #F7F1E3; --ink: #1E2A3A; --pencil: #5F6672; --gold: #FFC857; }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--paper); color: var(--ink); font: 400 1.02rem/1.6 'Nunito', system-ui, sans-serif; box-shadow: inset 18px 0 30px -18px rgba(30,42,58,.22); min-height: 100vh; }
 main { max-width: 760px; margin: 0 auto; padding: 24px 18px 60px; }

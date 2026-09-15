@@ -3,7 +3,7 @@ import { t, word, ART_COLOR, ART_TEXT, FRINGE, LANG_CODE, funnyLine, funnyAllowe
 import { drawStrokes } from './ink.js';
 import { makeRng } from '../core/raster.js';
 
-const PAPER = '#F7F1E3', INK = '#1E2A3A', PENCIL = '#6B7280', NIGHT = '#13203A';
+const PAPER = '#F7F1E3', INK = '#1E2A3A', PENCIL = '#5F6672', NIGHT = '#13203A';
 const fontsReady = () => Promise.all(['700 80px Caveat', '800 40px Nunito', '400 30px Nunito', '600 60px Caveat'].map((f) => document.fonts.load(f, 'ğüşıöçİĞÜŞÖÇäöüß'))).catch(() => {});
 const seedOf = (s) => [...String(s)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 2147483647, 7) || 7;
 
