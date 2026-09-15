@@ -35,6 +35,11 @@ export function playerId() {
   return id;
 }
 
+/** Zwischenstand einer laufenden Tagesskizze (Iteration 2, R2-P2-8) — nur gleicher Tag */
+export function loadProgress(iso) { const p = get('progress', null); return p && p.date === iso && Array.isArray(p.results) ? p : null; }
+export function saveProgress(p) { return set('progress', p); }
+export function clearProgress() { return set('progress', null); }
+
 /** Tagesergebnis (einmal pro Tag wertbar) */
 export function dayResult(iso) { return get('day.' + iso, null); }
 export function saveDayResult(iso, res) {

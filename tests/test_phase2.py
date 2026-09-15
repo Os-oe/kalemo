@@ -115,6 +115,7 @@ with server() as base, sync_playwright() as p:
         S.check('Hand verloren im Strich: zwei getrennte Striche, keine Linie quer übers Bild', len(strokes) == 2 and strokes[0]['t1'] < 2400 and strokes[1]['t0'] >= 2650, strokes)
         page.evaluate('() => window.__mode("screen")')
         page.click('#round-close')
+        page.click('.quit-card [data-k=quit]')  # Iteration 2 (R2-P2-8): laufende Tagesskizze fragt vor dem Schließen nach
     S.run('In-Runde', in_round)
 
     def article_tap():
@@ -135,6 +136,7 @@ with server() as base, sync_playwright() as p:
         cols = {'der': '#3B82F6', 'die': '#EF4444', 'das': '#22C55E'}
         S.check('Artikel antippen (andere Wahl) → richtige Farbe + Hinweis, KI-Schuld-freie Formulierung', st['lastArticle']['ok'] is False and art in (hint or '') and color == cols[art], (hint, color))
         page.click('#round-close')
+        page.click('.quit-card [data-k=quit]')  # Iteration 2 (R2-P2-8): laufende Tagesskizze fragt vor dem Schließen nach
     S.run('Artikel Tippen', article_tap)
     S.check('keine Seitenfehler (A/B)', not errors, errors[:3])
     b.close()

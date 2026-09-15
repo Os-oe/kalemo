@@ -799,8 +799,11 @@ with server() as base, sync_playwright() as p:
         pg.focus('#btn-daily'); pg.keyboard.press('Enter')
         wait_state(pg, 's.screen === "round" && s.round', 20000)
         pg.keyboard.press('Escape')
+        # Iteration 2 (R2-P2-8, bewusst neues Soll): Esc in der laufenden Tagesskizze fragt nach; „Abbrechen" → Start
+        pg.wait_for_selector('.quit-card [data-k=quit]', timeout=3000)
+        pg.keyboard.press('Tab'); pg.click('.quit-card [data-k=quit]')
         st = wait_state(pg, 's.screen === "start"', 5000)
-        S.check('Esc in der Runde → zurück zum Start', st['screen'] == 'start')
+        S.check('Esc in der Runde → Rückfrage → „Abbrechen" → zurück zum Start', st['screen'] == 'start')
         pg.goto(base + '/?test=1&scene=dict&detail=1'); pg.wait_for_selector('#sheet .dict-detail', timeout=15000)
         pg.keyboard.press('Escape'); pg.wait_for_timeout(200)
         s1 = pg.evaluate('() => window.__state()')

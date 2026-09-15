@@ -508,6 +508,110 @@ with server(8792) as base, sync_playwright() as p:
     if on('t5'):
         S.run('5 Äpfel 3/3', t5_apples); S.run('5 Mitnahme + Bonus', t5_carry_bonus); S.run('5 Teilerfolg-Karte', t5_partial_card)
 
+    # ---------- Aufgabe 6 (R2-P2-8): Fortschritt schützen (Kern: Wächter G4) — hier Festschreiben + Tageswechsel ----------
+    def t6_fixed():
+        c, pg, errs = fresh(b)
+        try:
+            pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000); pg.evaluate(SETUP)
+            pg.evaluate('() => window.__setDate("2026-10-12")')
+            plan, st = play_daily_hooks(pg, 'tr')
+            first = pg.evaluate('() => JSON.parse(localStorage.getItem("kalemo.day.2026-10-12"))')
+            streak = pg.evaluate('() => localStorage.getItem("kalemo.streak")')
+            pg.evaluate('() => window.__home()')
+            label = pg.text_content('#daily-label') or ''
+            pg.click('#btn-daily'); wait_state(pg, 's.round', 20000)
+            pg.click('#round-close', force=True); pg.wait_for_timeout(300)
+            st = pg.evaluate('() => window.__state()')
+            S.check('Nach dem ersten Durchgang: Knopf „Noch mal üben", Schließen ohne Rückfrage, kein Zwischenstand', 'üben' in label and st['screen'] == 'start' and st['progress'] is None and not pg.query_selector('.quit-card'), (label, st['screen'], st['progress']))
+            pg.click('#btn-daily'); wait_state(pg, 's.round', 20000)
+            wid = plan['slots'][0]['id']
+            pg.evaluate('(st) => window.__feedStrokes(st, {timing: "instant"})', [[[10, 200, 20], [10, 15, 200]]])  # Übung: Kritzel, Ergebnis egal
+            pg.evaluate('() => window.__home()')
+            again = pg.evaluate('() => JSON.parse(localStorage.getItem("kalemo.day.2026-10-12"))')
+            S.check('Erstes abgeschlossenes Ergebnis festgeschrieben: Übung ändert x/5, Punkte, Serie nicht', again['hits'] == first['hits'] and again['points'] == first['points'] and pg.evaluate('() => localStorage.getItem("kalemo.streak")') == streak, (first['hits'], again['hits']))
+            # Zwischenstand von gestern gilt heute nicht
+            pg.evaluate('() => { localStorage.setItem("kalemo.progress", JSON.stringify({ date: "2026-10-13", results: [{ c: 1, id: "x", result: "hit" }] })); window.__setDate("2026-10-14"); window.__home(); return 1; }')
+            label2 = pg.text_content('#daily-label') or ''
+            S.check('Zwischenstand eines anderen Tages wird ignoriert (neue Tagesskizze beginnt bei Wort 1)', 'weiter' not in label2, label2)
+            S.check('Festschreiben: keine Seitenfehler', not errs, errs[:2])
+        finally:
+            c.close()
+
+    if on('t6'):
+        S.run('6 Festschreiben', t6_fixed)
+
+    # ---------- Aufgabe 7 (R2-P2-9): Luft-Umschalter in der Runde ----------
+    MJPEG = os.path.join(ROOT, 'tools/fixtures/pointing.mjpeg')
+
+    def t7_toggle():
+        bw = p.chromium.launch(headless=True, args=['--enable-unsafe-swiftshader', '--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', f'--use-file-for-fake-video-capture={MJPEG}'])
+        c = bw.new_context(**DESK); c.grant_permissions(['camera'])
+        pg = c.new_page(); errs = []
+        pg.on('pageerror', lambda e: errs.append(str(e)))
+        try:
+            pg.goto(base + '/?test=1&delegate=CPU'); wait_state(pg, 's.clfReady', 60000)
+            pg.evaluate(SETUP, {'airOffered': True, 'air': False, 'airOnboarded': False, 'penCalib': None})
+            pg.evaluate('() => window.__setDate("2026-10-15")')
+            pg.evaluate('() => window.__startDaily()')
+            wait_state(pg, 's.round && s.screen === "round"', 20000); pg.wait_for_timeout(1500)
+            before = pg.evaluate('() => window.__state().round.elapsedMs')
+            pg.click('#mode-toggle [data-m=air]')
+            pg.wait_for_selector('.precam-card [data-k=go]', timeout=5000)
+            pc = pg.text_content('.precam-card') or ''
+            st = pg.evaluate('() => window.__state()')
+            S.check('Umschalter in der Runde: Onboarding mit Gesten + Datenschutz-Satz (wie am Tagesende), Uhr steht', 'verlässt nie' in pc and 'Zeigefinger = malen' in pc and st['round']['paused'], (pc[:90], st['round']['paused']))
+            t_wait = pg.evaluate('() => window.__state().round.elapsedMs')
+            pg.click('.precam-card [data-k=go]')
+            pg.wait_for_selector('.clear-card', timeout=90000)
+            mid = pg.evaluate('() => window.__state().round.elapsedMs')
+            S.check(f'Uhr steht während Kamera + Modell-Laden ({before} → {mid} ms)', abs(mid - t_wait) < 250, (before, t_wait, mid))
+            pg.wait_for_selector('.calib-card [data-k=go]', timeout=40000)
+            S.check('Umschalter-Weg: Kalibrierungs-Angebot nach dem Hand-Check', pg.query_selector('.calib-card [data-k=skip]') is not None)
+            pg.click('.calib-card [data-k=go]')
+            pg.wait_for_selector('.clear-card .calib-skip', state='visible', timeout=5000)
+            skip_hit = pg.evaluate('''() => { const b = document.querySelector('.clear-card .calib-skip'); const r = b.getBoundingClientRect(); const h = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return h === b; }''')
+            pg.click('.clear-card .calib-skip')
+            st = wait_state(pg, 's.calibPhase === "skipped" && s.airToggle && s.airToggle.elapsedAfter != null', 10000)
+            S.check('Kalibrierung: sichtbarer „Überspringen"-Knopf während der Messung (antippbar) → beendet ohne Messung', skip_hit and st['settings']['penCalib'].get('skipped') is True, st['settings']['penCalib'])
+            at = st['airToggle']
+            S.check(f'Uhr-Stand vor/nach Laden gleich ({at["elapsedBefore"]} → {at["elapsedAfter"]} ms), Runde läuft in der Luft weiter', at['ok'] and abs(at['elapsedAfter'] - at['elapsedBefore']) < 400 and st['mode'] == 'air' and not st['round']['paused'], at)
+            S.check('Umschalter: keine Seitenfehler', not errs, errs[:2])
+        finally:
+            bw.close()
+
+    def t7_metered_preload():
+        # Mobilfunk: erst Größe ansagen, nichts vorladen
+        c = b.new_context(**DESK); c.add_init_script("Object.defineProperty(navigator, 'connection', { value: { type: 'cellular', effectiveType: '4g', saveData: false }, configurable: true });")
+        pg = c.new_page(); reqs = []
+        pg.on('request', lambda r: reqs.append(r.url))
+        try:
+            pg.goto(base + '/?test=1&preload=1'); wait_state(pg, 's.clfReady', 60000); pg.evaluate(SETUP)
+            pg.evaluate('() => window.__setDate("2026-10-16")'); pg.evaluate('() => window.__startDaily()')
+            wait_state(pg, 's.round', 20000); pg.wait_for_timeout(3200)
+            S.check('Mobilfunk: kein Hintergrund-Vorladen der Handerkennung', not any('hand_landmarker' in u for u in reqs) and not pg.evaluate('() => window.__state().airPreload'))
+            pg.click('#mode-toggle [data-m=air]')
+            pg.wait_for_selector('.airsize-card', timeout=5000)
+            S.check('Mobilfunk: Umschalter sagt die Größe an („~20 MB laden?")', '20 MB' in (pg.text_content('.airsize-card') or ''), pg.text_content('.airsize-card'))
+            pg.click('.airsize-card [data-k=no]')
+            st = pg.evaluate('() => window.__state()')
+            S.check('„Lieber hier weiter" → Bildschirm-Modus, Runde läuft weiter', st['mode'] == 'screen' and st['round'] and not st['round']['paused'], (st['mode'], st['round']))
+        finally:
+            c.close()
+        # WLAN/unbekannt am Laptop: sobald der Umschalter sichtbar ist, lädt die Handerkennung im Hintergrund
+        c = b.new_context(**DESK); pg = c.new_page(); reqs = []
+        pg.on('request', lambda r: reqs.append(r.url))
+        try:
+            pg.goto(base + '/?test=1&preload=1'); wait_state(pg, 's.clfReady', 60000); pg.evaluate(SETUP)
+            S.check('Start: noch kein Vorladen (leichte Startseite bleibt)', not any('hand_landmarker' in u for u in reqs))
+            pg.evaluate('() => window.__setDate("2026-10-16")'); pg.evaluate('() => window.__startDaily()')
+            wait_state(pg, 's.round', 20000); pg.wait_for_timeout(3500)
+            S.check('Laptop/WLAN: Umschalter sichtbar → Handmodell + WASM im Hintergrund vorgeladen (ohne Kamera, ohne Air-Objekt)', any('hand_landmarker.task' in u for u in reqs) and any('vision_wasm_internal.wasm' in u for u in reqs) and pg.evaluate('() => !window.__kalemo.air'), [u.rsplit('/', 1)[-1] for u in reqs if 'mediapipe' in u])
+        finally:
+            c.close()
+
+    if on('t7'):
+        S.run('7 Umschalter in der Runde', t7_toggle); S.run('7 Mobilfunk + Vorladen', t7_metered_preload)
+
     if on('t4'):
         os.makedirs(os.path.join(ROOT, 'passes/fix2'), exist_ok=True)
         S.run('4 Landeseite', t4_landing); S.run('4 Erst Tagesskizze', t4_daily_first)

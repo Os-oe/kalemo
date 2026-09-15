@@ -1,5 +1,5 @@
 // Kalemo — Einstieg. Statische Seite, ES-Module, kein Framework, keine externen Requests.
-import { settings, saveSettings, streak, dayResult } from './core/store.js';
+import { settings, saveSettings, streak, dayResult, loadProgress } from './core/store.js';
 export { saveSettings };
 import { setUiLang, t, LANGS, LANG_CODE, ART_TEXT, FRINGE } from './core/i18n.js';
 import { planFor, berlinDate, addDays, msToBerlinMidnight } from './core/plan.js';
@@ -77,7 +77,8 @@ function renderStart() {
   (app.pairCtl ||= mountPair($('#pair'), app, { onChange: () => applyTexts() })).render();
   const plan = planFor(iso, app.words.length ? app.words : [{ id: 'x', acc: 1 }]);
   const today = dayResult(iso), done = !!today;
-  $('#daily-label').textContent = done ? t('practice') : t('daily', { n: plan.number });
+  const prog = done ? null : loadProgress(iso); // R2-P2-8: angefangene Tagesskizze → „weiter bei Wort n"
+  $('#daily-label').textContent = done ? t('practice') : prog && prog.results.length ? t('dailyResume', { n: plan.number, i: prog.results.length + 1 }) : t('daily', { n: plan.number });
   renderTodayTile(today);
   $('.daily-hint').hidden = done; // „5 Wörter · etwa 2 Minuten" nur vor dem ersten Durchgang
   const st = streak(iso, addDays(iso, -1));
@@ -143,8 +144,44 @@ app.fpsGuard = () => {
 
 app.hooks = {};
 
+/**
+ * R2-P2-8: Schließen einer laufenden (gewerteten) Tagesskizze fragt nach — ×, Esc und Zurück-Taste. Die Uhr steht, solange
+ * die Frage offen ist. Übung, Duell und Wörterbuch schließen ohne Rückfrage. Der Zwischenstand liegt schon im localStorage.
+ */
+app.requestClose = async () => {
+  const run = app.dailyRun;
+  if (!(run && run.scored && !run.weak && app.screen === 'round')) { app.goHome(); return 'home'; }
+  if (app._quitOpen) return 'open';
+  app._quitOpen = true;
+  const r = app.round.active, wasEnabled = app.stage.enabled;
+  const paused = !!(r && !r.engine.done && !r.engine.paused);
+  if (paused) { r.engine.pause(performance.now()); if (app.stage.active) app.stage.endStroke(); app.stage.enabled = false; }
+  const sheet = $('#sheet');
+  sheet.innerHTML = `<div class="sheet-card quit-card" role="alertdialog" aria-modal="true" aria-labelledby="quit-t"><h3 id="quit-t">${escapeHtml(t('quitT'))}</h3>
+    <p>${escapeHtml(t('quitB', { i: run.results.length + 1 }))}</p>
+    <div class="actions"><button class="btn primary" data-k="stay" data-act="close">${escapeHtml(t('quitStay'))}</button><button class="btn ghost" data-k="quit">${escapeHtml(t('quitGo'))}</button></div></div>`;
+  sheet.hidden = false;
+  const k = await new Promise((res) => {
+    sheet.onclick = (e) => { const b = e.target.closest('[data-k]'); if (b) res(b.dataset.k); else if (e.target === sheet) res('stay'); };
+    app.hooks.quitAnswer = res;
+    setTimeout(() => sheet.querySelector('[data-k=stay]')?.focus({ preventScroll: true }), 30);
+  });
+  sheet.onclick = null; sheet.hidden = true; sheet.innerHTML = ''; app._quitOpen = false;
+  if (k === 'quit') { app.sfx?.play('tap'); app.goHome(); return 'quit'; }
+  if (paused && app.round.active === r && !r.engine.done) { r.engine.resume(performance.now()); app.stage.enabled = wasEnabled; app.stage.pointerOn = app.mode === 'screen'; }
+  return 'stay';
+};
+/** Zurück-Taste (Android/Browser) während der Tagesskizze abfangen: eigener Verlaufseintrag */
+app.guardHistory = () => { try { if (!history.state?.kalemoRound) history.pushState({ kalemoRound: 1 }, ''); } catch {} };
+app.releaseHistory = () => { try { if (history.state?.kalemoRound) { app._ignorePop = true; history.back(); } } catch {} };
+window.addEventListener('popstate', () => {
+  if (app._ignorePop) { app._ignorePop = false; return; }
+  const run = app.dailyRun;
+  if (run && run.scored && !run.weak && app.screen === 'round') { app.guardHistory(); app.requestClose(); }
+});
+
 app.goHome = () => {
-  app.dailyRun = null; app.round.active = null; app.hideCard?.(); app.stage.enabled = false; document.body.classList.remove('replay', 'options');
+  const wasDaily = app.dailyRun?.scored; app.dailyRun = null; app.round.active = null; app.hideCard?.(); if (wasDaily) app.releaseHistory?.(); app.stage.enabled = false; document.body.classList.remove('replay', 'options');
   if (app.air) app.air.stop(); app.setMode?.('screen');
   const sheet = $('#sheet'); sheet.hidden = true; sheet.innerHTML = '';
   app.show('start'); renderStart();
@@ -182,7 +219,8 @@ window.addEventListener('keydown', (e) => {
   if (!sheet.hidden) { const b = sheet.querySelector('[data-act=close], [data-act=done]'); if (b) b.click(); else { sheet.hidden = true; sheet.innerHTML = ''; } e.preventDefault(); return; }
   const ov = $('#round-overlay');
   if (app.screen === 'round' && !ov.hidden) { const ghost = ov.querySelector('.btn.ghost[data-k], [data-act=help-go]'); if (ghost) { ghost.click(); e.preventDefault(); return; } }
-  if (app.screen === 'round' || app.screen === 'duel' || app.screen === 'dict' || app.screen === 'dayend') { e.preventDefault(); app.goHome(); }
+  if (app.screen === 'round') { e.preventDefault(); app.requestClose(); return; } // R2-P2-8: Tagesskizze fragt nach
+  if (app.screen === 'duel' || app.screen === 'dict' || app.screen === 'dayend') { e.preventDefault(); app.goHome(); }
 });
 window.addEventListener('pointerdown', () => document.body.classList.remove('kbd'));
 window.addEventListener('unhandledrejection', (e) => app.log.push('reject ' + (e.reason?.stack || e.reason || '').toString().slice(0, 300)));
@@ -224,7 +262,7 @@ async function boot() {
     try { await app.ensureClf(); } catch { app.ui.toast(t('modelFail'), 6000); return; }
     await startRoundMode(); playDaily(app, { practice: !!dayResult(app.today()) });
   };
-  $('#round-close').addEventListener('click', () => app.goHome());
+  $('#round-close').addEventListener('click', () => app.requestClose());
   app.onLowFps = () => {
     app.choice(`<h3>${escapeHtml(t('moreLight'))}</h3>`, [['screen', t('toScreen'), 'primary'], ['stay', t('next'), 'ghost']]).then((k) => { if (k === 'screen') app.leaveAir(); });
   };

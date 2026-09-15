@@ -158,6 +158,7 @@ export function install(app) {
       // text = Hauptzeile der Blase (ohne winzige Übersetzung/Hinweis), hint = „Mal ruhig fertig …" (Iteration 2)
       bubble: document.querySelector('#bubble').hidden ? null : { text: [...document.querySelector('#bubble').childNodes].filter((n) => !(n.classList && (n.classList.contains('bubble-sub') || n.classList.contains('bubble-hint')))).map((n) => n.textContent).join(''), hint: document.querySelector('#bubble .bubble-hint')?.textContent || null, pop: document.querySelector('#bubble').classList.contains('pop') },
       lastResult: app.lastResult ? { ...app.lastResult, strokes: app.lastResult.strokes?.length } : null,
+      progress: JSON.parse(localStorage.getItem('kalemo.progress') || 'null') ? { date: JSON.parse(localStorage.getItem('kalemo.progress')).date, n: JSON.parse(localStorage.getItem('kalemo.progress')).results.length } : null,
       daily: app.dailyRun ? { number: app.dailyRun.plan.number, index: app.dailyRun.index, results: app.dailyRun.results.map((x) => ({ id: x.id, kind: x.kind, result: x.result, points: x.points })) } : null,
       log: app.log.slice(-20),
     }));
