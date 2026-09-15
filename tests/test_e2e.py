@@ -131,6 +131,51 @@ with server(8797) as base, sync_playwright() as p:
         b.close()
     S.run('Mobil', mobile)
 
+    # ---------------- Leichter Start (Iteration 1, Review P3-13) ----------------
+    def light():
+        b, ctx = launch(p)
+        page = ctx.new_page(); tot = {'b': 0, 'heavy': []}
+        def on_fin(rq):
+            try:
+                sz = rq.sizes(); tot['b'] += (sz.get('responseBodySize', 0) or 0) + (sz.get('responseHeadersSize', 0) or 0)
+                if any(k in rq.url for k in ('tf.min.js', 'doodlenet', '/audio/v1/de/w/', '/audio/v1/tr/w/', '/audio/v1/en/w/', 'manifest.json')): tot['heavy'].append(rq.url.rsplit('/', 1)[-1])
+            except Exception:
+                pass
+        page.on('requestfinished', on_fin)
+        t0 = time.time()
+        page.goto(base + '/?test=1&lazy=1'); page.wait_for_function('() => window.__kalemo && window.__kalemo.ready', timeout=60000)
+        page.wait_for_load_state('networkidle'); page.wait_for_timeout(2000)
+        S.check('Leichter Start: < 400 KB Transfer, keine Mal-KI/Wort-Clips vor der Absicht', tot['b'] < 400_000 and not tot['heavy'], f"{tot['b'] / 1000:.0f} KB {tot['heavy'][:3]}")
+        page.evaluate('() => window.__settings({native: "de", learn: "tr", airOffered: true, chosenPair: true})')
+        plan = page.evaluate('() => window.__plan()')
+        page.click('#btn-daily')
+        wait_state(page, f's.round && s.round.target === {json.dumps(plan["slots"][0]["id"])}', 60000)
+        ms = page.evaluate('() => window.__kalemo.loadingMs ?? 0')
+        lr = play_slot(page, plan['slots'][0], 'tr')
+        S.check('Nach Klick: Ladeanzeige ≤ 1 s (Vorladen beim Zeigen), erster Treffer < 60 s', ms <= 1000 and lr['result'] == 'hit' and time.time() - t0 < 60, f'{ms} ms, {time.time() - t0:.1f} s')
+        b.close()
+    S.run('Leichter Start', light)
+
+    # ---------------- In-App-Browser (Instagram-UA) — Iteration 1, Review P1-1 ----------------
+    def inapp():
+        b = p.chromium.launch(headless=True, args=['--enable-unsafe-swiftshader'])
+        ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2, is_mobile=True, has_touch=True,
+                            user_agent='Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 300.0.0.18.110')
+        page = ctx.new_page(); errors = []
+        page.on('pageerror', lambda e: errors.append(str(e)))
+        page.goto(base + '/?test=1'); wait_state(page, 's.clfReady', 90000)
+        hit = '''(sel) => { const el = document.querySelector(sel); const r = el.getBoundingClientRect(); const h = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!h && (h === el || el.contains(h)); }'''
+        pos = page.evaluate("() => getComputedStyle(document.querySelector('#inapp')).position")
+        S.check('In-App: Hinweis als Layout-Zeile im Start (nicht fixed), Logo frei', page.is_visible('#inapp') and pos != 'fixed' and page.evaluate(hit, '#title'), pos)
+        page.evaluate('() => window.__settings({native: "de", learn: "tr", airOffered: true, chosenPair: true})')
+        page.tap('#btn-daily')
+        wait_state(page, 's.round && s.screen === "round"', 30000); page.wait_for_timeout(400)
+        oks = {sel: page.evaluate(hit, sel) for sel in ('#word', '#timer', '#round-close', '#round-speaker', '#mode-toggle .chip.locked')}
+        S.check('In-App-Runde: Wort, Timer, ×, Lautsprecher, Chip „nur im Browser" frei antippbar', all(oks.values()), oks)
+        S.check('Keine Seitenfehler (In-App)', not errors, errors[:3])
+        b.close()
+    S.run('In-App', inapp)
+
     # ---------------- Luft-Modus unter echter CSP (Fake-Kamera) ----------------
     def air():
         b, ctx = launch(p, args=['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream', f'--use-file-for-fake-video-capture={MJPEG}'])

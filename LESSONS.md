@@ -53,3 +53,39 @@ Autonomer Build aus `CONCEPT.md` (one-prompt-kit, Autonomie-Modus). Wiederverwen
 | **Gesamt** | **0,97 €** (Budget 10 €, Konzept-Schätzung ≈ 0,45 €) |
 
 Der Mehrpreis gegenüber der Schätzung kam fast vollständig aus der TTS: lange Bündel dehnen Pausen (Pausen-Audio wird bezahlt), eine ungedeckelte Anfrage lief 655 s. Mit Längendeckel + Einzelclips wären ≈ 0,45 € realistisch gewesen.
+
+---
+
+# Iteration 1 (Fix-Session nach Fresh-Eyes-Review 1, 15.09.2026)
+
+**⚠ Beim Launch:** `LAUNCH_DATE` in `js/core/plan.js` auf den tatsächlichen Post-Tag setzen + redeployen (`vercel deploy --prod` → `vercel alias set …`). Davor zeigt jedes Datum Tag #1; die 14 kuratierten Launch-Tage laufen erst ab dem Anker.
+
+## Produkt
+- **Die Viral-Stellen sind die zerbrechlichsten.** Review fand genau dort P1: In-App-Balken über dem Wort, „Herausfordern" landete in einem versteckten Screen, Hilfe = Aufgeben. Alle drei waren von den Phasen-Suiten nicht abgedeckt, weil die Suiten Hooks statt der sichtbaren Wege nutzten → je Viral-Weg ein Test über die echte Oberfläche (Klick, `elementFromPoint`, Zwischenablage).
+- **Hilfe als Pause statt Abbruch:** `RoundEngine.pause/resume` verschiebt `t0` (und Sprech-Zeitfenster) um die Pausendauer — Timer, Tempo-Bonus und Timing-Regeln bleiben ohne Sonderfälle korrekt.
+- **Teilen-Karte mit Pointe ohne Spoiler:** ein Zitat + genau eine scharfe Zeichnung verrät ein Wort (bewusst), die übrigen als „Langzeitbelichtung" (rotierte, verdrillte Kopien des eigenen Pfads) sehen schön aus und bestehen das Klassifikator-Spoiler-Gate schon auf Stufe 1. Verwischte Partikel wirkten dagegen wie Kleckse.
+- **„Wenige Striche" ist kein Lesbarkeitsmaß:** Die alte Kuratierung (hohe Konfidenz − Strafpunkte je Strich) lieferte Kürzel (Fahrrad = 2 Kreise), die der Klassifikator liebt und Menschen nicht lesen. Besser: Top-1 + Luft-robust + Detail-Score (Striche 3–14, Tintenlänge) — `tools/examples.py`.
+- **Launch-Tage kuratieren + ein Anker:** deterministische Pläne sind fair, aber der erste Eindruck braucht leichte, ikonische Wörter; Launch-Wörter danach ans Ende der Pool-Reihenfolge, damit sie im ersten Umlauf nicht wieder als „neu" kommen.
+- **Duell fair machen:** Antworten nach 3 s bei laufender Wiedergabe, Zeit ab Einblendung; Stand im Link (Code v2) — alte v1-Links weiter lesbar halten (echten Live-Link als Test-Fixture nutzen).
+- **Countdown bis Mitternacht Berlin** sommerzeitfest rechnen (25-/23-h-Tage) und gegen `zoneinfo` testen.
+
+## Technik
+- **Startseite leicht:** tfjs + DoodleNet + Tages-Audio erst bei Absicht (pointerenter/touchstart/focus/Klick, Duell-Link) → 225 KB Start, Ladeanzeige ~0,2 s lokal. Test-Suiten laden weiter sofort (`?test=1`), `?lazy=1` prüft den leichten Weg.
+- **FPS-Wächter:** Headless-Chromium hat standardmäßig kein WebGL (tfjs fällt still auf CPU) — echtes Software-WebGL gibt es mit `--use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist` (11–23 fps) → der Wächter-Test misst reale Bedingungen statt injizierter Zahlen.
+- **Ebenen explizit:** Canvas mit `z-index` im Luft-Modus lag über z-auto-Dialogen → Kopf/Blase/Schalter/Dialoge bekommen feste z-Ebenen; Pixelprobe im Test.
+- **Keras-`model.json`:** ein überzähliges `batch_input_shape` an einer inneren Schicht erzeugt bei jedem Laden eine tfjs-Warnung; Entfernen ändert nichts an den Gewichten.
+
+## Tests & Werkzeuge
+- **`aria-disabled` macht Playwright-Klicks „not enabled"** → für bewusst klickbare Sperr-Knöpfe `force=True` bzw. kein `aria-disabled`, wenn der Klick etwas erklärt.
+- **Einblend-Animationen verfälschen `getBoundingClientRect`** (translateY) → Layout-Messungen erst nach der Animation.
+- **Motion-Gate-Aliasing:** eine Animation mit ~3 s Periode wird bei 3 s Messabstand in derselben Phase fotografiert → „STILLSTAND" trotz Bewegung; nicht-harmonische Perioden (2,3 s) wählen.
+- **Nie Screenshots/zweite Suite parallel zu einer laufenden Suite, und keine JS-Edits während Suiten laufen:** Browser stürzte ab (`TargetClosedError`), bzw. Seiten laden halb geänderten Code. Suiten allein laufen lassen; `KALEMO_PORT` erlaubt getrennte Ports.
+- **`tools/serve.py` spiegelt die CSP** → Werkzeug-Seiten mit Inline-Modul brauchen `KALEMO_NO_CSP=1`.
+- **Web Share nur mit Nutzer-Geste:** Link-Erzeugung (await) direkt nach dem Tipp bleibt im Aktivierungsfenster; in Tests `navigator.share` als Attrappe mit `__mock` injizieren, sonst nutzt der Testmodus die Kopier-Variante.
+
+## Ist-Kosten Iteration 1
+| Posten | Ist |
+|---|---|
+| Neue Audio-Clips | 0,00 € (Mehrzahl-Ausruf aus vorhandenen Zahl- + Plural-Clips, Audio-Tages-Cap nicht angefasst) |
+| KI-Bilder/-Videos | 0,00 € (keine) |
+| **Iteration 1 gesamt** | **0,00 €** (Lauf gesamt weiter 0,97 €) |
