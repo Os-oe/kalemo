@@ -233,13 +233,13 @@ export function installFlow(app) {
       out.real = !!real; if (real) out.points *= 2;
     }
     app.lastResult = out;
-    if (out.result === 'hit' || out.parts > 0) {
+    if (out.result === 'hit') { // Iteration 2 (R2-P2-2): Mehrzahl-Teilerfolg ist kein „+1 Bildwörterbuch"
       const strokes = out.drawings?.length ? out.drawings[0] : out.strokes;
       const ft = pickFunniest([out]); // nur ein Tipp, der wirklich in der Blase stand (R2-P3-2)
       app.dict.put(w.id, { strokes, date: app.today(), articleOk, funny: ft ? ft.id : null }).then(() => app.onDictChange?.());
     }
     const extraHtml = plural && out.tip ? `<p class="tipcard">${escapeHtml(out.tip)}</p>` : '';
-    await app.round.resultCard(out, { plural, extraHtml, forceHit: !!(plural && out.parts > 0) });
+    await app.round.resultCard(out, { plural, extraHtml, partial: !!(plural && out.partial) });
     return out; // Review P3-1: kein Luft-Angebot mehr direkt nach Treffer 1 — das Tagesende bietet es an
   };
 

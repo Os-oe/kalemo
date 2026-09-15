@@ -243,13 +243,15 @@ export class RoundController {
   langOrder() { const { learn, native } = this.app.settings; return [learn, native, LANGS.find((l) => l !== learn && l !== native)]; }
 
   /** Ergebnis-Karte (Treffer oder Zeit um). Löst bei „Weiter" auf. */
-  resultCard(out, { plural = null, extraHtml = '', forceHit = false } = {}) {
+  resultCard(out, { plural = null, extraHtml = '', partial = false } = {}) {
     const app = this.app, w = app.byId.get(out.id), ui = app.settings.native;
-    const hit = out.result === 'hit' || forceHit;
+    // Iteration 2 (R2-P2-2): Mehrzahl-Teilerfolg = eigene Karte „Fast! 2 von 3" mit den erkannten Zeichnungen, ohne „+1 Bildwörterbuch"
+    const hit = out.result === 'hit' || partial;
+    const title = partial ? t('pluralPartial', { x: out.parts, n: plural }, ui) : hit ? t('hitTitle', {}, ui) : t('missTitle', {}, ui);
     const langs = this.langOrder().map((l, i) => `<button class="lang-line${i === 0 ? ' first' : ''}" data-say="${l}"><small>${l.toUpperCase()}</small><span>${escapeHtml(plural ? pluralPhrase(w, l, plural) : word(w, l))}</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 9c1.5 1.5 1.5 4.5 0 6"/></svg></button>`).join('');
-    this.overlay.innerHTML = `<div class="card ${hit ? 'hit' : 'miss'}" role="dialog" aria-live="polite">
-      <h3>${escapeHtml(hit ? t('hitTitle', {}, ui) : t('missTitle', {}, ui))}</h3>
-      ${hit ? `<div class="alive-wrap"><canvas class="alive" width="280" height="200"></canvas><span class="to-dict"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/></svg>+1 ${escapeHtml(t('dict', {}, ui))}</span></div>` : '<div class="others"></div>'}
+    this.overlay.innerHTML = `<div class="card ${hit ? 'hit' : 'miss'}${partial ? ' partial' : ''}" role="dialog" aria-live="polite">
+      <h3>${escapeHtml(title)}</h3>
+      ${hit ? `<div class="alive-wrap"><canvas class="alive" width="280" height="200"></canvas>${partial ? '' : `<span class="to-dict"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/></svg>+1 ${escapeHtml(t('dict', {}, ui))}</span>`}</div>` : '<div class="others"></div>'}
       <div class="langs">${langs}</div>${extraHtml}
       <button class="btn primary big" data-act="next">${escapeHtml(t('next', {}, ui))}</button></div>`;
     this.overlay.hidden = false;
