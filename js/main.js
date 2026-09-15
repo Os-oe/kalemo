@@ -164,6 +164,15 @@ function openSettings() {
 
 // ---------- Boot ----------
 window.addEventListener('keydown', (e) => { if (e.key === 'Tab') document.body.classList.add('kbd'); });
+// Review P3-8: Escape = Schließen (Sheet → Dialog-Abbruch → Screen verlassen)
+window.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape' || !app.ready) return;
+  const sheet = $('#sheet');
+  if (!sheet.hidden) { const b = sheet.querySelector('[data-act=close], [data-act=done]'); if (b) b.click(); else { sheet.hidden = true; sheet.innerHTML = ''; } e.preventDefault(); return; }
+  const ov = $('#round-overlay');
+  if (app.screen === 'round' && !ov.hidden) { const ghost = ov.querySelector('.btn.ghost[data-k], [data-act=help-go]'); if (ghost) { ghost.click(); e.preventDefault(); return; } }
+  if (app.screen === 'round' || app.screen === 'duel' || app.screen === 'dict' || app.screen === 'dayend') { e.preventDefault(); app.goHome(); }
+});
 window.addEventListener('pointerdown', () => document.body.classList.remove('kbd'));
 window.addEventListener('unhandledrejection', (e) => app.log.push('reject ' + (e.reason?.stack || e.reason || '').toString().slice(0, 300)));
 window.addEventListener('error', (e) => app.log.push('error ' + (e.message || '').slice(0, 200)));

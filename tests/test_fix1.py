@@ -788,5 +788,35 @@ with server() as base, sync_playwright() as p:
     if section('p3_6'):
         S.run('P3-6 Poster', p3_6)
 
+    # ---------- P3-8: Tastatur — Fokusringe überall, Esc schließt ----------
+    def p3_8():
+        c = b.new_context(viewport={'width': 1280, 'height': 800}, locale='de-DE'); pg = c.new_page(); errs = []
+        pg.on('pageerror', lambda e: errs.append(str(e)))
+        pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000)
+        pg.evaluate('() => window.__settings({native: "de", learn: "tr", airOffered: true, chosenPair: true})')
+        seen = []
+        for _ in range(22):
+            pg.keyboard.press('Tab')
+            info = pg.evaluate('''() => { const a = document.activeElement; if (!a || a === document.body) return null; const cs = getComputedStyle(a);
+              return { el: (a.id || a.className || a.tagName).toString().slice(0, 30), outline: cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) >= 2 }; }''')
+            if info: seen.append(info)
+        bad = [s['el'] for s in seen if not s['outline']]
+        S.check('Start per Tab: jedes fokussierte Element hat einen sichtbaren Fokusring', seen and not bad, (len(seen), bad))
+        pg.focus('#btn-daily'); pg.keyboard.press('Enter')
+        wait_state(pg, 's.screen === "round" && s.round', 20000)
+        pg.keyboard.press('Escape')
+        st = wait_state(pg, 's.screen === "start"', 5000)
+        S.check('Esc in der Runde → zurück zum Start', st['screen'] == 'start')
+        pg.goto(base + '/?test=1&scene=dict&detail=1'); pg.wait_for_selector('#sheet .dict-detail', timeout=15000)
+        pg.keyboard.press('Escape'); pg.wait_for_timeout(200)
+        s1 = pg.evaluate('() => window.__state()')
+        pg.keyboard.press('Escape'); pg.wait_for_timeout(200)
+        s2 = pg.evaluate('() => window.__state()')
+        S.check('Esc im Wörterbuch: erst Detail-Sheet zu, dann zurück zum Start', not s1['sheet'] and s1['screen'] == 'dict' and s2['screen'] == 'start', (s1['sheet'], s1['screen'], s2['screen']))
+        S.check('P3-8: keine Seitenfehler', not errs, errs[:2])
+        c.close()
+    if section('p3_8'):
+        S.run('P3-8 Tastatur', p3_8)
+
     b.close()
 S.finish()
