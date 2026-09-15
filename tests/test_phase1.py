@@ -21,8 +21,12 @@ with server() as base, sync_playwright() as p:
         again = {d: page2.evaluate('(d) => window.__plan(d)', d) for d in DATES}
         page2.close()
         S.check('Tagesplan identisch in zweitem Tab (3 Daten)', plans == again)
+        # Iteration 1 (P2-7): Launch-Tage #1–#7 fest kuratiert, eigene Prüfung in test_fix1.py p2_7
         for d in DATES:
             pl = plans[d]; ids = [s['id'] for s in pl['slots']]
+            if pl.get('curated'):
+                S.check(f'{d}: kuratierter Launch-Tag — 5 Slots, keine Dopplung, Tag #1 beginnt mit der Katze', len(set(ids)) == 5 and (pl['number'] != 1 or ids[0] == 'cat'), ids)
+                continue
             S.check(f'{d}: 5 Slots, Reihenfolge neu/neu/Wdh/neu/Mehrzahl, keine Dopplung',
                     [s['kind'] for s in pl['slots']] == ['new', 'new', 'review', 'new', 'plural'] and len(set(ids)) == 5, ids)
             # Wiederholung = neues Wort von Tag−2 · Mehrzahl = Wort von Tag−7
@@ -32,6 +36,8 @@ with server() as base, sync_playwright() as p:
             m7 = page.evaluate('(d) => window.__plan(d)', (dd - datetime.timedelta(days=7)).isoformat())
             new2 = [s['id'] for s in m2['slots'] if s['kind'] == 'new']
             new7 = [s['id'] for s in m7['slots'] if s['kind'] == 'new']
+            if m2.get('curated'):
+                new2 = [s['id'] for s in m2['slots'] if s['kind'] == 'new']
             S.check(f'{d}: Wiederholung stammt aus Tag−2', pl['slots'][2]['id'] in new2, (pl['slots'][2]['id'], new2))
             pw = pl['slots'][4]
             S.check(f'{d}: Mehrzahl-Wort aus Tag−7 (oder Fallback), n∈{{2,3}}', pw['n'] in (2, 3) and (pw['id'] in new7 or True), (pw['id'], new7))

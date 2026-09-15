@@ -38,27 +38,63 @@ export function poolOrder(pool) {
   return ids;
 }
 const mod = (a, n) => ((a % n) + n) % n;
-function newWords(order, d) { const N = order.length; return [0, 1, 2].map((k) => order[mod(3 * d + k, N)]); }
+
+/**
+ * Launch-Tage #1–#7 fest kuratiert (Iteration 1, Review P2-7): leicht + ikonisch, Tag #1 beginnt mit der Katze.
+ * Nur Wörter mit Top-3 ≥ 90 % im accuracy-report (Luft-Simulation), kein Sandwich. Artikel-Schritt + Mehrzahl
+ * frühestens ab Tag #3 (Tag #1/#2: 5 Einzelwörter, DE-Lernende sehen den Artikel direkt in Farbe).
+ * Wiederholung = neues Wort von Tag−2 (Tag #2: von Tag #1), Mehrzahl = frühes Wort der Launch-Woche.
+ */
+export const CURATED = [
+  [['cat', 'new'], ['house', 'new'], ['sun', 'new'], ['tree', 'new'], ['fish', 'new']],
+  [['apple', 'new'], ['car', 'new'], ['fish', 'review'], ['flower', 'new'], ['star', 'new']],
+  [['cloud', 'new'], ['book', 'new'], ['cat', 'review'], ['cup', 'new'], ['apple', 'plural', 3]],
+  [['snail', 'new'], ['umbrella', 'new'], ['car', 'review'], ['eye', 'new'], ['tree', 'plural', 2]],
+  [['bicycle', 'new'], ['owl', 'new'], ['book', 'review'], ['snowman', 'new'], ['cat', 'plural', 2]],
+  [['carrot', 'new'], ['guitar', 'new'], ['umbrella', 'review'], ['airplane', 'new'], ['star', 'plural', 3]],
+  [['cake', 'new'], ['giraffe', 'new'], ['owl', 'review'], ['crown', 'new'], ['flower', 'plural', 2]],
+];
+const CURATED_NEW = CURATED.map((day) => day.filter(([, k]) => k === 'new').map(([id]) => id));
+const CURATED_IDS = new Set(CURATED_NEW.flat());
+
+/** Reihenfolge für Tag #8 ff.: erst alle nicht kuratierten Wörter (gemischt), die Launch-Wörter kommen erst im nächsten Umlauf wieder */
+function algoOrder(pool) {
+  const order = poolOrder(pool);
+  const valid = order.filter((id) => !CURATED_IDS.has(id));
+  return valid.length === order.length ? order : [...valid, ...order.filter((id) => CURATED_IDS.has(id))];
+}
+/** Neue Wörter eines Tages (kuratiert für #1–#7, sonst deterministisch aus der Pool-Reihenfolge) */
+function newWords(order, d, byId) {
+  if (d >= 0 && d < CURATED.length && CURATED_NEW[d].every((id) => byId.has(id))) return CURATED_NEW[d];
+  const N = order.length, e = d - CURATED.length;
+  return [0, 1, 2].map((k) => order[mod(3 * e + k, N)]);
+}
 
 /** Plan für ein Datum. pool = Wörter aus data/words.json (mit acc, kP). */
 export function planFor(iso, pool) {
   const byId = new Map(pool.map((w) => [w.id, w]));
-  const order = poolOrder(pool);
   const d = dayIndex(iso);
-  const fresh = newWords(order, d);
+  const base = { date: iso, index: d, number: dayNumber(iso) };
+  if (d >= 0 && d < CURATED.length && CURATED[d].every(([id]) => byId.has(id))) {
+    const early = d < 2; // Tag #1/#2: kein Artikel-Schritt, keine Mehrzahl
+    return { ...base, curated: true, slots: CURATED[d].map(([id, kind, n]) => ({ id, kind, ...(n ? { n } : {}), ...(early ? { article: false } : {}) })) };
+  }
+  const order = algoOrder(pool);
+  const fresh = newWords(order, d, byId);
   // leichtestes neues Wort zuerst (schneller erster Treffer), Rest in Planreihenfolge
   const sorted = [...fresh].sort((a, b) => (byId.get(b).acc ?? 0) - (byId.get(a).acc ?? 0) || fresh.indexOf(a) - fresh.indexOf(b));
-  const review = newWords(order, d - 2)[mod(d, 3)];
+  const prev2 = newWords(order, d - 2, byId);
+  const review = prev2.find((id, i) => i >= mod(d, 3) && !fresh.includes(id)) || prev2.find((id) => !fresh.includes(id)) || prev2[0];
   const used = new Set([...fresh, review]);
   let plural = null;
-  const cand = newWords(order, d - 7);
-  for (let k = 0; k < 3 && !plural; k++) { const id = cand[mod(d + k, 3)]; if (!byId.get(id).kP && !used.has(id)) plural = id; }
+  const cand = newWords(order, d - 7, byId);
+  for (let k = 0; k < cand.length && !plural; k++) { const id = cand[mod(d + k, cand.length)]; if (!byId.get(id).kP && !used.has(id)) plural = id; }
   for (let s = 0; !plural && s < order.length; s++) { // Fallback: nächstes pluralfähiges Wort nach Tag−7
-    const id = order[mod(3 * (d - 7) + 3 + s, order.length)]; if (!byId.get(id).kP && !used.has(id)) plural = id;
+    const id = order[mod(3 * (d - 7 - CURATED.length) + 3 + s, order.length)]; if (!byId.get(id).kP && !used.has(id)) plural = id;
   }
   const n = 2 + (mod(d * 2654435761, 7) % 2); // 2 oder 3
   return {
-    date: iso, index: d, number: dayNumber(iso),
+    ...base,
     slots: [
       { id: sorted[0], kind: 'new' }, { id: sorted[1], kind: 'new' },
       { id: review, kind: 'review' },

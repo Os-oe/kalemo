@@ -11,7 +11,7 @@ WORDS = {w['id']: w for w in json.load(open(os.path.join(ROOT, 'data/words.json'
 
 def play_slot(page, slot, learn):
     wid = slot['id']
-    if learn == 'de' and slot['kind'] != 'plural':
+    if learn == 'de' and slot['kind'] != 'plural' and slot.get('article', True):  # Launch-Tage #1/#2 ohne Artikel-Schritt
         page.wait_for_selector('.art-card', timeout=20000)
         page.evaluate('(a) => window.__chooseArticle(a)', WORDS[wid]['de']['art'])
     base = wait_state(page, f's.round && s.round.target === {json.dumps(wid)}', 30000)['drawCount']

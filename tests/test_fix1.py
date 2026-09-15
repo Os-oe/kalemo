@@ -434,5 +434,46 @@ with server() as base, sync_playwright() as p:
     if section('p2_6'):
         S.run('P2-6 Luft-Onboarding', p2_6)
 
+    # ---------- P2-7: Launch-Tage kuratieren ----------
+    def p2_7():
+        c = b.new_context(viewport={'width': 1280, 'height': 800}); pg = c.new_page(); errs = []
+        pg.on('pageerror', lambda e: errs.append(str(e)))
+        pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000)
+        rep = json.load(open(os.path.join(ROOT, 'tools/accuracy-report.json')))['perWord']
+        dates = [(datetime.date(2026, 9, 15) + datetime.timedelta(days=i)).isoformat() for i in range(60)]
+        plans = pg.evaluate('(ds) => ds.map(d => window.__plan(d))', dates)
+        p2 = c.new_page(); p2.goto(base + '/?test=1'); p2.wait_for_function('() => window.__plan')
+        again = p2.evaluate('(ds) => ds.map(d => window.__plan(d))', dates); p2.close()
+        S.check('Tagesplan deterministisch (60 Tage ab Launch, zweiter Tab identisch)', plans == again)
+        first7 = plans[:7]
+        S.check('Tag #1 beginnt mit der Katze · Tage #1–#7 kuratiert', first7[0]['number'] == 1 and first7[0]['slots'][0]['id'] == 'cat' and all(p.get('curated') for p in first7) and not plans[7].get('curated'), [s['id'] for s in first7[0]['slots']])
+        ids7 = {s['id'] for p in first7 for s in p['slots']}
+        low = [(i, rep[i]['air']['top3']) for i in ids7 if rep[i]['air']['top3'] < 0.85]
+        S.check('Keine Wörter mit Top-3 < 85 % (accuracy-report) in #1–#7, kein Sandwich', not low and 'sandwich' not in ids7, (low, sorted(ids7)))
+        early_ok = all(s.get('article') is False and s['kind'] != 'plural' for p in first7[:2] for s in p['slots'])
+        later_ok = all(s.get('article', True) is not False for p in first7[2:] for s in p['slots']) and all(p['slots'][4]['kind'] == 'plural' for p in first7[2:])
+        S.check('Artikel-Schritt + Mehrzahl frühestens ab Tag #3', early_ok and later_ok, [[s['kind'] + ('' if s.get('article', True) else '/noArt') for s in p['slots']] for p in first7[:3]])
+        uniq = all(len({s['id'] for s in p['slots']}) == 5 for p in plans)
+        new_of = lambda p: [s['id'] for s in p['slots'] if s['kind'] == 'new']
+        rev_ok = all(p['slots'][2]['kind'] == 'review' and p['slots'][2]['id'] in new_of(plans[i - 2]) for i, p in enumerate(plans) if i >= 7)
+        plu_ok = all(p['slots'][4]['kind'] == 'plural' and p['slots'][4]['n'] in (2, 3) for p in plans[7:])
+        S.check('Ab Tag #8 deterministischer Plan: neu/neu/Wdh(Tag−2)/neu/Mehrzahl, keine Dopplung', uniq and rev_ok and plu_ok, (uniq, rev_ok, plu_ok))
+        cur_new = {s['id'] for p in first7 for s in p['slots'] if s['kind'] == 'new'}
+        rep_new = [s['id'] for p in plans[7:45] for s in p['slots'] if s['kind'] == 'new' and s['id'] in cur_new]
+        S.check('Launch-Wörter kommen im ersten Umlauf nicht erneut als „neu"', not rep_new, rep_new)
+        S.check('Tag #8: Mehrzahl aus der Launch-Woche (Tag−7)', plans[7]['slots'][4]['id'] in new_of(plans[0]), plans[7]['slots'][4])
+        # DE-Lernende am Tag #1: kein Artikel-Schritt, Wort mit Artikel + Artikel-Farbe
+        pg.evaluate('() => window.__settings({native: "tr", learn: "de", airOffered: true, chosenPair: true})')
+        pg.evaluate('() => window.__setDate("2026-09-15")')
+        pg.evaluate('() => window.__startDaily()')
+        st = wait_state(pg, 's.round && s.round.target === "cat"', 15000)
+        art = pg.query_selector('.art-card'); wtxt = pg.text_content('#word'); col = pg.evaluate('() => window.__kalemo.stage.color')
+        S.check('DE-Lernende Tag #1: kein Artikel-Schritt, „die Katze" direkt, Strich in Artikel-Farbe', art is None and wtxt == 'die Katze' and col == '#EF4444', (wtxt, col))
+        pg.evaluate('() => window.__home()')
+        S.check('P2-7: keine Seitenfehler', not errs, errs[:2])
+        c.close()
+    if section('p2_7'):
+        S.run('P2-7 Launch-Tage', p2_7)
+
     b.close()
 S.finish()

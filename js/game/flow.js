@@ -173,7 +173,7 @@ export function installFlow(app) {
     const plural = slot.kind === 'plural' ? slot.n : null;
     app.renderToggle();
     let articleOk = null;
-    if (learn === 'de' && !plural) {
+    if (learn === 'de' && !plural && slot.article !== false) { // Launch-Tage #1/#2 ohne Artikel-Schritt (P2-7)
       app.round.showWord(w, { article: false });
       app.stage.clear(); app.stage.enabled = false;
       const a = await app.articleStep(w);
