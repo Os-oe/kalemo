@@ -215,9 +215,11 @@ a.btn { color: var(--ink); text-decoration: none; }
 .overlay.duel .card { box-shadow: 0 -8px 40px rgba(0,0,0,.35); animation: rise .3s cubic-bezier(.2,1.3,.5,1); }
 body.replay #timer, body.replay #mode-toggle, body.replay #round-speaker { visibility: hidden; }
 #duel-body { text-align: center; }
-.word-pick { animation: float 3.2s ease-in-out infinite; }
-.word-pick:nth-child(2) { animation-delay: -1.1s; } .word-pick:nth-child(3) { animation-delay: -2.2s; }
-@keyframes float { 50% { transform: translateY(-5px) rotate(-.4deg); } }
+/* Review P2-4: nur einmal beim Öffnen einwackeln (dauerndes Schweben war unruhig und für Klicks „instabil") */
+.word-pick { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.05; padding: 6px 12px; animation: pickin .55s cubic-bezier(.3,1.5,.5,1) backwards; }
+.word-pick small { font-family: var(--ui); font-size: .95rem; font-weight: 700; color: var(--pencil); margin-top: 2px; }
+.word-pick:nth-child(2) { animation-delay: .08s; } .word-pick:nth-child(3) { animation-delay: .16s; }
+@keyframes pickin { 0% { transform: translateY(10px) rotate(-1.2deg); opacity: 0; } 60% { transform: translateY(-3px) rotate(.6deg); opacity: 1; } 100% { transform: none; } }
 .score-line .count { margin: 0 6px; }
 .duel-stage { width: 100%; max-width: 560px; aspect-ratio: 16 / 8; margin: 4px auto 6px; display: block; border-radius: 18px; background: var(--night); box-shadow: var(--shadow); }
 .dayend-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin: 10px 0 6px; }

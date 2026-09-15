@@ -41,8 +41,8 @@ export function installDuel(app) {
       const learn = app.settings.learn;
       document.body.classList.remove('replay', 'options');
       $('#duel-body').innerHTML = `<h2 class="h-hand">${escapeHtml(t('duelT'))}</h2><canvas class="duel-stage" aria-hidden="true"></canvas><p class="lead">${escapeHtml(t('duelPick'))}</p>
-        <div class="word-picks">${pick.map((w) => `<button class="word-pick" data-id="${escapeHtml(w.id)}" style="--c:${strokeColor(w, learn)}"><span>${escapeHtml(word(w, learn))}</span></button>`).join('')}</div>
-        <p class="hint">${escapeHtml(t('duelDraw'))}</p><button class="btn ghost" data-act="home">${escapeHtml(t('home'))}</button>`;
+        <div class="word-picks">${pick.map((w) => `<button class="word-pick" data-id="${escapeHtml(w.id)}" style="--c:${strokeColor(w, learn)}"><span>${escapeHtml(word(w, learn))}</span>${app.settings.native !== learn ? `<small>${escapeHtml(word(w, app.settings.native))}</small>` : ''}</button>`).join('')}</div>
+        <p class="hint">${escapeHtml(t('duelDraw'))}</p><button class="btn ghost" data-act="home">${escapeHtml(t('back'))}</button>`;
       app.duelPicks = pick.map((w) => w.id);
       app.others().then((o) => { const c = $('#duel-body canvas.duel-stage'); if (c) mount(c, { strokes: o.star[0].strokes, color: '#FFC857', style: 'glow', width: 2.3, replay: 2.2, boil: 0.4 }); });
       $('#duel-body').onclick = async (e) => {

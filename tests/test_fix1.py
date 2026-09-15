@@ -334,5 +334,35 @@ with server() as base, sync_playwright() as p:
     if section('p2_3'):
         S.run('P2-3 Duell', p2_3)
 
+    # ---------- P2-4: Duell-Wortwahl ----------
+    def p2_4():
+        c = b.new_context(viewport={'width': 1280, 'height': 800}); pg = c.new_page(); errs = []
+        pg.on('pageerror', lambda e: errs.append(str(e)))
+        pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000)
+        pg.evaluate('() => window.__settings({native: "de", learn: "tr", airOffered: true, chosenPair: true})')
+        pg.click('#btn-duel')
+        st = wait_state(pg, 's.screen === "duel" && s.duelPicks', 10000)
+        info = pg.evaluate('''() => [...document.querySelectorAll('.word-pick')].map(b => ({ id: b.dataset.id, main: b.querySelector('span').textContent, sub: b.querySelector('small')?.textContent || null,
+          subColor: b.querySelector('small') ? getComputedStyle(b.querySelector('small')).color : null, iter: getComputedStyle(b).animationIterationCount }))''')
+        grey = lambda col: col and col != 'rgb(30, 42, 58)' and len(set(col[4:-1].split(', '))) <= 3 and max(map(int, col[4:-1].split(', '))) - min(map(int, col[4:-1].split(', '))) < 40
+        ok_sub = all(i['sub'] == f"{WORDS[i['id']]['de']['art']} {WORDS[i['id']]['de']['noun']}" and i['main'] == WORDS[i['id']]['tr']['word'] and grey(i['subColor']) for i in info)
+        S.check('Unter jedem Lernwort klein die Muttersprache in Grau', len(info) == 3 and ok_sub, info)
+        S.check('Wackeln nur einmal beim Öffnen (keine Endlos-Animation)', all(i['iter'] == '1' for i in info), [i['iter'] for i in info])
+        pg.wait_for_timeout(900)
+        stable = True
+        try:
+            pg.locator('.word-pick').nth(1).hover(timeout=2000)  # ohne force: Element muss „stable" sein
+        except Exception:
+            stable = False
+        S.check('Wortkarten stehen nach dem Einwackeln still (Playwright „stable")', stable)
+        back = pg.text_content('#duel-body [data-act=home]')
+        pg.click('#duel-body [data-act=home]')
+        st = wait_state(pg, 's.screen === "start"', 5000)
+        S.check('Link „Start" heißt jetzt „Zurück" und führt zur Startseite', back == 'Zurück' and st['screen'] == 'start', back)
+        S.check('P2-4: keine Seitenfehler', not errs, errs[:2])
+        c.close()
+    if section('p2_4'):
+        S.run('P2-4 Duell-Wortwahl', p2_4)
+
     b.close()
 S.finish()
