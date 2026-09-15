@@ -166,5 +166,33 @@ with server() as base, sync_playwright() as p:
     if section('p1_3'):
         S.run('P1-3 Hilfe', p1_3)
 
+    # ---------- P2-1: Teilen-Karte mit Pointe ----------
+    def p2_1():
+        c = b.new_context(viewport={'width': 1280, 'height': 800}); pg = c.new_page(); errs = []
+        pg.on('pageerror', lambda e: errs.append(str(e)))
+        pg.goto(base + '/?test=1&scene=dayend'); wait_state(pg, 's.screen === "dayend" && s.summary', 30000)
+        pg.click('#btn-share', force=True)
+        st = wait_state(pg, 's.lastCard && s.lastCard.gates && s.sheet', 30000); lc = st['lastCard']; fz = st['summary']['funniest']
+        lines = lc['text'].split('\n')
+        S.check('Heute-Karte 1080×1350 + Zitat der lustigsten KI-Rate auf Karte UND im Teilen-Text („dachte … erst an")', lc['w'] == 1080 and lc['h'] == 1350 and lc['quote'] and 'dachte' in lc['quote'] and 'erst an' in lc['quote'] and len(lines) == 2 and lc['quote'] in lines[1] and lines[1].startswith('„'), lc['text'])
+        S.check('Genau EINE Zeichnung scharf (die zum Zitat), übrige 4 als abstrakte Leuchtspuren mit Spoiler-Gate', lc['hero'] == fz['target'] and len(lc['gates']) == 4 and lc['hero'] not in [g['id'] for g in lc['gates']] and all(g['ok'] and g['id'] not in (g['top'] or []) for g in lc['gates']), (lc['hero'], [(g['id'], g['level'], g['top']) for g in lc['gates']]))
+        # Pixel-Probe: Heldenkarte hell (Papier), Spur-Kacheln dunkel (Navy) mit Licht
+        probe = pg.evaluate('''async () => { const app = window.__kalemo; const m = await import('/js/game/cards.js'); const card = await m.todayCard(app, app.lastSummary);
+          const ctx = card.canvas.getContext('2d'); const px = (x, y) => Array.from(ctx.getImageData(x, y, 1, 1).data.slice(0, 3));
+          const tile = ctx.getImageData(72, 1040, 219, 190).data; let lit = 0, dark = 0; for (let i = 0; i < tile.length; i += 4) { const l = tile[i] + tile[i + 1] + tile[i + 2]; if (l > 600) lit++; else if (l < 200) dark++; }
+          return { heroPaper: px(300, 700), lit, dark, n: tile.length / 4 }; }''')
+        S.check('Spur-Kachel: Navy mit Leuchtspur (Langzeitbelichtung, nicht verwaschen) · Heldenkarte auf Papier', probe['heroPaper'][0] > 230 and probe['dark'] > probe['n'] * 0.3 and probe['lit'] > 150, probe)
+        # ohne lustigen Tipp: keine scharfe Zeichnung, 5 Spuren, einzeiliger Text
+        r = pg.evaluate('''async () => { const app = window.__kalemo; const m = await import('/js/game/cards.js'); const sum = { ...app.lastSummary, funniest: null };
+          const card = await m.todayCard(app, sum); return { gates: card.gates.map(g => g.ok), hero: card.hero, text: card.text, quote: card.quote }; }''')
+        S.check('Ohne lustigen Tipp: alle 5 Spuren abstrakt (Gate je Spur), kein Zitat, Text einzeilig', r['hero'] is None and len(r['gates']) == 5 and all(r['gates']) and r['quote'] is None and '\n' not in r['text'], r)
+        # EN/TR-Sätze
+        s2 = pg.evaluate('''async () => { const i = await import('/js/core/i18n.js'); const w = window.__kalemo.byId; return [i.funnyLine(w.get('hospital'), w.get('leg'), 'de'), i.funnyLine(w.get('hospital'), w.get('leg'), 'en'), i.funnyLine(w.get('hospital'), w.get('leg'), 'tr'), i.funnyLine(w.get('lion'), w.get('owl'), 'de'), i.funnyLine(w.get('cat'), w.get('eyeglasses'), 'en'), i.funnyLine(w.get('stairs'), w.get('apple'), 'en')]; }''')
+        S.check('Zitat-Sätze DE/EN/TR („erst an", n-Deklination, Plural-only)', s2 == ['Die KI dachte bei meinem Krankenhaus erst an ein Bein.', 'At first, the AI thought my hospital was a leg.', 'Yapay zekâ hastane yerine önce bacak dedi.', 'Die KI dachte bei meinem Löwen erst an eine Eule.', 'At first, the AI thought my cat was a pair of glasses.', 'At first, the AI thought my stairs were an apple.'], s2)
+        S.check('P2-1: keine Seitenfehler', not errs, errs[:2])
+        c.close()
+    if section('p2_1'):
+        S.run('P2-1 Teilen-Karte', p2_1)
+
     b.close()
 S.finish()

@@ -111,7 +111,9 @@ with server() as base, sync_playwright() as p:
                 S.check('Spoiler-Gate: Luftspur-Grafik → Zielwort nicht in Top-3 (alle Wörter)', len(gates) >= 4 and all(g['ok'] and g['id'] not in (g['top'] or []) for g in gates), [(g['id'], g['level'], g['top']) for g in gates])
                 teeth = pg.evaluate('''async (ids) => { const out = []; const sum = window.__kalemo.lastSummary; for (const r of sum.results) { if (!ids.includes(r.id) || !r.strokes.length) continue; const res = await window.__kalemo.clf.classify(r.strokes); out.push([r.id, res.top.slice(0, 3).map(x => x.id).includes(r.id)]); } return out; }''', [g['id'] for g in gates])
                 S.check('Spoiler-Gate hat Zähne: dieselben Zeichnungen als Striche werden erkannt', sum(1 for _, ok in teeth if ok) >= len(teeth) - 1, teeth)
-                S.check('Teilen-Text spoilerfrei (#, Paar, x/5, Serie — keine Wörter)', not any(WORDS[s['id']]['tr']['word'] in st2['lastCard']['text'] for s in plan['slots']) and re.search(r'#\d+ · DE → TR · \d/5', st2['lastCard']['text']), st2['lastCard']['text'])
+                # Iteration 1 (P2-1): zweite Zeile = Zitat der lustigsten KI-Rate (verrät höchstens dieses eine Wort, in der Muttersprache)
+                head = st2['lastCard']['text'].split('\n')[0]
+                S.check('Teilen-Text: Kopfzeile spoilerfrei (#, Paar, x/5, Serie — keine Wörter) + ggf. Zitat', not any(WORDS[s['id']]['tr']['word'] in head or WORDS[s['id']]['de']['noun'] in head for s in plan['slots']) and re.search(r'#\d+ · DE → TR · \d/5', head) and (not st2['lastCard']['quote'] or st2['lastCard']['quote'] in st2['lastCard']['text']), st2['lastCard']['text'])
                 pg.click('#sheet [data-act=close]')
                 # Wörterbuch + Reload
                 pg.click('#btn-dayend-dict')

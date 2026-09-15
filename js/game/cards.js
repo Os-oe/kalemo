@@ -1,5 +1,5 @@
 // Teilen-Karten (PNG, 0 €): Heute-Karte spoilerfrei (+ Spoiler-Gate per Klassifikator), Gestern-Karte, Poster.
-import { t, word, ART_COLOR, ART_TEXT, LANG_CODE, funnyLine, funnyAllowed } from '../core/i18n.js';
+import { t, word, ART_COLOR, ART_TEXT, LANG_CODE, funnyLine, funnyAllowed, quoted } from '../core/i18n.js';
 import { drawStrokes } from './ink.js';
 import { makeRng } from '../core/raster.js';
 
@@ -54,6 +54,40 @@ export function drawTrail(ctx, strokes, { x, y, w, h, color, seed, level = 1, gl
   ctx.restore();
 }
 
+/**
+ * Abstrakte Leuchtspur im Langzeitbelichtungs-Look (Iteration 1, Review P2-1): der eigene Pfad kreist als
+ * Lichtspur mehrfach um die Mitte (rotierte, verdrillte Kopien) + Funken — schön, aber Form unkenntlich.
+ * level erhöht Kopien + Verdrillung (Spoiler-Gate eskaliert).
+ */
+export function drawExposure(ctx, strokes, { x, y, w, h, color, seed, level = 1 }) {
+  const pts = resample(strokes, 96); const rng = makeRng(seed);
+  if (!pts.length) return;
+  let mx = 0, my = 0; for (const [px, py] of pts) { mx += px; my += py; } mx /= pts.length; my /= pts.length;
+  const cx = x + w / 2, cy = y + h / 2, R = Math.min(w, h) * 0.66;
+  const copies = Math.round(3 + level * 2), twist = 0.9 + level * 0.9, rot0 = rng.rnd() * Math.PI * 2;
+  ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+  const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R); bg.addColorStop(0, color + '30'); bg.addColorStop(1, color + '00');
+  ctx.fillStyle = bg; ctx.fillRect(x, y, w, h);
+  ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  const n = pts.length;
+  const at = (k, i, s = 1) => { const a = rot0 + (k * Math.PI * 2) / copies + twist * (i / n); const px = (pts[i][0] - mx) * R * s, py = (pts[i][1] - my) * R * s; return [cx + px * Math.cos(a) - py * Math.sin(a), cy + px * Math.sin(a) + py * Math.cos(a)]; };
+  for (let k = 0; k < copies; k++) {
+    const s = 0.72 + 0.28 * ((k % 3) / 2);
+    const path = () => { ctx.beginPath(); for (let i = 0; i < n; i++) { const [px, py] = at(k, i, s); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); } };
+    ctx.shadowColor = color; ctx.shadowBlur = 16; ctx.strokeStyle = color + '22'; ctx.lineWidth = 9; path(); ctx.stroke();
+    ctx.shadowBlur = 0; ctx.strokeStyle = color + '66'; ctx.lineWidth = 2.6; path(); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,251,239,0.55)'; ctx.lineWidth = 0.9; path(); ctx.stroke();
+  }
+  // Funken mit Lichtkreuz
+  for (let i = 0; i < 22; i++) {
+    const [px, py] = at(Math.floor(rng.rnd() * copies), Math.floor(rng.rnd() * n), 0.72 + rng.rnd() * 0.28);
+    const r = 1 + rng.rnd() * 2.2;
+    ctx.fillStyle = 'rgba(255,251,239,0.9)'; ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2); ctx.fill();
+    if (i % 4 === 0) { ctx.strokeStyle = 'rgba(255,241,201,0.55)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(px - r * 5, py); ctx.lineTo(px + r * 5, py); ctx.moveTo(px, py - r * 5); ctx.lineTo(px, py + r * 5); ctx.stroke(); }
+  }
+  ctx.restore();
+}
+
 /** Bild-Ausschnitt → 28×28 wie die Strich-Pipeline (Box 304, Inhalt 256, zentriert) */
 function imageToInput(src) {
   const W = src.width, H = src.height, d = src.getContext('2d').getImageData(0, 0, W, H).data;
@@ -73,12 +107,12 @@ function imageToInput(src) {
   return out;
 }
 
-/** Spoiler-Gate: Luftspur-Grafik darf das Zielwort nicht in Top-3 haben. Liefert {level, top, ok} */
-export async function spoilerGate(clf, id, strokes, color) {
+/** Spoiler-Gate: Luftspur-Grafik darf das Zielwort nicht in Top-3 haben. Liefert {level, top, ok}. draw = Zeichen-Funktion */
+export async function spoilerGate(clf, id, strokes, color, draw = drawExposure) {
   const c = document.createElement('canvas'); c.width = c.height = 256; const ctx = c.getContext('2d');
   for (const level of [1, 1.6, 2.4, 3.4]) {
     ctx.fillStyle = '#000'; ctx.fillRect(0, 0, 256, 256);
-    drawTrail(ctx, strokes, { x: 0, y: 0, w: 256, h: 256, color, seed: seedOf(id), level });
+    draw(ctx, strokes, { x: 0, y: 0, w: 256, h: 256, color, seed: seedOf(id), level });
     const top = (await clf.classifyInput(imageToInput(c))).slice(0, 3).map((x) => x.id);
     if (!top.includes(id)) return { level, top, ok: true };
   }
@@ -87,40 +121,92 @@ export async function spoilerGate(clf, id, strokes, color) {
 
 async function toBlob(c) { return new Promise((res) => c.toBlob(res, 'image/png')); }
 
-/** Heute-Karte 1080×1350 (spoilerfrei) */
+/** Washi-Tape-Streifen */
+function tape(ctx, x, y, w, rot) {
+  ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.fillStyle = 'rgba(255,200,87,0.62)'; ctx.shadowColor = 'rgba(0,0,0,0.12)'; ctx.shadowBlur = 3; ctx.fillRect(-w / 2, -16, w, 32); ctx.restore();
+}
+const secsLabel = (r, ui) => (r.result === 'hit' && r.hitAt != null ? t('secs', { n: Math.max(1, Math.round(r.hitAt / 1000)) }, ui) : '–');
+const okOf = (r) => r.result === 'hit' || (r.parts && r.parts === r.n);
+
+/**
+ * Heute-Karte 1080×1350 (Iteration 1, Review P2-1): großes Zitat der lustigsten KI-Rate, genau EINE Zeichnung scharf
+ * (die zum Zitat, Buntstift mit Farbsaum), die übrigen als Langzeitbelichtungs-Leuchtspuren auf Navy (Spoiler-Gate
+ * je Spur). Ohne lustigen Tipp: alle 5 Spuren abstrakt, keine scharfe Zeichnung. Zeit statt unbeschrifteter Balken.
+ */
 export async function todayCard(app, sum) {
   await fontsReady();
   const W = 1080, H = 1350, c = document.createElement('canvas'); c.width = W; c.height = H; const ctx = c.getContext('2d');
   const { learn, native } = app.settings; const ui = native;
   paper(ctx, W, H, sum.number * 17);
-  ctx.fillStyle = INK; ctx.font = '700 132px Caveat'; ctx.textBaseline = 'alphabetic'; ctx.fillText('Kalemo', 70, 170);
-  ctx.textAlign = 'right'; ctx.font = '700 120px Caveat'; ctx.fillText('#' + sum.number, W - 70, 170); ctx.textAlign = 'left';
+  ctx.fillStyle = INK; ctx.font = '700 132px Caveat'; ctx.textBaseline = 'alphabetic'; ctx.fillText('Kalemo', 70, 160);
+  ctx.textAlign = 'right'; ctx.font = '700 120px Caveat'; ctx.fillText('#' + sum.number, W - 70, 160); ctx.textAlign = 'left';
   const streakN = sum.streak ?? 1;
-  ctx.font = '800 46px Nunito'; ctx.fillStyle = INK;
-  ctx.fillText(`${LANG_CODE[native]} → ${LANG_CODE[learn]}  ·  ${sum.hits}/5  ·  ${t('streak', { n: streakN }, ui)}`, 72, 250);
+  ctx.font = '800 44px Nunito'; ctx.fillStyle = INK;
+  ctx.fillText(`${LANG_CODE[native]} → ${LANG_CODE[learn]}  ·  ${sum.hits}/5  ·  ${t('streak', { n: streakN }, ui)}`, 72, 236);
   const gates = [];
-  const rowH = 180, y0 = 310;
-  for (let i = 0; i < 5; i++) {
-    const r = sum.results[i]; if (!r) continue; const w = app.byId.get(r.id); const y = y0 + i * rowH;
-    const col = slotColor(w, r, learn);
-    ctx.fillStyle = col; rr(ctx, 72, y + 20, 120, 120, 26); ctx.fill();
-    ctx.fillStyle = 'rgba(30,42,58,0.78)'; ctx.font = '700 84px Caveat'; ctx.textAlign = 'center'; ctx.fillText(String(i + 1), 132, y + 110); ctx.textAlign = 'left';
-    ctx.fillStyle = NIGHT; rr(ctx, 222, y + 10, 330, 140, 24); ctx.fill();
+  const fz = sum.funniest && app.byId.get(sum.funniest.target) && app.byId.get(sum.funniest.id) && funnyAllowed(sum.funniest.target, sum.funniest.id) ? sum.funniest : null;
+  const heroIdx = fz ? sum.results.findIndex((r) => r.id === fz.target && (r.drawings?.length ? r.drawings[0] : r.strokes)?.length) : -1;
+  const quote = heroIdx >= 0 ? funnyLine(app.byId.get(fz.target), app.byId.get(fz.id), ui) : null;
+  const trailTile = async (r, i, x, y, w, h) => {
+    const wd = app.byId.get(r.id), col = slotColor(wd, r, learn);
+    ctx.save(); ctx.shadowColor = 'rgba(30,42,58,0.35)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 8; ctx.fillStyle = NIGHT; rr(ctx, x, y, w, h, 26); ctx.fill(); ctx.restore();
     const strokes = r.drawings?.length ? r.drawings[0] : r.strokes;
     if (strokes?.length && app.clf) {
       const g = await spoilerGate(app.clf, r.id, strokes, col); gates.push({ id: r.id, ...g });
-      if (g.ok) drawTrail(ctx, strokes, { x: 222, y: y + 10, w: 330, h: 140, color: col, seed: seedOf(r.id), level: g.level });
+      if (g.ok) drawExposure(ctx, strokes, { x, y, w, h, color: col, seed: seedOf(r.id), level: g.level });
     }
-    // Zeitbalken
-    const frac = r.result === 'hit' && r.hitAt != null ? Math.max(0.06, Math.min(1, r.hitAt / (r.kind === 'plural' ? 30000 : 20000))) : 1;
-    ctx.fillStyle = 'rgba(30,42,58,0.12)'; rr(ctx, 590, y + 66, 300, 28, 14); ctx.fill();
-    ctx.fillStyle = r.result === 'hit' ? INK : PENCIL; rr(ctx, 590, y + 66, 300 * frac, 28, 14); ctx.fill();
-    check(ctx, 930, y + 44, 72, r.result === 'hit' || (r.parts && r.parts === r.n));
+    // Nummer im Farbpunkt (Artikel-Farbe bzw. Gold) + Ergebnis + Zeit (auf dunklem Verlauf, lesbar über der Spur)
+    ctx.save(); rr(ctx, x, y, w, h, 26); ctx.clip(); const sg = ctx.createLinearGradient(0, y + h - 64, 0, y + h); sg.addColorStop(0, 'rgba(19,32,58,0)'); sg.addColorStop(1, 'rgba(19,32,58,0.92)'); ctx.fillStyle = sg; ctx.fillRect(x, y + h - 64, w, 64); ctx.restore();
+    ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x + 34, y + 34, 20, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = INK; ctx.font = '800 24px Nunito'; ctx.textAlign = 'center'; ctx.fillText(String(i + 1), x + 34, y + 43);
+    ctx.textAlign = 'right'; ctx.fillStyle = okOf(r) ? '#FFF6D8' : 'rgba(255,251,239,0.6)'; ctx.font = '800 28px Nunito';
+    ctx.fillText(secsLabel(r, ui), x + w - 18, y + h - 20); ctx.textAlign = 'left';
+    const tw2 = ctx.measureText(secsLabel(r, ui)).width;
+    ctx.save(); ctx.strokeStyle = okOf(r) ? '#86EFAC' : 'rgba(255,251,239,0.55)'; ctx.lineWidth = 4.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath();
+    const bx = x + w - 30 - tw2 - 26, by = y + h - 40;
+    if (okOf(r)) { ctx.moveTo(bx, by + 11); ctx.lineTo(bx + 8, by + 19); ctx.lineTo(bx + 22, by + 2); } else { ctx.moveTo(bx + 3, by + 3); ctx.lineTo(bx + 19, by + 19); ctx.moveTo(bx + 19, by + 3); ctx.lineTo(bx + 3, by + 19); }
+    ctx.stroke(); ctx.restore();
+  };
+  if (quote) {
+    // Zitat groß (Pointe zuerst): kleines Label, Satz in Anführungszeichen, Leuchtmarker unter der letzten Zeile
+    ctx.fillStyle = PENCIL; ctx.font = '800 30px Nunito'; ctx.fillText(t('funniest', {}, ui).toLocaleUpperCase(ui), 74, 318);
+    ctx.font = '700 74px Caveat';
+    const lines = wrapLines(ctx, quoted(quote, ui), 930).slice(0, 3); const lh = 76; const qy = 398;
+    const lastW = ctx.measureText(lines[lines.length - 1]).width;
+    ctx.save(); ctx.globalAlpha = 0.55; ctx.strokeStyle = '#FFC857'; ctx.lineCap = 'round'; ctx.lineWidth = 26; ctx.beginPath();
+    const my = qy + (lines.length - 1) * lh + 4; ctx.moveTo(78, my); ctx.quadraticCurveTo(78 + lastW / 2, my - 10, 72 + lastW, my - 2); ctx.stroke(); ctx.restore();
+    ctx.fillStyle = INK; lines.forEach((l, k) => ctx.fillText(l, 72, qy + k * lh));
+    // die EINE scharfe Zeichnung (Buntstift mit Farbsaum) auf Papierkarte mit Klebeband
+    const r = sum.results[heroIdx], wd = app.byId.get(r.id), strokes = r.drawings?.length ? r.drawings[0] : r.strokes;
+    const hx = 250, hy = qy + (lines.length - 1) * lh + 70, hw = 580, hh = Math.min(420, 1000 - (qy + (lines.length - 1) * lh + 70));
+    ctx.save(); ctx.translate(hx + hw / 2, hy + hh / 2); ctx.rotate(-0.025); ctx.translate(-(hx + hw / 2), -(hy + hh / 2));
+    ctx.save(); ctx.shadowColor = 'rgba(30,42,58,0.28)'; ctx.shadowBlur = 26; ctx.shadowOffsetY = 10; ctx.fillStyle = '#FFFDF7'; rr(ctx, hx, hy, hw, hh, 22); ctx.fill(); ctx.restore();
+    const core = learn === 'de' ? ART_TEXT[r.kind === 'plural' ? 'plural' : wd.de.art] : INK;
+    const fringe = learn === 'de' ? ART_COLOR[r.kind === 'plural' ? 'plural' : wd.de.art] : ART_COLOR.neutral;
+    drawStrokes(ctx, strokes, { style: 'crayon', color: core, fringe, paper: 'rgba(255,253,247,0.6)', width: 11, box: { x: hx + 30, y: hy + 24, w: hw - 60, h: hh - 48 }, seed: 11 });
+    check(ctx, hx + hw - 86, hy + 24, 54, okOf(r));
+    ctx.restore();
+    tape(ctx, hx + 20, hy + 12, 150, -0.6); tape(ctx, hx + hw - 16, hy + hh - 10, 150, -0.6);
+    // übrige 4 als Leuchtspuren
+    const rest = sum.results.map((x, i) => [x, i]).filter(([, i]) => i !== heroIdx).slice(0, 4);
+    const tw = 219, th = 190, gap = (W - 144 - tw * 4) / 3;
+    for (let k = 0; k < rest.length; k++) await trailTile(rest[k][0], rest[k][1], 72 + k * (tw + gap), 1040, tw, th);
+  } else {
+    const tw = 300, th = 250, gapX = (W - 144 - tw * 3) / 2;
+    const pos = [[0, 0], [1, 0], [2, 0], [0.5, 1], [1.5, 1]];
+    for (let i = 0; i < Math.min(5, sum.results.length); i++) await trailTile(sum.results[i], i, 72 + pos[i][0] * (tw + gapX), 320 + pos[i][1] * (th + 40), tw, th);
+    ctx.fillStyle = INK; ctx.font = '700 84px Caveat'; ctx.textAlign = 'center'; ctx.fillText(t('aiRecognized', { x: sum.hits }, ui), W / 2, 1010); ctx.textAlign = 'left';
   }
-  ctx.fillStyle = PENCIL; ctx.font = '600 58px Caveat'; ctx.fillText(t('tagline', {}, ui), 72, H - 80);
-  ctx.textAlign = 'right'; ctx.font = '700 30px Nunito'; ctx.fillText('kalemo.demo.osai.solutions', W - 72, H - 88); ctx.textAlign = 'left';
+  ctx.fillStyle = PENCIL; ctx.font = '600 54px Caveat'; ctx.fillText(t('tagline', {}, ui), 72, H - 46);
+  ctx.textAlign = 'right'; ctx.font = '700 28px Nunito'; ctx.fillText('kalemo.demo.osai.solutions', W - 72, H - 54); ctx.textAlign = 'left';
   const blob = await toBlob(c);
-  return { blob, canvas: c, gates, text: t('shareText', { n: sum.number, pair: `${LANG_CODE[native]} → ${LANG_CODE[learn]}`, x: sum.hits, s: streakN }, ui) };
+  const head = t('shareText', { n: sum.number, pair: `${LANG_CODE[native]} → ${LANG_CODE[learn]}`, x: sum.hits, s: streakN }, ui);
+  return { blob, canvas: c, gates, quote, hero: heroIdx >= 0 ? sum.results[heroIdx].id : null, text: quote ? `${head}\n${quoted(quote, ui)}` : head };
+}
+function wrapLines(ctx, text, maxW) {
+  const words = text.split(' '); const lines = []; let line = '';
+  for (const w of words) { const test = line ? line + ' ' + w : w; if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; } else line = test; }
+  lines.push(line); return lines;
 }
 
 /** Gestern-Karte: echte Zeichnungen + lustigster Fehltipp */

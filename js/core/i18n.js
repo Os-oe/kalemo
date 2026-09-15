@@ -31,7 +31,7 @@ export const T = {
     camDenied: 'Kein Problem — du malst auf dem Bildschirm.', camFail: 'Die Kamera ist gerade nicht verfügbar — du malst auf dem Bildschirm.',
     moreLight: 'Mehr Licht von vorn hilft der Kamera.', toScreen: 'Auf dem Bildschirm malen', airToggle: 'In die Luft', screenToggle: 'Bildschirm',
     inApp: 'Für die Kamera im Browser öffnen', inAppB: 'Hier im App-Browser malst du auf dem Bildschirm.', inAppChip: 'nur im Browser',
-    dayEndT: 'Tagesskizze #{n}', aiRecognized: 'KI erkannte {x}/5', points: 'Punkte', streakDays: 'Serie: {n} Tage', streakDay: 'Serie: 1 Tag',
+    secs: '{n} s', dayEndT: 'Tagesskizze #{n}', aiRecognized: 'KI erkannte {x}/5', points: 'Punkte', streakDays: 'Serie: {n} Tage', streakDay: 'Serie: 1 Tag',
     funniest: 'Lustigster KI-Tipp', share: 'Teilen', challenge: 'Jemanden herausfordern', toDict: 'Zum Bildwörterbuch', home: 'Start',
     shareText: 'Kalemo #{n} · {pair} · {x}/5 · Serie {s}', shareCopied: 'Text kopiert.', shareSave: 'Bild speichern', shareLong: 'Lange drücken zum Speichern',
     yesterdayCard: 'Karte von gestern', todayCard: 'Karte von heute',
@@ -76,7 +76,7 @@ export const T = {
     camDenied: 'No problem — you’ll draw on the screen.', camFail: 'The camera isn’t available right now — you’ll draw on the screen.',
     moreLight: 'More light from the front helps the camera.', toScreen: 'Draw on the screen', airToggle: 'In the air', screenToggle: 'Screen',
     inApp: 'Open in your browser to use the camera', inAppB: 'In this in-app browser you draw on the screen.', inAppChip: 'browser only',
-    dayEndT: 'Daily Sketch #{n}', aiRecognized: 'AI recognised {x}/5', points: 'Points', streakDays: 'Streak: {n} days', streakDay: 'Streak: 1 day',
+    secs: '{n} s', dayEndT: 'Daily Sketch #{n}', aiRecognized: 'AI recognised {x}/5', points: 'Points', streakDays: 'Streak: {n} days', streakDay: 'Streak: 1 day',
     funniest: 'Funniest AI guess', share: 'Share', challenge: 'Challenge a friend', toDict: 'Picture Dictionary', home: 'Home',
     shareText: 'Kalemo #{n} · {pair} · {x}/5 · Streak {s}', shareCopied: 'Text copied.', shareSave: 'Save image', shareLong: 'Press and hold to save',
     yesterdayCard: 'Yesterday’s card', todayCard: 'Today’s card',
@@ -121,7 +121,7 @@ export const T = {
     camDenied: 'Sorun değil — ekranda çizebilirsin.', camFail: 'Kamera şu anda kullanılamıyor — ekranda çizebilirsin.',
     moreLight: 'Önden daha fazla ışık kameraya yardımcı olur.', toScreen: 'Ekranda çiz', airToggle: 'Havada', screenToggle: 'Ekran',
     inApp: 'Kamera için tarayıcıda aç', inAppB: 'Bu uygulama içi tarayıcıda ekranda çizebilirsin.', inAppChip: 'yalnızca tarayıcıda',
-    dayEndT: 'Günün Çizimi #{n}', aiRecognized: 'Yapay zekâ {x}/5 tanıdı', points: 'Puan', streakDays: 'Seri: {n} gün', streakDay: 'Seri: 1 gün',
+    secs: '{n} sn', dayEndT: 'Günün Çizimi #{n}', aiRecognized: 'Yapay zekâ {x}/5 tanıdı', points: 'Puan', streakDays: 'Seri: {n} gün', streakDay: 'Seri: 1 gün',
     funniest: 'En komik tahmin', share: 'Paylaş', challenge: 'Arkadaşına meydan oku', toDict: 'Resimli Sözlük', home: 'Ana sayfa',
     shareText: 'Kalemo #{n} · {pair} · {x}/5 · Seri {s}', shareCopied: 'Metin kopyalandı.', shareSave: 'Resmi kaydet', shareLong: 'Kaydetmek için basılı tut',
     yesterdayCard: 'Dünün kartı', todayCard: 'Bugünün kartı',
@@ -188,19 +188,27 @@ export function strokeColor(w, learn, { plural = false } = {}) {
   return plural ? ART_COLOR.plural : ART_COLOR[w.de.art];
 }
 
-/** „Die KI hielt meine Katze für einen Rasenmäher." in UI-Sprache (Wörter in UI-Sprache) */
+/**
+ * Lustigster KI-Tipp als teilbarer Satz in UI-Sprache (Wörter in UI-Sprache).
+ * Iteration 1 (Review P3-12): „dachte erst an" statt „hielt … für" — stimmt auch, wenn das Wort danach erkannt wurde.
+ * DE „Die KI dachte bei meinem Krankenhaus erst an ein Bein." · EN „At first, the AI thought my hospital was a leg."
+ * TR „Yapay zekâ hastane yerine önce bacak dedi."
+ */
 export function funnyLine(target, guess, lang) {
   if (lang === 'de') {
-    const poss = { der: 'meinen', die: 'meine', das: 'mein' }[target.de.art];
+    const dat = { der: 'meinem', die: 'meiner', das: 'meinem' }[target.de.art];
     const ind = guess.de.mass ? '' : { der: 'einen ', die: 'eine ', das: 'ein ' }[guess.de.art];
-    const acc = (w) => (w.de.art === 'der' && w.de.akk) || w.de.noun; // n-Deklination: Löwe → Löwen
-    return `Die KI hielt ${poss} ${acc(target)} für ${ind}${acc(guess)}.`;
+    const weak = (w) => (w.de.art === 'der' && w.de.akk) || w.de.noun; // n-Deklination: Löwe → (dem/den) Löwen
+    return `Die KI dachte bei ${dat} ${weak(target)} erst an ${ind}${weak(guess)}.`;
   }
   if (lang === 'en') {
     const PL = new Set(['glasses', 'trousers', 'scissors', 'stairs', 'drums', 'grapes']);
     const g = guess.en.word;
-    const art = PL.has(g) || guess.en.mass ? '' : /^[aeiou]/i.test(g) ? 'an ' : 'a ';
-    return `The AI mistook my ${target.en.word} for ${art}${g}.`;
+    const PAIR = new Set(['glasses', 'trousers', 'scissors']);
+    const art = PAIR.has(g) ? 'a pair of ' : PL.has(g) ? 'some ' : guess.en.mass ? '' : /^[aeiou]/i.test(g) ? 'an ' : 'a ';
+    return `At first, the AI thought my ${target.en.word} ${PL.has(target.en.word) ? 'were' : 'was'} ${art}${g}.`;
   }
-  return `Yapay zekâ ${target.tr.word} yerine ${guess.tr.word} dedi.`;
+  return `Yapay zekâ ${target.tr.word} yerine önce ${guess.tr.word} dedi.`;
 }
+/** Satz in Anführungszeichen der UI-Sprache */
+export const quoted = (s, lang) => (lang === 'de' ? `„${s}“` : `“${s}”`);

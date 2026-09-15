@@ -45,7 +45,7 @@ export function installDayEnd(app) {
     const btn = $('#btn-share'); btn.disabled = true;
     try {
       const card = await todayCard(app, sum);
-      app.lastCard = { gates: card.gates, text: card.text, bytes: card.blob.size };
+      app.lastCard = { gates: card.gates, text: card.text, bytes: card.blob.size, quote: card.quote, hero: card.hero, w: card.canvas.width, h: card.canvas.height };
       await shareImage(app, { blob: card.blob, filename: `kalemo-${sum.number}.png`, text: card.text, url: location.origin + location.pathname.replace(/index\.html$/, ''), forceFallback: !!app.TEST });
     } finally { btn.disabled = false; }
   });

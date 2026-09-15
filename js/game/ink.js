@@ -62,6 +62,30 @@ export function drawStrokes(ctx, strokes, opts = {}) {
     paths.forEach(trace);
     ctx.shadowBlur = 0; ctx.strokeStyle = rgba(color, 0.85); ctx.lineWidth = width * 1.25; paths.forEach(trace);
     ctx.strokeStyle = 'rgba(255,252,240,0.95)'; ctx.lineWidth = Math.max(1.2, width * 0.42); paths.forEach(trace);
+  } else if (style === 'crayon') {
+    // Buntstift mit Farbsaum (Iteration 1, Treffer-Karte/Teilen-Karte): weicher Saum in Leuchtfarbe, körnige
+    // versetzte Buntstift-Lagen, kräftiger Tinten-Kern, Papierkorn in den Strich gestanzt (ohne Transparenz-Löcher)
+    const fringe = opts.fringe || color;
+    ctx.strokeStyle = rgba(fringe, 0.26); ctx.lineWidth = width * 2.7; paths.forEach(trace);
+    for (let k = 0; k < 4; k++) {
+      const dx = (hash(k, seed) - 0.5) * width * 0.7, dy = (hash(k + 9, seed) - 0.5) * width * 0.7;
+      ctx.save(); ctx.translate(dx, dy); ctx.strokeStyle = rgba(fringe, 0.5); ctx.lineWidth = width * (0.55 + k * 0.16); paths.forEach(trace); ctx.restore();
+    }
+    ctx.strokeStyle = rgba(color, 0.93); ctx.lineWidth = Math.max(1.4, width * 0.62); paths.forEach(trace);
+    ctx.fillStyle = opts.paper || 'rgba(255,253,247,0.55)';
+    const g = Math.max(0.7, width * 0.16);
+    const step = Math.max(2, width * 0.8);
+    paths.forEach((pts, pi) => {
+      let n = 0;
+      for (let i = 1; i < pts.length; i++) {
+        const [x0, y0] = pts[i - 1], [x1, y1] = pts[i]; const segs = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / step));
+        for (let s = 0; s < segs; s++, n++) {
+          if (hash(n * 3 + pi * 17, seed + 5) < 0.6) continue;
+          const f = s / segs, ox = (hash(n, pi + seed) - 0.5) * width * 1.2, oy = (hash(pi + 31, n + seed) - 0.5) * width * 1.2;
+          ctx.fillRect(x0 + (x1 - x0) * f + ox, y0 + (y1 - y0) * f + oy, g, g);
+        }
+      }
+    });
   } else if (style === 'pencil') {
     // Buntstift: mehrere leicht versetzte, halbtransparente Linien = körnige Textur
     ctx.strokeStyle = rgba(color, 0.55); ctx.lineWidth = width;
