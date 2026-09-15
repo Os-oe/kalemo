@@ -1,8 +1,8 @@
 // Kalemo — Einstieg. Statische Seite, ES-Module, kein Framework, keine externen Requests.
 import { settings, saveSettings, streak, dayResult } from './core/store.js';
 export { saveSettings };
-import { setUiLang, t, LANGS, LANG_CODE } from './core/i18n.js';
-import { planFor, berlinDate, addDays } from './core/plan.js';
+import { setUiLang, t, LANGS, LANG_CODE, ART_TEXT, ART_COLOR } from './core/i18n.js';
+import { planFor, berlinDate, addDays, msToBerlinMidnight } from './core/plan.js';
 import { createClassifier } from './core/classifier.js';
 import { Stage } from './game/stage.js';
 import { RoundController, escapeHtml } from './game/round.js';
@@ -15,7 +15,7 @@ import { installDuel } from './game/duel.js';
 import { installDict } from './game/dict.js';
 import { yesterdayCard } from './game/cards.js';
 import { shareImage } from './game/share.js';
-import { mount } from './game/alive.js';
+import { mount, unmountAll } from './game/alive.js';
 import { installAudio } from './game/audio.js';
 import { installAttract } from './game/attract.js';
 
@@ -82,14 +82,32 @@ function renderStart() {
   };
   mk($('#pair-native'), 'native', 'learn'); mk($('#pair-learn'), 'learn', 'native');
   const plan = planFor(iso, app.words.length ? app.words : [{ id: 'x', acc: 1 }]);
-  const done = !!dayResult(iso);
+  const today = dayResult(iso), done = !!today;
   $('#daily-label').textContent = done ? t('practice') : t('daily', { n: plan.number });
+  renderTodayTile(today);
+  $('.daily-hint').hidden = done; // „5 Wörter · etwa 2 Minuten" nur vor dem ersten Durchgang
   const st = streak(iso, addDays(iso, -1));
   const badge = $('#streak-badge'); badge.hidden = st < 1; badge.textContent = t('streak', { n: st });
   // „Gestern gemalt"-Kachel, sobald eine Gestern-Karte existiert
   const y = dayResult(addDays(iso, -1)); const tile = $('#btn-yesterday');
   tile.hidden = !y;
   if (y) { const c = tile.querySelector('canvas'); const r = y.results.find((x) => x.strokes?.length); if (r) mount(c, { strokes: r.strokes, color: '#1E2A3A', style: 'pencil', width: 2, still: true }); app.yesterday = y; }
+}
+
+/** Ergebnis-Kachel „Heute x/5 · Teilen · Herausfordern" + „Neue Skizze in 14 h" (Review P2-2) */
+function renderTodayTile(sum) {
+  const tile = $('#today-tile'); tile.hidden = !sum; clearInterval(app._countdown);
+  if (!sum) return;
+  $('#today-score').textContent = t('todayScore', { x: sum.hits });
+  const tick = () => {
+    const ms = msToBerlinMidnight(); const h = Math.floor(ms / 3600000);
+    $('#today-next').textContent = h >= 1 ? t('nextInH', { h }) : t('nextInMin', { m: Math.max(1, Math.ceil(ms / 60000)) });
+  };
+  tick(); app._countdown = setInterval(() => { if (app.screen === 'start') tick(); }, 30000);
+  const hero = (sum.funniest && sum.results.find((r) => r.id === sum.funniest.target && r.strokes?.length)) || sum.results.find((r) => r.result === 'hit' && r.strokes?.length) || sum.results.find((r) => r.strokes?.length);
+  const c = tile.querySelector('canvas'); unmountAll(tile);
+  if (hero) { const w = app.byId.get(hero.id); const de = (sum.learn || app.settings.learn) === 'de' && w; mount(c, { strokes: hero.drawings?.length ? hero.drawings[0] : hero.strokes, color: de ? ART_TEXT[hero.kind === 'plural' ? 'plural' : w.de.art] : '#1E2A3A', fringe: de ? ART_COLOR[hero.kind === 'plural' ? 'plural' : w.de.art] : ART_COLOR.neutral, style: 'crayon', width: 2.6, still: true }); }
+  app.todaySummary = sum;
 }
 
 app.hooks = {};
@@ -139,6 +157,7 @@ async function boot() {
   if (inAppBrowser() && !app.settings.inAppDismissed) $('#inapp').hidden = false;
   $('#inapp-close').addEventListener('click', () => { $('#inapp').hidden = true; app.settings = saveSettings({ inAppDismissed: true }); app.sfx?.play('tap'); });
   app.clfPromise = createClassifier({ words, backend: Q.get('backend') || undefined }).then((c) => (app.clf = c)).catch((e) => { app.log.push('clf ' + e.message); throw e; });
+  app.ensureClf = () => app.clfPromise;
   $('#btn-daily').addEventListener('click', async () => {
     app.sfx?.play('tap');
     const btn = $('#btn-daily'), label = $('#daily-label');
@@ -152,6 +171,8 @@ async function boot() {
     app.choice(`<h3>${escapeHtml(t('moreLight'))}</h3>`, [['screen', t('toScreen'), 'primary'], ['stay', t('next'), 'ghost']]).then((k) => { if (k === 'screen') app.leaveAir(); });
   };
   $('#btn-dayend-home').addEventListener('click', () => app.goHome());
+  $('#today-share').addEventListener('click', () => { app.sfx?.play('tap'); app.shareToday(app.todaySummary, $('#today-share')); });
+  $('#today-challenge').addEventListener('click', () => { app.sfx?.play('tap'); app.challengeFrom(app.todaySummary); });
   $('#btn-duel').addEventListener('click', () => { app.sfx?.play('tap'); app.duel.create(); });
   $('#btn-dict').addEventListener('click', () => { app.sfx?.play('tap'); app.openDict(); });
   $('#btn-settings').addEventListener('click', openSettings);

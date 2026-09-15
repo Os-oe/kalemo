@@ -40,20 +40,27 @@ export function installDayEnd(app) {
     app.music?.play();
   };
 
-  $('#btn-share').addEventListener('click', async () => {
-    const sum = app.lastSummary; if (!sum) return;
-    const btn = $('#btn-share'); btn.disabled = true;
+  /** Heute-Karte teilen — vom Tagesende und von der Ergebnis-Kachel auf dem Start (P2-2) */
+  app.shareToday = async (sum, btn) => {
+    if (!sum) return;
+    if (btn) btn.disabled = true;
     try {
+      if (!app.clf) await app.ensureClf?.();
+      sum.streak ??= streak(sum.date, addDays(sum.date, -1)) || 1;
       const card = await todayCard(app, sum);
       app.lastCard = { gates: card.gates, text: card.text, bytes: card.blob.size, quote: card.quote, hero: card.hero, w: card.canvas.width, h: card.canvas.height };
       await shareImage(app, { blob: card.blob, filename: `kalemo-${sum.number}.png`, text: card.text, url: location.origin + location.pathname.replace(/index\.html$/, ''), forceFallback: !!app.TEST });
-    } finally { btn.disabled = false; }
-  });
-  $('#btn-challenge').addEventListener('click', () => {
-    const sum = app.lastSummary; if (!sum) return;
+    } finally { if (btn) btn.disabled = false; }
+  };
+  $('#btn-share').addEventListener('click', () => app.shareToday(app.lastSummary, $('#btn-share')));
+  $('#btn-challenge').addEventListener('click', () => app.challengeFrom(app.lastSummary));
+  /** Zeichnung auswählen → Duell-Link (Tagesende + Start-Kachel) */
+  app.challengeFrom = (sum) => {
+    if (!sum) return;
+    const learn = sum.learn || app.settings.learn;
     const opts = sum.results.map((r, i) => ({ r, i })).filter(({ r }) => (r.drawings?.length ? r.drawings[0] : r.strokes)?.length);
     const box = document.getElementById('sheet');
-    box.innerHTML = `<div class="sheet-card"><h3>${escapeHtml(t('challenge'))}</h3><div class="pick-grid">${opts.map(({ r, i }) => `<button class="pick" data-i="${i}"><canvas></canvas><span>${escapeHtml(word(app.byId.get(r.id), app.settings.learn))}</span></button>`).join('')}</div><button class="btn ghost" data-act="close">${escapeHtml(t('close'))}</button></div>`;
+    box.innerHTML = `<div class="sheet-card"><h3>${escapeHtml(t('challenge'))}</h3><div class="pick-grid">${opts.map(({ r, i }) => `<button class="pick" data-i="${i}"><canvas></canvas><span>${escapeHtml(word(app.byId.get(r.id), learn))}</span></button>`).join('')}</div><button class="btn ghost" data-act="close">${escapeHtml(t('close'))}</button></div>`;
     box.hidden = false;
     box.querySelectorAll('.pick canvas').forEach((c, k) => { const r = opts[k].r; mount(c, { strokes: r.drawings?.length ? r.drawings[0] : r.strokes, color: '#1E2A3A', style: 'pencil', width: 2.6, still: true }); });
     box.onclick = (e) => {
@@ -62,6 +69,6 @@ export function installDayEnd(app) {
       if (b) { const r = sum.results[+b.dataset.i]; unmountAll(box); box.innerHTML = ''; app.sfx?.play('tap'); app.duel.sendDrawing(r.id, r.drawings?.length ? r.drawings[0] : r.strokes, r.hitAt || 20000, r.timing || null, { autoShare: true }); }
       else if (e.target === box || e.target.closest('[data-act=close]')) { box.hidden = true; box.innerHTML = ''; }
     };
-  });
+  };
   $('#btn-dayend-dict').addEventListener('click', () => app.openDict());
 }

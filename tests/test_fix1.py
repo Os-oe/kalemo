@@ -20,6 +20,29 @@ HIT_TEST = '''(sel) => { const el = document.querySelector(sel); if (!el) return
   return { sel, ok: !!hit && (hit === el || el.contains(hit)), hit: hit ? (hit.id || hit.className || hit.tagName).toString().slice(0, 40) : null, x: Math.round(x), y: Math.round(y) }; }'''
 
 
+def play_daily(pg, learn, via_button=False, stop_before=None):
+    """Tagesskizze komplett per Hooks (Fixture-Striche). Liefert (plan, state am Tagesende)."""
+    plan = pg.evaluate('() => window.__plan()')
+    if via_button:
+        pg.click('#btn-daily')
+    else:
+        pg.evaluate('() => window.__startDaily()')
+    for i, slot in enumerate(plan['slots']):
+        if stop_before is not None and i == stop_before:
+            return plan, None
+        wid = slot['id']; w = WORDS[wid]
+        if learn == 'de' and slot['kind'] != 'plural' and slot.get('article', True):
+            pg.wait_for_selector('.art-card', timeout=20000)
+            pg.evaluate('(a) => window.__chooseArticle(a)', w['de']['art'])
+        base_n = wait_state(pg, f's.round && s.round.target === {json.dumps(wid)}', 30000)['drawCount']
+        for k in range(slot['n'] if slot['kind'] == 'plural' else 1):
+            wait_state(pg, f's.round && s.round.target === {json.dumps(wid)} && s.drawCount === {base_n + k}', 30000)
+            pg.evaluate('(st) => window.__feedStrokes(st, {timing: "real", ptMs: 8, gapMs: 120})', FIX[wid][k % 2])
+        wait_state(pg, f's.lastResult && s.lastResult.id === {json.dumps(wid)} && s.overlay', 45000)
+        pg.evaluate('() => window.__next()')
+    return plan, wait_state(pg, 's.screen === "dayend" && s.summary', 30000)
+
+
 def mobile_ctx(b, ua, **kw):
     return b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2, is_mobile=True, has_touch=True, user_agent=ua, **kw)
 
@@ -193,6 +216,46 @@ with server() as base, sync_playwright() as p:
         c.close()
     if section('p2_1'):
         S.run('P2-1 Teilen-Karte', p2_1)
+
+    # ---------- P2-2: Startseite nach dem Spielen: Ergebnis-Kachel + Countdown ----------
+    def p2_2():
+        c = b.new_context(viewport={'width': 1280, 'height': 800}); pg = c.new_page(); errs = []
+        pg.on('pageerror', lambda e: errs.append(str(e)))
+        pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000)
+        S.check('Frischer Start: keine Ergebnis-Kachel', pg.is_hidden('#today-tile'))
+        pg.evaluate('() => window.__settings({native: "de", learn: "tr", airOffered: true, chosenPair: true})')
+        today = pg.evaluate('() => window.__state().date')
+        plan, st = play_daily(pg, 'tr')
+        hits = st['summary']['hits']
+        pg.click('#btn-dayend-home', force=True)
+        pg.wait_for_selector('#today-tile:not([hidden])', timeout=5000)
+        import zoneinfo
+        now = datetime.datetime.now(zoneinfo.ZoneInfo('Europe/Berlin'))
+        mid = (now + datetime.timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+        hours = int((mid - now).total_seconds() // 3600)
+        score = pg.text_content('#today-score'); nxt = pg.text_content('#today-next')
+        exp_next = f'Neue Skizze in {hours} h' if hours >= 1 else 'Neue Skizze in'
+        S.check('Start nach dem Spielen: Kachel „Heute x/5" + Teilen + Herausfordern + „Neue Skizze in N h" (Mitternacht Berlin)', score == f'Heute {hits}/5' and nxt.startswith(exp_next) and pg.is_visible('#today-share') and pg.is_visible('#today-challenge'), (score, nxt, hours))
+        box = pg.evaluate("() => { const t = document.querySelector('#today-tile').getBoundingClientRect(), d = document.querySelector('#btn-daily').getBoundingClientRect(); return t.bottom <= d.top + 1; }")
+        S.check('Kachel steht über „Noch mal üben"', box and 'üben' in (pg.text_content('#daily-label') or ''))
+        pg.reload(); wait_state(pg, 's.clfReady', 60000)
+        pg.evaluate(f'() => window.__setDate("{today}")'); pg.evaluate('() => window.__home()')
+        S.check('Kachel überlebt Reload (localStorage)', pg.is_visible('#today-tile') and pg.text_content('#today-score') == f'Heute {hits}/5')
+        pg.click('#today-share')
+        st = wait_state(pg, 's.lastCard && s.sheet', 30000)
+        S.check('Kachel → Teilen: Heute-Karte (gleiche Tagesnummer, Gates ok)', f'#{plan["number"]}' in st['lastCard']['text'] and all(g['ok'] for g in st['lastCard']['gates']) and pg.query_selector('#sheet img.share-img') is not None, st['lastCard']['text'])
+        pg.click('#sheet [data-act=close]', force=True)
+        pg.click('#today-challenge')
+        pg.wait_for_selector('#sheet .pick', timeout=5000); pg.locator('#sheet .pick').first.click(force=True)
+        st = wait_state(pg, 's.lastDuel && s.sheet && s.lastLinkShare', 10000)
+        S.check('Kachel → Herausfordern: Zeichnung wählen → Link-Karte auf dem Start', st['screen'] == 'start' and pg.is_visible('#sheet .link-card'), st['lastDuel']['url'][:50])
+        ms = pg.evaluate('''async () => { const p = await import('/js/core/plan.js'); const at = (iso) => p.msToBerlinMidnight(Date.parse(iso));
+          return [at('2026-09-15T12:00:00Z'), at('2026-10-25T00:30:00Z'), at('2027-03-28T00:30:00Z'), at('2026-10-25T12:00:00Z'), at('2026-09-15T21:59:30Z')]; }''')
+        S.check('Countdown sommerzeitfest (normal 10 h · 25-h-Tag vor Umstellung 22,5 h · 23-h-Tag vor Umstellung 21,5 h · nach Umstellung 11 h · 30 s vor Mitternacht)', ms == [36000000, 81000000, 77400000, 39600000, 30000], ms)
+        S.check('P2-2: keine Seitenfehler', not errs, errs[:2])
+        c.close()
+    if section('p2_2'):
+        S.run('P2-2 Start-Kachel', p2_2)
 
     b.close()
 S.finish()

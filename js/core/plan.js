@@ -9,6 +9,16 @@ export function berlinDate(ms = Date.now()) {
   const f = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit', day: '2-digit' });
   return f.format(new Date(ms)); // YYYY-MM-DD
 }
+/** Millisekunden bis zur nächsten Mitternacht Europe/Berlin (Tageswechsel der Tagesskizze, sommerzeitfest) */
+export function msToBerlinMidnight(ms = Date.now()) {
+  const f = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Berlin', hourCycle: 'h23', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const p = Object.fromEntries(f.formatToParts(new Date(ms)).map((x) => [x.type, x.value]));
+  let left = (24 * 3600 - ((+p.hour % 24) * 3600 + +p.minute * 60 + +p.second)) * 1000 - (ms % 1000);
+  const today = berlinDate(ms);
+  if (berlinDate(ms + left) === today) left += 3600000; // Umstellung auf Winterzeit (25-h-Tag)
+  else if (berlinDate(ms + left - 3600000) !== today) left -= 3600000; // Umstellung auf Sommerzeit (23-h-Tag)
+  return Math.max(0, left);
+}
 const dayNum = (iso) => { const [y, m, d] = iso.split('-').map(Number); return Math.round(Date.UTC(y, m - 1, d) / 86400000); };
 export const dayIndex = (iso) => dayNum(iso) - dayNum(LAUNCH);
 export const addDays = (iso, n) => new Date((dayNum(iso) + n) * 86400000).toISOString().slice(0, 10);

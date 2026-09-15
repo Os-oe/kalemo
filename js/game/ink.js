@@ -32,7 +32,7 @@ export function fitter(strokes, box, padding = 0.12) {
 export function drawStrokes(ctx, strokes, opts = {}) {
   const { color = '#FFC857', width = 6, style = 'glow', box = null, boil = 0, t = 0, motion = null, alive = 0, seed = 1, progress = 1, crumble = 0 } = opts;
   if (!strokes || !strokes.length) return;
-  const fit = box ? fitter(strokes, box) : { map: (x, y) => [x, y], scale: 1, cx: 0, cy: 0, bottom: 0 };
+  const fit = box ? fitter(strokes, box, opts.padding ?? 0.12) :{ map: (x, y) => [x, y], scale: 1, cx: 0, cy: 0, bottom: 0 };
   const reduce = reducedMotion();
   const boilFrame = Math.floor(t * 12); // ~12 fps
   const bAmp = reduce ? 0 : boil * Math.max(1, width * 0.28);

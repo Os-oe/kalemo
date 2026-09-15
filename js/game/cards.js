@@ -136,7 +136,8 @@ const okOf = (r) => r.result === 'hit' || (r.parts && r.parts === r.n);
 export async function todayCard(app, sum) {
   await fontsReady();
   const W = 1080, H = 1350, c = document.createElement('canvas'); c.width = W; c.height = H; const ctx = c.getContext('2d');
-  const { learn, native } = app.settings; const ui = native;
+  // gespieltes Paar aus dem Tagesergebnis (auch wenn die Sprachwahl seitdem geändert wurde), Texte in aktueller UI-Sprache
+  const learn = sum.learn || app.settings.learn, native = sum.native || app.settings.native; const ui = app.settings.native;
   paper(ctx, W, H, sum.number * 17);
   ctx.fillStyle = INK; ctx.font = '700 132px Caveat'; ctx.textBaseline = 'alphabetic'; ctx.fillText('Kalemo', 70, 160);
   ctx.textAlign = 'right'; ctx.font = '700 120px Caveat'; ctx.fillText('#' + sum.number, W - 70, 160); ctx.textAlign = 'left';
