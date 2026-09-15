@@ -379,3 +379,14 @@ body.landing-on #screen-duel .page { max-width: none; padding: 0; min-height: 10
 .share-wrap::after { content: none; animation: none; }
 .share-wrap .share-img { display: block; position: relative; background: #F7F1E3; }
 @keyframes rimglint { from { background-position: 100% 0; } to { background-position: 0% 0; } }
+
+/* Iteration 2 (R2-P3-9 / Wächter G2): auf niedrigen Laptop-Bildschirmen bleibt der Hauptknopf im ersten Bild —
+   nach dem Spielen (Heute-Kachel) bzw. mit In-App-Hinweis wird die Demo-Karte kleiner und die Kachel kompakter */
+@media (max-height: 800px) and (min-width: 520px) {
+  .start-wrap.inapp-on .attract { width: min(100%, calc(40vh * 4 / 3)); }
+  .start-wrap.played .attract { width: min(100%, calc(29vh * 4 / 3)); }
+  .start-wrap.played.inapp-on .attract { width: min(100%, calc(24vh * 4 / 3)); }
+  .start-wrap.played .today-tile { padding: 6px 10px; gap: 2px 12px; }
+  .start-wrap.played .today-art { width: 64px; height: 64px; }
+  .start-wrap.played .today-main strong { font-size: 1.7rem; }
+}

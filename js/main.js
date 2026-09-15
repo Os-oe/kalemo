@@ -99,6 +99,7 @@ function renderStart() {
 /** Ergebnis-Kachel „Heute x/5 · Teilen · Herausfordern" + „Neue Skizze in 14 h" (Review P2-2) */
 function renderTodayTile(sum) {
   const tile = $('#today-tile'); tile.hidden = !sum; clearInterval(app._countdown);
+  $('.start-wrap').classList.toggle('played', !!sum); // R2-P3-9: nach dem Spielen kompakter (Hauptknopf im ersten Bild)
   if (!sum) return;
   $('#today-score').textContent = t('todayScore', { x: sum.hits });
   const tick = () => {
@@ -243,8 +244,8 @@ async function boot() {
   window.addEventListener('pointerdown', () => { if (app.screen !== 'round') setTimeout(() => app.music?.play(), 50); }, { once: true });
   app.setMode('screen');
   applyTexts();
-  if (inAppBrowser() && !app.settings.inAppDismissed) $('#inapp').hidden = false;
-  $('#inapp-close').addEventListener('click', () => { $('#inapp').hidden = true; app.settings = saveSettings({ inAppDismissed: true }); app.sfx?.play('tap'); });
+  if (inAppBrowser() && !app.settings.inAppDismissed) { $('#inapp').hidden = false; $('.start-wrap').classList.add('inapp-on'); }
+  $('#inapp-close').addEventListener('click', () => { $('#inapp').hidden = true; $('.start-wrap').classList.remove('inapp-on'); app.settings = saveSettings({ inAppDismissed: true }); app.sfx?.play('tap'); });
   // Absicht erkennen (Zeiger drüber, Finger drauf, Tastatur-Fokus) → Mal-KI + Tages-Audio vorladen
   for (const id of ['btn-daily', 'btn-duel', 'today-share', 'today-challenge', 'btn-yesterday']) for (const ev of ['pointerenter', 'pointerdown', 'focus', 'touchstart']) $('#' + id).addEventListener(ev, () => app.warm(), { once: true, passive: true });
   if (app.TEST && Q.get('lazy') !== '1') app.warm(); // Test-Suiten erwarten die KI sofort; ?lazy=1 prüft den leichten Start
