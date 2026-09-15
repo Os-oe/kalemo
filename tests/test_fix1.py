@@ -641,5 +641,30 @@ with server() as base, sync_playwright() as p:
     if section('p3_4'):
         S.run('P3-4 Mehrzahl', p3_4)
 
+    # ---------- P3-3: Artikel anders gewählt → rote Schüttel-Karte; Blase beim Rundenwechsel leer ----------
+    def p3_3():
+        c = b.new_context(viewport={'width': 1280, 'height': 800}); pg = c.new_page(); errs = []
+        pg.on('pageerror', lambda e: errs.append(str(e)))
+        pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000)
+        pg.evaluate('() => window.__settings({native: "tr", learn: "de", airOffered: true, chosenPair: true})')
+        pg.evaluate('() => window.__setDate("2026-10-14")')
+        plan = pg.evaluate('() => window.__plan()'); wid = plan['slots'][0]['id']; art = WORDS[wid]['de']['art']
+        wrong = next(a for a in ('der', 'die', 'das') if a != art)
+        pg.evaluate('() => { window.__kalemo.show("round"); window.__kalemo.round.showBubble("Süre doldu."); return 1; }')
+        pg.evaluate('() => window.__startDaily()')
+        pg.wait_for_selector('.art-card', timeout=15000)
+        S.check('Rundenwechsel: Sprechblase der Vorrunde ist weg, wenn die Artikel-Karte kommt', pg.evaluate('() => window.__state().bubble') is None)
+        pg.click(f'.art-card[data-a="{wrong}"]')
+        pg.wait_for_timeout(150)
+        cls = pg.get_attribute(f'.art-card[data-a="{wrong}"]', 'class') or ''
+        bg = pg.evaluate(f'''() => getComputedStyle(document.querySelector('.art-card[data-a="{wrong}"]')).borderTopColor''')
+        right = pg.get_attribute(f'.art-card[data-a="{art}"]', 'class') or ''
+        S.check('Andere Wahl: gewählte Karte schüttelt sich rot, richtige Karte leuchtet', 'wrong' in cls and 'wobble' in cls and bg == 'rgb(220, 38, 38)' and 'flash' in right, (cls, bg, right))
+        pg.evaluate('() => window.__home()')
+        S.check('P3-3: keine Seitenfehler', not errs, errs[:2])
+        c.close()
+    if section('p3_3'):
+        S.run('P3-3 Artikel', p3_3)
+
     b.close()
 S.finish()

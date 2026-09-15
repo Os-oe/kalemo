@@ -108,7 +108,7 @@ export function installFlow(app) {
       const btn = card.querySelector(`[data-a="${a}"]`), right = card.querySelector(`[data-a="${w.de.art}"]`);
       card.classList.add('chosen');
       if (ok) { btn.classList.add('flash'); app.sfx?.play('articleOk'); }
-      else { btn.classList.add('wobble'); right.classList.add('flash'); app.sfx?.play('articleNo'); card.querySelector('.hint').textContent = t('articleShow', { w: `${w.de.art} ${w.de.noun}` }); }
+      else { btn.classList.add('wobble', 'wrong'); right.classList.add('flash'); try { navigator.vibrate?.([30, 40, 30]); } catch {} app.sfx?.play('articleNo'); card.querySelector('.hint').textContent = t('articleShow', { w: `${w.de.art} ${w.de.noun}` }); }
       app.voice?.word(w.id, 'de');
       app.lastArticle = { choice: a, ok, via };
       await sleep(ok ? 900 : 1700);
@@ -172,6 +172,7 @@ export function installFlow(app) {
     const w = app.byId.get(slot.id), learn = app.settings.learn;
     const plural = slot.kind === 'plural' ? slot.n : null;
     app.renderToggle();
+    app.round.bubble.hidden = true; // Review P3-3: Sprechblase der Vorrunde („Zeit ist um.") nicht unter die nächste Karte mitnehmen
     let articleOk = null;
     if (learn === 'de' && !plural && slot.article !== false) { // Launch-Tage #1/#2 ohne Artikel-Schritt (P2-7)
       app.round.showWord(w, { article: false });

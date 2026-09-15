@@ -299,6 +299,9 @@ body:not(.kbd) .btn:focus-visible { outline: none; }
 .art-card.flash { animation: flash .6s ease; background: var(--c); } .art-card.flash .art-label, .art-card.flash .art-n { color: #fff; }
 .art-card.flash svg { animation: hop .5s ease; }
 .art-card.wobble { animation: wobble .5s ease; }
+/* Review P3-3: die gewählte (andere) Karte schüttelt sich kurz rot */
+.art-card.wrong { border-color: #DC2626; background: #FEE2E2; box-shadow: 3px 3px 0 #B91C1C; animation: wobble .55s ease, wrongfade 1.6s ease forwards; }
+@keyframes wrongfade { 0%, 60% { background: #FEE2E2; } 100% { background: #FFFDF7; } }
 @keyframes flash { 0% { box-shadow: 0 0 0 0 var(--c); } 40% { box-shadow: 0 0 0 14px transparent; transform: scale(1.06); } }
 @keyframes hop { 40% { transform: translateY(-10px); } }
 @keyframes wobble { 20% { transform: translateX(-8px) rotate(-3deg); } 40% { transform: translateX(7px) rotate(2deg); } 60% { transform: translateX(-5px); } 80% { transform: translateX(3px); } }
