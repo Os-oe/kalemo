@@ -120,7 +120,7 @@ export class RoundController {
       const left = Math.max(0, r.engine.duration - r.engine.elapsed(now));
       this.app.ui?.timer(left, r.opts.totalMs || r.engine.duration);
       // Hilfe nach 8 s: „So malen es andere" (beendet die Runde freundlich, auch per Tastatur erreichbar)
-      if (!r.helpShown && r.engine.elapsed(now) > 8000 && !r.opts.totalMs) { r.helpShown = true; const hb = document.getElementById('round-help'); hb.hidden = false; hb.onclick = () => { if (this.active === r && !r.engine.done) { this.app.sfx?.play('tap'); this._handle(r, r.engine.finish(performance.now(), 'timeout')); } }; }
+      if (!r.helpShown && r.engine.elapsed(now) > 8000 && !r.opts.totalMs) { r.helpShown = true; const hb = document.getElementById('round-help'); hb.hidden = false; hb.onclick = () => { if (this.active === r && !r.engine.done) { this.app.sfx?.play('tap'); r.helped = true; this._handle(r, r.engine.finish(performance.now(), 'timeout')); } }; }
       if (left < 5000 && left > 0 && Math.floor(left / 1000) !== r.lastTickS) { r.lastTickS = Math.floor(left / 1000); this.app.sfx?.play('tick'); }
     }
     if (!r || now >= (r.frozenUntil || 0)) this.stage.render(now);
@@ -148,11 +148,15 @@ export class RoundController {
       try { navigator.vibrate?.(40); } catch {}
       setTimeout(() => { ink.classList.remove('squash'); void ink.offsetWidth; ink.classList.add('squash'); confetti(document.querySelector('#stage canvas.fx'), this.stage.color); }, 100);
       setTimeout(() => app.sfx?.play(r.w.sfx), 520);
+    } else if (r.helped) { // Hilfe erbeten: nicht „Zeit ist um" sagen (Sprach-Review 3 Nr. 1)
+      this.showBubble(t('helpBubble', {}, learn));
+      this.stage.crumble(); app.sfx?.play('crumble');
     } else {
       this.showBubble(t('timeUp', {}, learn));
       this.stage.crumble();
       app.sfx?.play('crumble'); app.sfx?.play('timeup');
     }
+    out.helped = !!r.helped;
     this.active = null;
     r.resolve(out);
   }

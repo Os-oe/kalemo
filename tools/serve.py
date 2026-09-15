@@ -8,6 +8,11 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8765
+import json, re
+try:
+    VERCEL_HEADERS = json.load(open(os.path.join(ROOT, 'vercel.json'))).get('headers', []) if os.environ.get('KALEMO_NO_CSP') != '1' else []
+except Exception:
+    VERCEL_HEADERS = []
 
 class H(http.server.SimpleHTTPRequestHandler):
     extensions_map = {
@@ -21,6 +26,13 @@ class H(http.server.SimpleHTTPRequestHandler):
         super().__init__(*a, directory=ROOT, **k)
     def end_headers(self):
         self.send_header('Cache-Control', 'no-store')
+        # Sicherheits-Header wie auf Vercel (vercel.json), damit CSP-Probleme lokal auffallen
+        path = self.path.split('?')[0]
+        for rule in VERCEL_HEADERS:
+            if re.fullmatch(rule['source'].replace('(.*)', '.*'), path):
+                for h in rule['headers']:
+                    if h['key'] not in ('Cache-Control', 'Content-Type'):
+                        self.send_header(h['key'], h['value'])
         super().end_headers()
     def log_message(self, *a):
         pass

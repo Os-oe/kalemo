@@ -50,8 +50,11 @@ const PATCH2 = {
     tr: { en: 'Turkish “bank” means bench — a bank for money is “banka”.', de: '„bank“ heißt auf Türkisch Sitzbank — die Bank für Geld heißt „banka“.' } } },
   candle: { amb: { tr: { en: 'Turkish “mum” means candle — nothing to do with your mum!' } } },
   'cell phone': { amb: { de: { en: 'German “Handy” means mobile phone — not ‘handy’ (useful).' } } },
-  eyeglasses: { amb: { en: { de: '„glasses“ heißt auch Trinkgläser.', tr: '“glasses” içme bardakları anlamına da gelir.' } } },
+  eyeglasses: { amb: { en: { de: '„glasses“ heißt auch Trinkgläser.', tr: '“glasses” aynı zamanda bardaklar demek.' } } },
+  // Sprach-Review 3 Nr. 2–4
+  pants: { amb: { en: { tr: 'Burada “trousers” diyoruz, çünkü İngiliz İngilizcesinde “pants” iç çamaşırı demek.' } } },
 };
+Object.assign(PATCH2.clock.amb.de, { en: 'German “Uhr” also means a watch — and it’s used for the time (“3 Uhr” = 3 o’clock).', tr: 'Almanca “Uhr” aynı zamanda kol saati demek; saati söylerken de kullanılır (“3 Uhr” = saat üç).' });
 
 function deepMerge(a, b) { for (const [k, v] of Object.entries(b)) { if (v && typeof v === 'object' && !Array.isArray(v)) { a[k] = deepMerge(a[k] && typeof a[k] === 'object' ? a[k] : {}, v); } else a[k] = v; } return a; }
 for (const f of ['data/words.src.json', 'data/words.json']) {

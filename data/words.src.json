@@ -1544,8 +1544,8 @@
     "tr": "“saat” aynı zamanda zaman birimi ve kol saati demek."
    },
    "de": {
-    "en": "German “Uhr” also means a watch — and the time (“3 Uhr”).",
-    "tr": "Almanca “Uhr” kol saati ve saat (“3 Uhr”) anlamına da gelir."
+    "en": "German “Uhr” also means a watch — and it’s used for the time (“3 Uhr” = 3 o’clock).",
+    "tr": "Almanca “Uhr” aynı zamanda kol saati demek; saati söylerken de kullanılır (“3 Uhr” = saat üç)."
    }
   }
  },
@@ -2331,7 +2331,7 @@
    "en": {
     "de": "„pants“ heißt in den USA Hose, in Großbritannien Unterhose — darum „trousers“.",
     "en": "We use “trousers”: in British English “pants” means underwear.",
-    "tr": "“trousers” kullanıyoruz: İngiliz İngilizcesinde “pants” iç çamaşırı demek."
+    "tr": "Burada “trousers” diyoruz, çünkü İngiliz İngilizcesinde “pants” iç çamaşırı demek."
    }
   }
  },
@@ -2387,7 +2387,7 @@
   "amb": {
    "en": {
     "de": "„glasses“ heißt auch Trinkgläser.",
-    "tr": "“glasses” içme bardakları anlamına da gelir."
+    "tr": "“glasses” aynı zamanda bardaklar demek."
    }
   }
  },

@@ -137,6 +137,26 @@ with server() as base, sync_playwright() as p:
         page.evaluate('() => window.__home()')
     S.run('Juice Runde', juice_round)
 
+    def help_path():
+        page.evaluate('() => window.__settings({native: "en", learn: "tr", airOffered: true})')
+        page.evaluate('() => window.__setDate("2026-10-17")')
+        plan = page.evaluate('() => window.__plan()'); wid = plan['slots'][0]['id']
+        page.evaluate('() => window.__startDaily()')
+        wait_state(page, f's.round && s.round.target === {json.dumps(wid)}', 20000)
+        page.wait_for_selector('#round-help:not([hidden])', timeout=12000)
+        S.check('Hilfe-Knopf „Show me how others draw it" erscheint nach 8 s (UI-Sprache)', 'others draw' in (page.text_content('#round-help') or ''))
+        t_click = page.evaluate('() => performance.now()')
+        page.click('#round-help', force=True)
+        s = wait_state(page, f's.lastResult && s.lastResult.id === {json.dumps(wid)}', 10000)
+        page.wait_for_timeout(800); s = page.evaluate('() => window.__state()')
+        v_after = [v for v in s['voiceLog'] if v['t'] >= t_click]; fx_after = [x['name'] for x in s['fxLog'] if x['t'] >= t_click]
+        S.check('Hilfe-Weg: Blase „Bakalım başkaları nasıl çizmiş." statt „Zeit ist um", kein Zeit-um-Clip/-Ton, Wort in 3 Sprachen', s['bubble'] and 'Bakalım' in s['bubble']['text'] and not any('/x/timeup' in q for v in v_after for q in v['parts']) and 'timeup' not in fx_after and any(len(v['parts']) == 3 for v in v_after), (s['bubble'], [v['parts'] for v in v_after], fx_after))
+        page.wait_for_selector('#round-overlay .others canvas', timeout=6000)
+        aria = page.get_attribute('#round-close', 'aria-label')
+        S.check('aria-label folgt der UI-Sprache (EN: Close)', aria == 'Close', aria)
+        page.evaluate('() => window.__home()')
+    S.run('Hilfe-Weg', help_path)
+
     def juice_article():
         page.evaluate('() => window.__settings({native: "en", learn: "de", airOffered: true})')
         page.evaluate('() => window.__setDate("2026-10-13")')

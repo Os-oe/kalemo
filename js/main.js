@@ -64,6 +64,7 @@ app.applyTexts = applyTexts;
 function applyTexts() {
   setUiLang(app.settings.native);
   for (const el of document.querySelectorAll('[data-t]')) el.textContent = t(el.dataset.t);
+  for (const el of document.querySelectorAll('[data-t-aria]')) el.setAttribute('aria-label', t(el.dataset.tAria));
   renderStart();
 }
 
