@@ -2,6 +2,7 @@
 // Plus Luft-Modus-Einstieg (Onboarding-Kette) und Kamera-Fallbacks.
 import { t, word, strokeColor, ART_COLOR, ART_TEXT, cap, funnyAllowed } from '../core/i18n.js';
 import { saveSettings } from '../core/store.js';
+import { pickFunniest } from '../core/funny.js';
 import { handSvg, POSES } from './hands.js';
 import { escapeHtml } from './round.js';
 
@@ -234,7 +235,8 @@ export function installFlow(app) {
     app.lastResult = out;
     if (out.result === 'hit' || out.parts > 0) {
       const strokes = out.drawings?.length ? out.drawings[0] : out.strokes;
-      app.dict.put(w.id, { strokes, date: app.today(), articleOk, funny: out.bestWrong && funnyAllowed(w.id, out.bestWrong.id) ? out.bestWrong.id : null }).then(() => app.onDictChange?.());
+      const ft = pickFunniest([out]); // nur ein Tipp, der wirklich in der Blase stand (R2-P3-2)
+      app.dict.put(w.id, { strokes, date: app.today(), articleOk, funny: ft ? ft.id : null }).then(() => app.onDictChange?.());
     }
     const extraHtml = plural && out.tip ? `<p class="tipcard">${escapeHtml(out.tip)}</p>` : '';
     await app.round.resultCard(out, { plural, extraHtml, forceHit: !!(plural && out.parts > 0) });

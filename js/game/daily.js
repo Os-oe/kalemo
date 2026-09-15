@@ -1,8 +1,9 @@
 // Tagesskizze: 5 Slots nacheinander, danach Tagesende.
 import { planFor, addDays } from '../core/plan.js';
-import { dayResult, saveDayResult, bumpStreak } from '../core/store.js';
-import { t, funnyAllowed } from '../core/i18n.js';
+import { dayResult, saveDayResult, bumpStreak, store } from '../core/store.js';
+import { t } from '../core/i18n.js';
 import { compact } from '../core/codec.js';
+import { pickFunniest, RECENT_MAX } from '../core/funny.js';
 import { recordWeak } from './practice.js';
 
 export async function playDaily(app, { practice = false } = {}) {
@@ -27,15 +28,17 @@ export async function playDaily(app, { practice = false } = {}) {
     number: plan.number, date: iso, pair: `${app.settings.learn}`, native: app.settings.native,
     hits: run.results.filter((r) => r.result === 'hit').length,
     points: run.results.reduce((a, r) => a + (r.points || 0), 0),
-    results: run.results.map((r) => { const c = compact(r.strokes || []); return { id: r.id, kind: r.kind, result: r.result, hitAt: r.hitAt, points: r.points, n: r.n, parts: r.parts,
-      articleOk: r.articleOk, real: r.real, bestWrong: r.bestWrong, strokes: c.strokes, timing: c.timing, drawings: r.drawings?.map((d) => compact(d).strokes) }; }),
-    funniest: run.results.map((r) => r.bestWrong && { target: r.id, ...r.bestWrong }).filter((f) => f && funnyAllowed(f.target, f.id)).sort((a, b) => b.p - a.p)[0] || null,
+    results: run.results.map((r) => { const c = compact(r.strokes || []); return { id: r.id, kind: r.kind, result: r.result, hitAt: r.hitAt, drawMs: r.drawMs ?? null, points: r.points, n: r.n, parts: r.parts,
+      articleOk: r.articleOk, real: r.real, bestWrong: r.bestWrong, tips: (r.tips || []).map((x) => ({ id: x.id, p: x.p })), strokes: c.strokes, timing: c.timing, drawings: r.drawings?.map((d) => compact(d).strokes) }; }),
+    // Iteration 2 (R2-P3-2): nur Rateversuche, die in der Sprechblase standen, nie ein Tageswort, mit Wiederholungs-Bremse
+    funniest: pickFunniest(run.results, { exclude: plan.slots.map((s) => s.id), recent: store.get('funnyRecent', []) }),
     learn: app.settings.learn,
     scored,
   };
   if (scored) {
     saveDayResult(iso, summary);
     bumpStreak(iso, addDays(iso, -1));
+    if (summary.funniest) store.set('funnyRecent', [...store.get('funnyRecent', []), summary.funniest.id].slice(-RECENT_MAX));
   }
   run.summary = summary;
   await app.showDayEnd(summary);

@@ -35,6 +35,12 @@ export const T = {
     todayScore: 'Heute {x}/5', nextInH: 'Neue Skizze in {h} h', nextInMin: 'Neue Skizze in {m} min', challengeShort: 'Herausfordern',
     funniest: 'Lustigster KI-Tipp', share: 'Teilen', challenge: 'Jemanden herausfordern', toDict: 'Zum Bildwörterbuch', home: 'Start',
     shareText: 'Kalemo #{n} · {pair} · {x}/5 · Serie {s}', shareCopied: 'Text kopiert.', shareSave: 'Bild speichern', shareLong: 'Lange drücken zum Speichern',
+    shareCopyText: 'Text kopieren',
+    landingLead: 'Jemand hat dir etwas in die Luft gemalt. Rate, was es ist — dann malst du zurück.', duelDailyFirst: 'Erst Tagesskizze #{n} (2 Min) — dann das Duell', duelDirect: 'Direkt ansehen', duelNew: 'Neues Duell', duelBackToDuel: 'Zurück zum Duell',
+    duelSenderDrew: 'Absender hat in {b} s gemalt', duelSenderMissed: 'Die KI hat die Zeichnung des Absenders nicht erkannt.', duelBeat: 'Jetzt du: Mal ein Wort — schneller als {b} s?', duelBeatAny: 'Jetzt du: Mal ein Wort zurück!',
+    duelLostRound: 'Diese Runde geht an den Absender — mal trotzdem zurück!', duelCompare: 'Du hast in {a} s gemalt — Absender {b} s.', duelYouMissed: 'Die KI hat deine Zeichnung nicht erkannt — Absender {b} s.',
+    duelLeadYou: 'Du führst {a}:{b}', duelLeadThem: 'Absender führt {b}:{a}', duelTied: 'Gleichstand {a}:{b}', duelWrongRound: 'Diesmal nicht erraten — die Runde geht an den Absender.', duelTie: 'Unentschieden — die KI hat keine der beiden Zeichnungen erkannt.',
+    duelShowLink: 'Link anzeigen', duelSendBack: 'Zurückschicken',
     yesterdayCard: 'Karte von gestern', todayCard: 'Karte von heute',
     duelT: 'Luft-Duell', duelPick: 'Wähle ein Wort', duelDraw: 'Mal es — im Link steckt nur diese eine Zeichnung.',
     duelLink: 'Dein Duell-Link', duelSend: 'Link teilen', duelCopy: 'Link kopieren', duelCopied: 'Link kopiert.', duelCopyManual: 'Link markieren und kopieren.',
@@ -87,6 +93,12 @@ export const T = {
     todayScore: 'Today {x}/5', nextInH: 'New sketch in {h} h', nextInMin: 'New sketch in {m} min', challengeShort: 'Challenge',
     funniest: 'Funniest AI guess', share: 'Share', challenge: 'Challenge a friend', toDict: 'Picture Dictionary', home: 'Home',
     shareText: 'Kalemo #{n} · {pair} · {x}/5 · Streak {s}', shareCopied: 'Text copied.', shareSave: 'Save image', shareLong: 'Press and hold to save',
+    shareCopyText: 'Copy text',
+    landingLead: 'Someone drew something in the air for you. Guess what it is — then draw one back.', duelDailyFirst: 'Daily Sketch #{n} first (2 min) — then the duel', duelDirect: 'Watch it now', duelNew: 'New duel', duelBackToDuel: 'Back to the duel',
+    duelSenderDrew: 'The sender drew it in {b} s', duelSenderMissed: 'The AI didn’t recognise the sender’s drawing.', duelBeat: 'Your turn: draw a word — faster than {b} s?', duelBeatAny: 'Your turn: draw one back!',
+    duelLostRound: 'This round goes to the sender — draw one back anyway!', duelCompare: 'You drew it in {a} s — sender {b} s.', duelYouMissed: 'The AI didn’t recognise your drawing — sender {b} s.',
+    duelLeadYou: 'You lead {a}:{b}', duelLeadThem: 'The sender leads {b}:{a}', duelTied: 'Tied {a}:{b}', duelWrongRound: 'Not guessed this time — the round goes to the sender.', duelTie: 'A draw — the AI didn’t recognise either drawing.',
+    duelShowLink: 'Show link', duelSendBack: 'Send it back',
     yesterdayCard: 'Yesterday’s card', todayCard: 'Today’s card',
     duelT: 'Air Duel', duelPick: 'Pick a word', duelDraw: 'Draw it — your link only contains this one drawing.',
     duelLink: 'Your duel link', duelSend: 'Share link', duelCopy: 'Copy link', duelCopied: 'Link copied.', duelCopyManual: 'Select the link and copy it.',
@@ -139,6 +151,12 @@ export const T = {
     todayScore: 'Bugün {x}/5', nextInH: 'Yeni çizim {h} saat sonra', nextInMin: 'Yeni çizim {m} dakika sonra', challengeShort: 'Meydan oku',
     funniest: 'En komik tahmin', share: 'Paylaş', challenge: 'Arkadaşına meydan oku', toDict: 'Resimli Sözlük', home: 'Ana sayfa',
     shareText: 'Kalemo #{n} · {pair} · {x}/5 · Seri {s}', shareCopied: 'Metin kopyalandı.', shareSave: 'Resmi kaydet', shareLong: 'Kaydetmek için basılı tut',
+    shareCopyText: 'Metni kopyala',
+    landingLead: 'Biri senin için havaya bir şey çizdi. Ne olduğunu tahmin et — sonra sen de çiz.', duelDailyFirst: 'Önce Günün Çizimi #{n} (2 dk) — sonra düello', duelDirect: 'Hemen izle', duelNew: 'Yeni düello', duelBackToDuel: 'Düelloya dön',
+    duelSenderDrew: 'Gönderen {b} saniyede çizdi', duelSenderMissed: 'Yapay zekâ gönderenin çizimini tanıyamadı.', duelBeat: 'Sıra sende: bir kelime çiz — {b} saniyeden hızlı mı?', duelBeatAny: 'Sıra sende: sen de bir kelime çiz!',
+    duelLostRound: 'Bu tur gönderenin — yine de sen de çiz!', duelCompare: 'Sen {a} saniyede çizdin — gönderen {b} saniyede.', duelYouMissed: 'Yapay zekâ çizimini tanıyamadı — gönderen {b} saniyede.',
+    duelLeadYou: 'Öndesin: {a}:{b}', duelLeadThem: 'Gönderen önde: {b}:{a}', duelTied: 'Berabere: {a}:{b}', duelWrongRound: 'Bu sefer bilemedin — tur gönderenin.', duelTie: 'Berabere — yapay zekâ iki çizimi de tanıyamadı.',
+    duelShowLink: 'Linki göster', duelSendBack: 'Geri gönder',
     yesterdayCard: 'Dünün kartı', todayCard: 'Bugünün kartı',
     duelT: 'Havada Düello', duelPick: 'Bir kelime seç', duelDraw: 'Çiz — linkinde yalnızca bu çizim var.',
     duelLink: 'Düello linkin', duelSend: 'Linki paylaş', duelCopy: 'Linki kopyala', duelCopied: 'Link kopyalandı.', duelCopyManual: 'Linki seçip kopyala.',
@@ -232,6 +250,26 @@ export function funnyLine(target, guess, lang) {
     return `At first, the AI thought my ${target.en.word} ${PL.has(target.en.word) ? 'were' : 'was'} ${art}${g}.`;
   }
   return `Yapay zekâ ${target.tr.word} yerine önce ${guess.tr.word} dedi.`;
+}
+/**
+ * Iteration 2 (Spoiler-Entscheidung Punkt 2a): teilbarer Satz OHNE Zielwort — Neugier-Lücke mit Wortnummer der Tagesskizze.
+ * DE „Die KI hielt Wort 3 erst für ein Bein. Was hab ich gemalt?" · EN „At first, the AI thought word 3 was a leg. What did I draw?"
+ * TR „Yapay zekâ 3. kelimeyi önce bacak sandı. Ne çizdim?"
+ */
+export function funnyQuiz(n, guess, lang) {
+  if (lang === 'de') {
+    const ind = guess.de.mass ? '' : { der: 'einen ', die: 'eine ', das: 'ein ' }[guess.de.art];
+    const noun = (guess.de.art === 'der' && guess.de.akk) || guess.de.noun; // n-Deklination: für einen Löwen
+    return `Die KI hielt Wort ${n} erst für ${ind}${noun}. Was hab ich gemalt?`;
+  }
+  if (lang === 'en') {
+    const PL = new Set(['glasses', 'trousers', 'scissors', 'stairs', 'drums', 'grapes']);
+    const PAIR = new Set(['glasses', 'trousers', 'scissors']);
+    const g = guess.en.word;
+    const art = PAIR.has(g) ? 'a pair of ' : PL.has(g) ? 'some ' : guess.en.mass ? '' : /^[aeiou]/i.test(g) ? 'an ' : 'a ';
+    return `At first, the AI thought word ${n} was ${art}${g}. What did I draw?`;
+  }
+  return `Yapay zekâ ${n}. kelimeyi önce ${guess.tr.word} sandı. Ne çizdim?`;
 }
 /** Satz in Anführungszeichen der UI-Sprache */
 export const quoted = (s, lang) => (lang === 'de' ? `„${s}“` : `“${s}”`);

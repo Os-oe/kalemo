@@ -1,22 +1,44 @@
-// Attract-Loop auf dem Start (Motion-Pflicht ab Sekunde 0): Hand-Silhouette malt eine Katze als Leuchtspur.
-// Iteration 1 (Review P2-8): EINE Schleife pro Lernsprache — Wort → Tipps nur in der Lernsprache → Treffer →
-// Katze hüpft → Belohnungs-Karte „kedi · die Katze · cat" (Lern-, Mutter-, dritte Sprache).
-// P3-16: Tagline beginnt in der Muttersprache. P3-7: prefers-reduced-motion → Standbild (fertige Katze + Karte).
+// Attract-Loop auf dem Start (Motion-Pflicht ab Sekunde 0): Hand-Silhouette malt ein Motiv als Leuchtspur.
+// Iteration 1 (Review P2-8): EINE Schleife pro Lernsprache — Wort → Tipps nur in der Lernsprache → Treffer → Motiv lebt →
+// Belohnungs-Karte „mantar · der Pilz · mushroom" (Lern-, Mutter-, dritte Sprache).
+// Iteration 2 (R2-P3-1): das Motiv ist nie ein Wort der kuratierten Launch-Tage #1–#14 und nie ein Wort des heutigen Plans
+// (vorher immer die Katze = Wort 1 von Tag #1). Eigenes Motiv je Lernsprache, Fallback-Reihe bei Überschneidung; Tipps ebenso gefiltert.
+// P3-16: Tagline beginnt in der Muttersprache. P3-7: prefers-reduced-motion → Standbild (fertiges Motiv + Karte).
 import { drawStrokes, reducedMotion, rgba } from './ink.js';
 import { drawPointerSilhouette } from './hands.js';
 import { t, word, cap, LANGS, ART_TEXT } from '../core/i18n.js';
+import { planFor, CURATED } from '../core/plan.js';
 
 export const LOOP = 11.6;
 const DRAW_START = 0.5, DRAW_END = 5.2, HIT_AT = 5.5, CARD_AT = 7.0, FADE = 0.5;
-const TIPS = [[1.8, 2.9, 'moon'], [3.1, 4.1, 'sun'], [4.2, 5.2, 'owl']];
-// Katzenkopf = data/others.json cat[0] (kuratierte Quick-Draw-Zeichnung, CC BY 4.0), eingebettet — der Start braucht so kein others.json
-export const CAT = [[[24,27,36,64,84,107,130,152,170,200,216,218,215,205,191,173,153,115,99,69,41,27,24,24,29,40,53,84],[116,96,83,57,46,38,35,35,40,62,95,133,154,175,194,209,220,225,225,214,190,167,151,132,112,94,80,58]],[[202,248,255,218],[47,12,10,128]],[[65,55,4,1,14,23,34],[66,46,0,97,117,124,127]],[[204,223,230,225,212,215],[68,46,44,65,92,92]]];
+const TIP_TIMES = [[1.8, 2.9], [3.1, 4.1], [4.2, 5.2]];
+// Kuratierte Quick-Draw-Zeichnungen (data/examples.json, CC BY 4.0), eingebettet — der Start braucht so keine Datendatei
+export const MOTIFS = {
+  mushroom: { tips: ['hat', 'ice cream', 'leaf'], strokes: [[[79,83,96,90,63,1,0,12,37,85,111,125,144,191,206,226,247,255,184,150,130,113,96,69],[234,197,146,143,140,118,114,94,69,27,7,1,0,20,31,55,100,148,120,112,112,156,233,218]],[[97,108,110,137],[144,102,105,113]],[[88,82,82,86,99,116,122,124,122,114,98,88],[49,66,80,82,82,74,67,53,41,36,36,41]],[[182,163,159,160,173,191,199,202,208,208,199,189],[66,82,89,93,102,106,104,98,69,54,50,50]],[[53,73,82,86,87,81,62,44,44],[115,130,133,122,99,92,90,105,108]],[[36,59,69,70],[64,68,50,33]],[[154,160],[17,29]]] },
+  'soccer ball': { tips: ['moon', 'clock', 'watermelon'], strokes: [[[129,114,106,59,27,12,6,1,2,12,29,43,68,104,124,157,179,198,214,220,224,224,214,179,151,119,97],[249,255,254,229,198,177,164,138,90,68,41,25,8,0,0,11,25,44,71,94,129,168,194,235,248,253,251]],[[26,36,48,53,53,47,10],[52,55,74,91,111,123,164]],[[63,69,84,90,107,128,155,185],[16,43,67,73,78,76,61,23]],[[208,186,167,161,161,168,181,198,227],[88,92,104,113,139,157,170,179,186]],[[74,74,91,114,139,156,173,184,181],[233,221,201,190,190,195,209,238,245]],[[120,102,88,81,79,87,93,113,126,135,135,125,107,98,97],[141,143,138,131,114,102,99,96,100,109,120,139,141,135,127]]] },
+  'light bulb': { tips: ['pear', 'hot air balloon', 'ice cream'], strokes: [[[78,82,96,102,128,144,151,152,151,146],[170,201,244,251,255,249,232,174,167,163]],[[75,95,148],[168,164,162]],[[135,112,116,135,121],[183,189,198,213,234]],[[88,66,63,64,74,83,114,129,150,159,167,165,154,151],[167,134,126,107,84,76,64,63,68,72,84,112,134,154]],[[61,28],[53,27]],[[35,0],[93,100]],[[141,170],[27,0]],[[196,233],[91,85]]] },
+  rain: { tips: ['moon', 'hat', 'leaf'], strokes: [[[5,0,11,29,43,79,83,91,101,120,160,180,185,197,219,243,251,255,252,240,228,208,156,112,104,101,102,94,80,62,39,17,8,8],[21,54,73,80,80,71,83,91,96,96,84,70,80,84,82,72,66,58,41,20,11,4,2,13,21,30,16,6,1,0,2,10,15,24]],[[46,36,36,41,48,48],[94,107,113,114,108,98]],[[109,107,117,117,111],[112,126,127,119,110]],[[169,168,173,177,172],[110,129,129,125,112]],[[61,56,58,67,68,64],[152,166,173,173,162,153]],[[126,123,132,133,126],[159,176,178,176,162]],[[191,191,197,199,199,193],[160,170,173,171,162,156]]] },
+  helicopter: { tips: ['hat', 'clock', 'leaf'], strokes: [[[82,57,35,24,24,41,75,117],[81,80,97,113,140,158,179,180]],[[103,174,175,167,156,124,81,72],[180,186,138,117,105,95,72,72]],[[90,47],[180,220]],[[28,244],[220,218]],[[140,160],[189,218]],[[90,93],[74,51]],[[88,0,10],[50,47,52]],[[90,92],[51,0]],[[94,164],[51,54]]] },
+};
+/** Eigenes Motiv je Lernsprache, danach die Fallback-Reihe */
+const ORDER = { tr: ['mushroom', 'soccer ball', 'light bulb', 'rain', 'helicopter'], de: ['soccer ball', 'mushroom', 'light bulb', 'rain', 'helicopter'], en: ['light bulb', 'mushroom', 'soccer ball', 'rain', 'helicopter'] };
+const SPARE_TIPS = ['moon', 'hat', 'clock', 'leaf', 'onion', 'cookie', 'potato', 'pear', 'ice cream', 'watermelon'];
+const CURATED_IDS = new Set(CURATED.flat().map(([id]) => id));
+
+/** Motiv + 3 Tipps für Lernsprache und Datum (pure, testbar) */
+export function pickMotif(learn, planIds, byId) {
+  const blocked = new Set([...CURATED_IDS, ...planIds]);
+  const id = (ORDER[learn] || ORDER.de).find((m) => !blocked.has(m) && byId.has(m)) || ORDER.de[0];
+  const tips = [...MOTIFS[id].tips, ...SPARE_TIPS].filter((x, i, a) => a.indexOf(x) === i && x !== id && !blocked.has(x) && byId.has(x)).slice(0, 3);
+  return { id, tips };
+}
+// Rückwärtskompatibel für Werkzeuge (Szenen, OG-Bild): früheres Katzen-Motiv
+export const CAT = MOTIFS.mushroom.strokes;
 
 export function installAttract(app) {
   const canvas = document.getElementById('attract'); const ctx = canvas.getContext('2d');
   const bubble = document.getElementById('attract-bubble'); const tag = document.getElementById('tagline');
-  let raf = null, t0 = 0, loopN = -1, lastBubble = '', staticKey = '', lastPair = '';
-  const strokes = CAT;
+  let raf = null, t0 = 0, loopN = -1, lastBubble = '', staticKey = '', lastPair = '', motif = null;
 
   function setBubble(key, html) {
     if (key === lastBubble) return; lastBubble = key;
@@ -25,9 +47,20 @@ export function installAttract(app) {
     if (key) { bubble.innerHTML = html; bubble.classList.remove('pop'); void bubble.offsetWidth; bubble.classList.add('pop'); }
   }
   const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
-  function rewardHtml(order) {
-    const cat = app.byId.get('cat'); if (!cat) return '';
-    return order.map((l, i) => `<span class="${i === 0 ? 'rw-first' : 'rw'}" lang="${l}"${l === 'de' ? ` style="color:${ART_TEXT[cat.de.art]}"` : ''}>${esc(word(cat, l))}</span>`).join('<i> · </i>');
+  function rewardHtml(order, w) {
+    if (!w) return '';
+    return order.map((l, i) => `<span class="${i === 0 ? 'rw-first' : 'rw'}" lang="${l}"${l === 'de' ? ` style="color:${ART_TEXT[w.de.art]}"` : ''}>${esc(word(w, l))}</span>`).join('<i> · </i>');
+  }
+  /** Motiv neu wählen (Sprachwechsel, neuer Tag) */
+  function choose() {
+    const { learn } = app.settings; const iso = app.today();
+    const planIds = app.words.length ? planFor(iso, app.words).slots.map((s) => s.id) : [];
+    const key = `${learn}|${iso}|${app.words.length}`;
+    if (motif && motif.key === key) return motif;
+    const m = pickMotif(learn, planIds, app.byId);
+    motif = { ...m, key, strokes: MOTIFS[m.id].strokes };
+    app.attract.info = { motif: m.id, tips: m.tips.slice(), date: iso, learn };
+    return motif;
   }
 
   function frame(now) {
@@ -37,9 +70,11 @@ export function installAttract(app) {
     if (!W || !H) return;
     const reduce = reducedMotion();
     const { learn, native } = app.settings;
+    const m = choose(); const mw = app.byId.get(m.id);
+    if (!mw) return;
     const third = LANGS.find((l) => l !== learn && l !== native);
     const order = [learn, native, third];
-    const key = `${W}x${H}|${learn}|${native}`;
+    const key = `${W}x${H}|${learn}|${native}|${m.id}`;
     if (reduce && staticKey === key) return; // Standbild: nur bei Größen-/Sprachwechsel neu zeichnen
     if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
     if (lastPair !== learn + native) { lastPair = learn + native; loopN = -1; lastBubble = ''; } // Sprachwechsel: Tagline + Blase sofort neu
@@ -59,14 +94,14 @@ export function installAttract(app) {
     const alive = reduce ? 0 : lt > HIT_AT + 0.15 ? Math.min(1, (lt - HIT_AT - 0.15) * 3) : 0;
     const fade = reduce ? 1 : lt > LOOP - FADE ? (LOOP - lt) / FADE : lt < 0.25 ? lt / 0.25 : 1;
     ctx.globalAlpha = fade;
-    const catW = app.byId.get('cat');
-    // Treffer-Glühen hinter der Katze
+    // Treffer-Glühen hinter dem Motiv
     if (lt >= HIT_AT && !reduce) {
       const g = Math.max(0, 1 - (lt - HIT_AT) / 1.4); const cx = W / 2, cy = box.y + box.h / 2, R = Math.min(W, H) * (0.3 + 0.25 * (1 - g));
       const gr = ctx.createRadialGradient(cx, cy, 0, cx, cy, R); gr.addColorStop(0, rgba('#FFC857', 0.28 * g)); gr.addColorStop(1, rgba('#FFC857', 0));
       ctx.fillStyle = gr; ctx.fillRect(0, 0, W, H);
     }
-    const fit = drawStrokes(ctx, strokes, { style: 'glow', color: '#FFC857', width: 3.4 * dpr * Math.max(0.8, W / (520 * dpr)), box, progress: p, motion: { kind: 'hop', id: 'cat' }, alive, t: lt, boil: alive ? 0.5 : 0 });
+    const strokes = m.strokes;
+    const fit = drawStrokes(ctx, strokes, { style: 'glow', color: '#FFC857', width: 3.4 * dpr * Math.max(0.8, W / (520 * dpr)), box, progress: p, motion: { kind: mw.motion === 'munch' ? 'hop' : mw.motion, id: m.id }, alive, t: lt, boil: alive ? 0.5 : 0 });
     // Funken beim Treffer
     if (!reduce && lt >= HIT_AT && lt < HIT_AT + 1.2 && fit) {
       const k = (lt - HIT_AT) / 1.2;
@@ -79,24 +114,31 @@ export function installAttract(app) {
       const s = strokes[Math.min(si, strokes.length - 1)]; const [hx, hy] = fit.map(s[0][Math.min(k, s[0].length - 1)], s[1][Math.min(k, s[0].length - 1)]);
       drawPointerSilhouette(ctx, hx, hy, 0.9 * dpr * Math.max(0.7, H / (360 * dpr)), { fill: 'rgba(255,251,239,0.14)', stroke: 'rgba(255,251,239,0.6)' });
     }
-    // Wort oben links (Klebeband sitzt jetzt oben rechts): nur das Wort in der Lernsprache
-    ctx.font = `700 ${Math.round(H * 0.1)}px Caveat, cursive`; ctx.fillStyle = 'rgba(255,251,239,0.92)'; ctx.textAlign = 'left';
-    ctx.fillText(word(catW, learn), W * 0.05, H * 0.15);
+    // Wort oben links (Klebeband sitzt oben rechts): nur das Wort in der Lernsprache, lange Wörter passen sich an
+    let fs = Math.round(H * 0.1); ctx.font = `700 ${fs}px Caveat, cursive`;
+    const label = word(mw, learn); const maxW = W * 0.62; const tw = ctx.measureText(label).width;
+    if (tw > maxW) { fs = Math.max(10, Math.floor(fs * maxW / tw)); ctx.font = `700 ${fs}px Caveat, cursive`; }
+    ctx.fillStyle = 'rgba(255,251,239,0.92)'; ctx.textAlign = 'left';
+    ctx.fillText(label, W * 0.05, H * 0.15);
     ctx.globalAlpha = 1;
     // KI rät — nur in der Lernsprache; dann Treffer; dann Belohnungs-Karte in 3 Sprachen
     let bKey = '', bHtml = '';
     if (!reduce) {
-      for (const [a, b, id] of TIPS) if (lt > a && lt < b) { bKey = 'tip' + id; bHtml = esc(t('guessHmm', { w: word(app.byId.get(id), learn) }, learn)); }
-      if (lt >= HIT_AT && lt < CARD_AT) { bKey = 'hit'; bHtml = esc(t('guessHit', { w: cap(word(catW, learn), learn) }, learn)); }
+      m.tips.forEach((id, i) => { const [a, b] = TIP_TIMES[i]; if (lt > a && lt < b) { bKey = 'tip' + id; bHtml = esc(t('guessHmm', { w: word(app.byId.get(id), learn) }, learn)); } });
+      if (lt >= HIT_AT && lt < CARD_AT) { bKey = 'hit' + m.id; bHtml = esc(t('guessHit', { w: cap(word(mw, learn), learn) }, learn)); }
     }
-    if (lt >= CARD_AT && lt < LOOP - 0.35) { bKey = 'card' + order.join(''); bHtml = rewardHtml(order); }
+    if (lt >= CARD_AT && lt < LOOP - 0.35) { bKey = 'card' + order.join('') + m.id; bHtml = rewardHtml(order, mw); }
     setBubble(bKey, bHtml);
     if (reduce) staticKey = key;
   }
   app.attract = {
+    info: null,
     start() { if (raf || !canvas) return; t0 = performance.now(); loopN = -1; staticKey = ''; lastBubble = ''; raf = requestAnimationFrame(frame); },
     stop() { if (raf) cancelAnimationFrame(raf); raf = null; },
     /** Test: Zustand zu einem Schleifen-Zeitpunkt */
     at: (sec) => { t0 = performance.now() - sec * 1000; loopN = -1; },
+    /** Tageswechsel/Sprachwechsel: Motiv neu wählen */
+    refresh: () => { motif = null; lastBubble = ''; staticKey = ''; },
   };
+  choose();
 }

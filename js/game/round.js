@@ -118,6 +118,7 @@ export class RoundController {
     const { native, learn } = this.app.settings;
     if (g && native !== learn && (!this.active || g.id !== this.active.w.id)) { const s = document.createElement('small'); s.className = 'bubble-sub'; s.lang = native; s.textContent = word(g, native); b.append(s); }
     b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
+    if (this.app.TEST) (this.app.bubbleLog ||= []).push({ target: this.active?.w.id || null, guess: g?.id || null, text: b.textContent }); // Iteration 2: Zitat-Quelle prüfbar
   }
 
   _loop(now) {

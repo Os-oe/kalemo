@@ -83,9 +83,16 @@ function renderStart() {
   const st = streak(iso, addDays(iso, -1));
   const badge = $('#streak-badge'); badge.hidden = st < 1; badge.textContent = t('streak', { n: st });
   // „Gestern gemalt"-Kachel, sobald eine Gestern-Karte existiert
-  const y = dayResult(addDays(iso, -1)); const tile = $('#btn-yesterday');
-  tile.hidden = !y;
-  if (y) { const c = tile.querySelector('canvas'); const r = y.results.find((x) => x.strokes?.length); if (r) mount(c, { strokes: r.strokes, color: '#1E2A3A', style: 'pencil', width: 2, still: true }); app.yesterday = y; }
+  const y = dayResult(addDays(iso, -1)); const tile = $('#yesterday-tile');
+  tile.hidden = !y; app.yesterdayTileId = null;
+  if (y) {
+    // Iteration 2 (G1): nie eine Zeichnung zeigen, deren Wort auch heute dran ist (z. B. Wiederholung) — vor dem Spielen kein Spoiler
+    const todayIds = plan.slots.map((s) => s.id);
+    const c = tile.querySelector('canvas'); unmountAll(tile); c.getContext('2d').clearRect(0, 0, c.width, c.height);
+    const r = y.results.find((x) => x.strokes?.length && !todayIds.includes(x.id));
+    if (r) { mount(c, { strokes: r.drawings?.length ? r.drawings[0] : r.strokes, color: '#1E2A3A', style: 'pencil', width: 2, still: true }); app.yesterdayTileId = r.id; }
+    app.yesterday = y;
+  }
 }
 
 /** Ergebnis-Kachel „Heute x/5 · Teilen · Herausfordern" + „Neue Skizze in 14 h" (Review P2-2) */
@@ -231,11 +238,13 @@ async function boot() {
     document.documentElement.style.setProperty('--px', ((e.clientX / innerWidth - 0.5) * 8).toFixed(1) + 'px');
     document.documentElement.style.setProperty('--py', ((e.clientY / innerHeight - 0.5) * 8).toFixed(1) + 'px');
   }, { passive: true });
-  $('#btn-yesterday').addEventListener('click', async () => {
-    const y = app.yesterday; if (!y) return; await app.ensureClf();
-    const card = await yesterdayCard(app, y); app.lastCard = { kind: 'yesterday', text: card.text, bytes: card.blob.size };
-    await shareImage(app, { blob: card.blob, filename: `kalemo-${y.number}-gestern.png`, text: card.text, forceFallback: !!app.TEST });
-  });
+  const shareYesterday = async () => {
+    const y = app.yesterday; if (!y) return; app.sfx?.play('tap'); await app.ensureClf();
+    const card = await yesterdayCard(app, y); app.lastCard = { kind: 'yesterday', text: card.text, bytes: card.blob.size, quote: card.quote, tiles: card.tiles };
+    await shareImage(app, { blob: card.blob, filename: `kalemo-${y.number}-gestern.png`, text: card.text, url: location.origin + location.pathname.replace(/index\.html$/, ''), forceFallback: !!app.TEST });
+  };
+  $('#btn-yesterday').addEventListener('click', (e) => { e.stopPropagation(); shareYesterday(); });
+  $('#yesterday-tile').addEventListener('click', () => shareYesterday());
   const hash = location.hash.match(/^#d=([A-Za-z0-9_-]+)/);
   if (hash) app.duel.receive(hash[1]);
   if (app.TEST) {

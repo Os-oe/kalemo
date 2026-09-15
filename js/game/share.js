@@ -18,20 +18,23 @@ export async function shareImage(app, { blob, filename = 'kalemo.png', text, url
     try { await navigator.share(data); return 'shared'; }
     catch (e) { if (e && e.name === 'AbortError') return 'cancelled'; }
   }
-  // Fallback
-  const copied = await copyText(data.text);
+  // Fallback. Iteration 2 (R2-P3-4): die Zwischenablage wird erst beim Tipp auf „Text kopieren" beschrieben, nie ungefragt
   const href = URL.createObjectURL(blob);
   const touch = matchMedia('(hover: none)').matches;
   const box = document.getElementById('sheet');
   box.innerHTML = `<div class="sheet-card" role="dialog" aria-label="${escapeHtml(t('share'))}">
     <span class="share-wrap"><img src="${href}" alt="" class="share-img"></span>
     ${touch ? `<p class="hint">${escapeHtml(t('shareLong'))}</p>` : ''}
-    ${copied ? `<p class="hint ok">${escapeHtml(t('shareCopied'))}</p>` : ''}
+    <p class="hint ok share-copied" hidden>${escapeHtml(t('shareCopied'))}</p>
     <div class="actions"><a class="btn primary" href="${href}" download="${escapeHtml(filename)}" data-act="save">${escapeHtml(t('shareSave'))}</a>
+    <button class="btn" data-act="copytext">${escapeHtml(t('shareCopyText'))}</button>
     <button class="btn ghost" data-act="close">${escapeHtml(t('close'))}</button></div></div>`;
   box.hidden = false;
-  app.lastShare = { mode: 'fallback', copied, filename, bytes: blob.size, text: data.text };
-  box.onclick = (e) => { if (e.target === box || e.target.closest('[data-act=close]')) { box.hidden = true; box.innerHTML = ''; URL.revokeObjectURL(href); } };
+  app.lastShare = { mode: 'fallback', copied: false, filename, bytes: blob.size, text: data.text };
+  box.onclick = async (e) => {
+    if (e.target.closest('[data-act=copytext]')) { const ok = await copyText(data.text); app.lastShare.copied = ok; const h = box.querySelector('.share-copied'); if (h) h.hidden = !ok; return; }
+    if (e.target === box || e.target.closest('[data-act=close]')) { box.hidden = true; box.innerHTML = ''; URL.revokeObjectURL(href); }
+  };
   return 'fallback';
 }
 
