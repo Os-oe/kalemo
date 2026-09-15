@@ -127,9 +127,17 @@ export function installFlow(app) {
     const card = showCard(`<h3>${escapeHtml(t('realQ', { w: label }))}</h3><div class="progress real"><i style="width:0%"></i></div><button class="btn ghost" data-act="skip">${escapeHtml(t('skip'))}</button>`, 'real');
     card.querySelector('[data-act=skip]').addEventListener('click', () => app.air.cancelHunt());
     await app.air.loadObjectDetector();
-    app.onRealFrame = (score, box, p) => { const bar = card.querySelector('.progress i'); if (bar) bar.style.width = Math.round(Math.min(1, p) * 100) + '%'; app.realBox = score >= 0.5 ? box : null; };
+    app.onRealFrame = (score, box, p) => {
+      const bar = card.querySelector('.progress i'); if (bar) bar.style.width = Math.round(Math.min(1, p) * 100) + '%';
+      if (score >= 0.5 && box && app.air.layout) { // Objekt-Rahmen glüht (Video-Pixel → Bühne, gespiegelt)
+        const L = app.air.layout(), vw = app.air.video.videoWidth || 640, vh = app.air.video.videoHeight || 480;
+        const x0 = L.ox + (1 - (box.originX + box.width) / vw) * L.dw, y0 = L.oy + (box.originY / vh) * L.dh;
+        app.stage.realBox = { x: x0, y: y0, w: (box.width / vw) * L.dw, h: (box.height / vh) * L.dh };
+      } else app.stage.realBox = null;
+    };
     const r = await app.air.hunt(w.echt);
-    app.onRealFrame = null; app.realBox = null;
+    app.onRealFrame = null; app.stage.realBox = r.found && r.box ? app.stage.realBox : null;
+    if (r.found) { app.stage.realGlowUntil = performance.now() + 1500; }
     if (r.found) { card.classList.add('stamp'); card.innerHTML = `<div class="x2">×2</div><h3>${escapeHtml(t('realOk'))}</h3>`; app.sfx?.play('fanfare'); await sleep(1500); }
     else if (!r.cancelled) { card.querySelector('h3').textContent = t('realNone'); await sleep(1100); }
     hideCard();
@@ -174,13 +182,15 @@ export function installFlow(app) {
     else out = await app.round.draw({ id: w.id, color: strokeColor(w, learn) });
     out.kind = slot.kind; out.n = plural; out.articleOk = articleOk;
     if (articleOk) out.points += 20;
+    const order = app.round.langOrder();
+    if (plural) app.voice?.announce(w.id, order, { delay: 400, plural });
+    else if (out.result === 'hit') app.voice?.hitAnnounce(w.id, order);
+    else app.voice?.missAnnounce(w.id, order);
+    await sleep(out.result === 'hit' ? 950 : 1000); // Treffer-/Zerbrösel-Animation wirken lassen
     if (out.result === 'hit' && !plural) {
-      app.voice?.announce(w.id, app.round.langOrder(), { delay: 700 });
       const real = await app.realStep(w);
       out.real = !!real; if (real) out.points *= 2;
     }
-    if (out.result !== 'hit') app.voice?.announce(w.id, app.round.langOrder(), { delay: 900, plural });
-    else if (plural) app.voice?.announce(w.id, app.round.langOrder(), { delay: 500, plural });
     app.lastResult = out;
     if (out.result === 'hit' || out.parts > 0) {
       const strokes = out.drawings?.length ? out.drawings[0] : out.strokes;

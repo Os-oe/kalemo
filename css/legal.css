@@ -1,0 +1,20 @@
+@font-face { font-family: 'Caveat'; font-weight: 400 700; font-display: swap; src: url(../fonts/v1/caveat-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F; }
+@font-face { font-family: 'Caveat'; font-weight: 400 700; font-display: swap; src: url(../fonts/v1/caveat-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+1E00-1E9F; }
+@font-face { font-family: 'Nunito'; font-weight: 200 1000; font-display: swap; src: url(../fonts/v1/nunito-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F; }
+@font-face { font-family: 'Nunito'; font-weight: 200 1000; font-display: swap; src: url(../fonts/v1/nunito-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+1E00-1E9F; }
+:root { --paper: #F7F1E3; --ink: #1E2A3A; --pencil: #6B7280; --gold: #FFC857; }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 400 1.02rem/1.6 'Nunito', system-ui, sans-serif; box-shadow: inset 18px 0 30px -18px rgba(30,42,58,.22); min-height: 100vh; }
+main { max-width: 760px; margin: 0 auto; padding: 24px 18px 60px; }
+a { color: #1D4ED8; }
+.back { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 800; text-decoration: none; color: var(--ink); }
+h1 { font-family: 'Caveat', cursive; font-size: 3.2rem; line-height: 1; margin: 12px 0 6px; }
+h2 { font-family: 'Caveat', cursive; font-size: 2rem; margin: 28px 0 6px; }
+h3 { font-size: 1.05rem; margin: 18px 0 4px; }
+nav.langs { display: flex; gap: 8px; margin: 6px 0 18px; }
+nav.langs a { font-weight: 800; padding: 6px 12px; border: 2px solid var(--ink); border-radius: 10px; text-decoration: none; color: var(--ink); min-height: 40px; display: inline-flex; align-items: center; }
+.note { background: #FFF6D6; border-radius: 12px; padding: 10px 14px; font-weight: 700; }
+section { border-top: 2px dashed rgba(30,42,58,.15); margin-top: 26px; }
+address { font-style: normal; }
+ul { padding-left: 1.2em; }
+:focus-visible { outline: 3px solid #1D4ED8; outline-offset: 3px; }

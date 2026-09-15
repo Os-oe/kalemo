@@ -49,7 +49,9 @@ export class Stage {
   setColor(c) { this.color = c; this._rebuildLayer(); }
   /** Stiftbreite relativ zur Bühne */
   get penWidth() { return Math.max(5.5, Math.min(11, Math.min(this.w, this.h) / 66)); }
-  clear() { this.strokes = []; this.widths = []; this.active = null; this.activeW = null; this.version++; this._rebuildLayer(); }
+  clear() { this.strokes = []; this.widths = []; this.active = null; this.activeW = null; this.crumbleAt = null; this.canvas.classList.remove('squash'); this.version++; this._rebuildLayer(); }
+  /** Zeit um: Zeichnung zerbröselt (keine Buzzer-Strafe) */
+  crumble() { this.crumbleAt = performance.now(); }
   inkLength() { return inkLength(this.active ? [...this.strokes, this.active] : this.strokes); }
   /** Alle Striche inkl. laufendem (Kopie) */
   allStrokes() { const all = this.active && this.active[0].length ? [...this.strokes, this.active] : this.strokes; return all.map((s) => [s[0].slice(), s[1].slice(), s[2].slice()]); }
@@ -145,10 +147,21 @@ export class Stage {
     ctx.save();
     if (this.twitch > 0) { const k = this.twitch; ctx.translate((Math.random() - 0.5) * 5 * k * dpr, (Math.random() - 0.5) * 5 * k * dpr); this.twitch = Math.max(0, k - dt * 5); }
     if (this.shift) ctx.translate(this.shift * dpr, 0);
-    ctx.drawImage(this.layer, 0, 0);
-    if (this.active) this._drawStroke(ctx, this.active, this.activeW, false);
+    if (this.crumbleAt != null) {
+      const k = Math.min(1, (now - this.crumbleAt) / 900);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawStrokes(ctx, this.strokes, { style: 'glow', color: this.color, width: this.penWidth * 0.9, crumble: k, seed: 5 });
+    } else {
+      ctx.drawImage(this.layer, 0, 0);
+      if (this.active) this._drawStroke(ctx, this.active, this.activeW, false);
+    }
     ctx.restore();
     if (this.ghosts.length) this._drawGhosts(ctx, now);
+    if (this.realBox && (!this.realGlowUntil || now < this.realGlowUntil)) {
+      const b = this.realBox, pulse = 0.6 + 0.4 * Math.sin(now / 120);
+      ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.strokeStyle = '#FFC857'; ctx.lineWidth = 5; ctx.shadowColor = '#FFC857'; ctx.shadowBlur = 24 * pulse;
+      ctx.beginPath(); ctx.roundRect ? ctx.roundRect(b.x, b.y, b.w, b.h, 18) : ctx.rect(b.x, b.y, b.w, b.h); ctx.stroke(); ctx.restore();
+    } else if (this.realGlowUntil && now >= this.realGlowUntil) { this.realBox = null; this.realGlowUntil = null; }
     this.sparks.update(dt);
     ctx.save(); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalCompositeOperation = 'lighter'; this.sparks.draw(ctx); ctx.restore();
     if (this.cursor && this.enabled) {

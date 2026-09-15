@@ -31,7 +31,7 @@
 <main id="screen-start" class="screen paper" aria-labelledby="title">
   <div class="start-wrap">
     <header class="start-head">
-      <h1 id="title" class="logo">Kalemo</h1>
+      <h1 id="title" class="logo">Kalemo<svg class="logo-trail" viewBox="0 0 220 26" aria-hidden="true"><path d="M6 16c30-10 60 8 92-2s62-10 116-3" pathLength="1"/></svg></h1>
       <p class="tagline" aria-live="polite"><span id="tagline"></span></p>
     </header>
     <div class="attract" aria-hidden="true"><canvas id="attract"></canvas><div class="attract-bubble" id="attract-bubble"></div></div>
@@ -40,7 +40,7 @@
       <label class="pair-col"><span data-t="iLearn"></span><div class="seg" id="pair-learn" role="radiogroup"></div></label>
     </section>
     <nav class="start-actions">
-      <button class="btn primary big" id="btn-daily"><span id="daily-label"></span><span class="badge" id="streak-badge" hidden></span></button>
+      <button class="btn primary big" id="btn-daily"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l1.2-4.6L16.5 4.1a2 2 0 0 1 2.8 0l.6.6a2 2 0 0 1 0 2.8L8.6 18.8z"/><path d="M14.5 6.1l3.4 3.4"/></svg><span id="daily-label"></span><span class="badge" id="streak-badge" hidden></span></button>
       <div class="row2">
         <button class="btn" id="btn-duel" data-t="duel"></button>
         <button class="btn" id="btn-dict" data-t="dict"></button>
@@ -60,6 +60,7 @@
   <div class="stage" id="stage">
     <canvas class="cam" hidden></canvas>
     <canvas class="ink"></canvas>
+    <canvas class="fx" aria-hidden="true"></canvas>
   </div>
   <header class="round-top">
     <button class="icon-btn" id="round-close" aria-label="Schließen"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>

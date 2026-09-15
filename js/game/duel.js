@@ -54,7 +54,8 @@ export function installDuel(app) {
         app.round.showWord(w); app.voice?.word(w.id, learn);
         const out = await app.round.draw({ id: w.id, color: strokeColor(w, learn) });
         app.lastResult = { ...out, kind: 'duel' };
-        await sleep(700);
+        if (out.result === 'hit') app.voice?.hitAnnounce(w.id, app.round.langOrder()); else app.voice?.missAnnounce(w.id, app.round.langOrder());
+        await sleep(1100);
         await duel.sendDrawing(w.id, out.strokes, out.result === 'hit' ? out.hitAt : 20000);
       };
     },

@@ -16,6 +16,8 @@ import { installDict } from './game/dict.js';
 import { yesterdayCard } from './game/cards.js';
 import { shareImage } from './game/share.js';
 import { mount } from './game/alive.js';
+import { installAudio } from './game/audio.js';
+import { installAttract } from './game/attract.js';
 
 /** Beim Rundenstart: Luft-Modus wieder aufnehmen, wenn früher erlaubt (Desktop, nicht abgelehnt) */
 async function startRoundMode() {
@@ -52,8 +54,9 @@ app.ui = {
 app.show = function (name) {
   for (const el of document.querySelectorAll('.screen')) el.hidden = el.id !== 'screen-' + name;
   document.body.dataset.screen = name; app.screen = name;
-  if (name === 'round' && app.stage) { app.stage.resize(); app.round.ensureLoop(); } // sofort messen, nicht erst im ResizeObserver (sonst 1×1-Bühne)
-  else if (app.round) app.round.stopLoop();
+  if (name === 'round' && app.stage) { app.stage.resize(); app.round.ensureLoop(); app.music?.stop(); } // sofort messen, nicht erst im ResizeObserver (sonst 1×1-Bühne)
+  else { if (app.round) app.round.stopLoop(); if (name !== 'duel') app.music?.play(); }
+  app.attract?.[name === 'start' ? 'start' : 'stop']();
   app.onScreen?.(name);
 };
 
@@ -126,7 +129,10 @@ async function boot() {
   app.words = words; app.byId = new Map(words.map((w) => [w.id, w]));
   app.stage = new Stage($('#stage'));
   app.round = new RoundController(app);
+  installAudio(app); installAttract(app); app.attract.start();
+  app.voice.preloadWords(planFor(app.today(), words).slots.map((s) => s.id), ['de', 'en', 'tr']); // Audio der 5 Tageswörter
   installFlow(app); installPlural(app); installDayEnd(app); installDuel(app); installDict(app);
+  window.addEventListener('pointerdown', () => { if (app.screen !== 'round') setTimeout(() => app.music?.play(), 50); }, { once: true });
   app.setMode('screen');
   applyTexts();
   if (inAppBrowser()) $('#inapp').hidden = false;

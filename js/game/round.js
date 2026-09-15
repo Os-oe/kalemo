@@ -2,7 +2,7 @@
 import { RoundEngine } from '../core/engine.js';
 import { t, word, cap, strokeColor, LANGS, pluralPhrase } from '../core/i18n.js';
 import { drawStrokes } from './ink.js';
-import { mount as mountAlive } from './alive.js';
+import { mount as mountAlive, confetti } from './alive.js';
 
 const CLASSIFY_MS = 450;
 const $ = (s, r = document) => r.querySelector(s);
@@ -53,8 +53,9 @@ export class RoundController {
         t0: performance.now(), endAt: null, deadline: opts.deadline || null,
       };
       engine.start(r.t0);
-      this.stage.cb.onStrokeEnd = () => this._classify(true);
+      this.stage.cb.onStrokeEnd = () => { app.sfx?.scribbleStop(); this._classify(true); };
       this.stage.cb.onStrokeStart = () => app.sfx?.play('penDown');
+      this.stage.cb.onPoint = (x, y, t, v) => app.sfx?.scribble(v);
       if (!this.raf) this.raf = requestAnimationFrame(this._loop);
     });
   }
@@ -129,14 +130,19 @@ export class RoundController {
       tips: snap.tips, bestWrong: snap.bestWrong, lastTop: snap.lastTop, predictions: snap.predictions,
       stage: { w: this.stage.w, h: this.stage.h },
     };
+    app.sfx?.scribbleStop();
+    const ink = this.stage.canvas;
     if (result === 'hit') {
       r.frozenUntil = performance.now() + 100; // Freeze 80–120 ms
       this.showBubble(t('guessHit', { w: cap(word(r.w, learn), learn) }, learn));
       app.sfx?.play('hit');
-      app.vibrate?.(40);
+      try { navigator.vibrate?.(40); } catch {}
+      setTimeout(() => { ink.classList.remove('squash'); void ink.offsetWidth; ink.classList.add('squash'); confetti(document.querySelector('#stage canvas.fx'), this.stage.color); }, 100);
+      setTimeout(() => app.sfx?.play(r.w.sfx), 520);
     } else {
       this.showBubble(t('timeUp', {}, learn));
-      app.sfx?.play('timeup');
+      this.stage.crumble();
+      app.sfx?.play('crumble'); app.sfx?.play('timeup');
     }
     this.active = null;
     r.resolve(out);
