@@ -169,7 +169,9 @@ export class RoundController {
     if (r.opts.finish === false) return this._complete(r, 'hit');
     // Fertig malen: Hinweis in der Blase (UI-Sprache), „Fertig"-Knopf, Karte nach Stift-Pause bzw. Deckel
     r.finishing = true; r.recognizedAt = performance.now(); r.recognizedStrokes = this.stage.strokes.length + (this.stage.active ? 1 : 0);
-    if (!pl || pl.i === pl.n) { const s = document.createElement('small'); s.className = 'bubble-hint'; s.lang = ui; s.textContent = near ? nearMissLine(near, ui) : t('finishHint', {}, ui); this.bubble.append(s); }
+    // Iteration 2 (Gate-Fund 17.09.): Beim Fertigmalen steht die Anleitung in der Blase; der Nachbar-Hinweis
+    // (R2-P3-15) würde sie verdrängen — er gehört auf die Treffer-Karte (out.nearMiss).
+    if (!pl || pl.i === pl.n) { const s = document.createElement('small'); s.className = 'bubble-hint'; s.lang = ui; s.textContent = t('finishHint', {}, ui); this.bubble.append(s); }
     const done = document.getElementById('round-done'); done.hidden = false; done.onclick = () => { app.sfx?.play('tap'); this._complete(r, 'hit', { carry: false }); };
     app.hooks.finishNow = () => this._complete(r, 'hit');
     r.capT = setTimeout(() => this._complete(r, 'hit', { carry: !!r.opts.carryOutside }), r.opts.finishCapMs ?? FINISH.capMs);
@@ -207,6 +209,7 @@ export class RoundController {
       elapsedMs: Math.round(result === 'hit' ? snap.hitAt : r.engine.duration),
       tips: snap.tips, bestWrong: snap.bestWrong, lastTop: snap.lastTop, predictions: snap.predictions,
       stage: { w: this.stage.w, h: this.stage.h }, recognizedStrokes: r.recognizedStrokes ?? null, carried: !!carry,
+      nearMiss: result === 'hit' ? r.nearMiss || null : null, // R2-P3-15: ehrlicher Hinweis auf der Karte
     };
     app.sfx?.scribbleStop();
     document.getElementById('round-help').hidden = true;

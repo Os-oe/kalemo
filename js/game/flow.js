@@ -1,6 +1,6 @@
 // Ablauf einer Tagesskizzen-Runde: Artikel-Schritt → Malen (bzw. Mehrzahl) → Hol es echt → Ergebnis.
 // Plus Luft-Modus-Einstieg (Onboarding-Kette) und Kamera-Fallbacks.
-import { t, word, strokeColor, ART_COLOR, ART_TEXT, cap, funnyAllowed } from '../core/i18n.js';
+import { t, word, strokeColor, ART_COLOR, ART_TEXT, cap, funnyAllowed, nearMissLine } from '../core/i18n.js';
 import { saveSettings } from '../core/store.js';
 import { pickFunniest } from '../core/funny.js';
 import { handSvg, POSES } from './hands.js';
@@ -292,7 +292,9 @@ export function installFlow(app) {
       const ft = pickFunniest([out]); // nur ein Tipp, der wirklich in der Blase stand (R2-P3-2)
       app.dict.put(w.id, { strokes, date: app.today(), articleOk, funny: ft ? ft.id : null }).then(() => app.onDictChange?.());
     }
-    const extraHtml = plural && out.tip ? `<p class="tipcard">${escapeHtml(out.tip)}</p>` : '';
+    // R2-P3-15: „Fast — das ist eher eine Brille. Zählt trotzdem!" auf der Treffer-Karte (nicht in der Blase, die erklärt das Fertigmalen)
+    const nearHtml = out.nearMiss ? `<p class="tipcard near">${escapeHtml(nearMissLine(out.nearMiss, app.settings.native))}</p>` : '';
+    const extraHtml = (plural && out.tip ? `<p class="tipcard">${escapeHtml(out.tip)}</p>` : '') + nearHtml;
     await app.round.resultCard(out, { plural, extraHtml, partial: !!(plural && out.partial) });
     return out; // Review P3-1: kein Luft-Angebot mehr direkt nach Treffer 1 — das Tagesende bietet es an
   };

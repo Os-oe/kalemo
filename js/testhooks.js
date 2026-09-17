@@ -55,6 +55,12 @@ export async function scene(app, name) {
       app.round.resultCard({ id: 'apple', result: 'timeout', parts: 2, n: 3, strokes: d[0], drawings: d, points: 67 }, { plural: 3, partial: true, extraHtml: '<p class="tipcard">Im Türkischen reicht die Zahl: üç elma</p>' });
       loop(); break;
     }
+    case 'duelresult': { // Iteration 2 (R2-P2-5): Ergebnis nach der eigenen Zeichnung + Link zurück
+      setPair('de', 'tr'); await app.ensureClf(); roundBase('owl'); app.stage.enabled = false;
+      const ex = await app.examples(); const st = ex.owl[0].strokes.map(([x, y]) => [x, y, x.map((_, i) => i * 30)]);
+      app.duel.sendDrawing('owl', st, 3300, null, { score: [1, 0], to: 4242, result: { key: 'faster', you: 1, them: 0, youMs: 3300, themMs: 9000, ok: true } });
+      loop(); break;
+    }
     case 'quit': { // Iteration 2 (R2-P2-8): Rückfrage beim Schließen der Tagesskizze
       setPair('de', 'tr'); await app.ensureClf(); playDaily(app); setTimeout(() => app.requestClose(), 1200); break;
     }

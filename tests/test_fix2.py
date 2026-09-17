@@ -95,9 +95,12 @@ with server(8792) as base, sync_playwright() as p:
                     S.check(f'Dauer-Malen nach dem Erkennen → Karte nach dem 4-s-Deckel ({dt:.0f} ms ab Erkennen)', 3800 <= dt <= 4600, dt)
                 else:
                     pg.evaluate('() => { const st = window.__kalemo.stage; st.beginStroke(10, 10); st.addPoint(30, 30); return 1; }')
+                    # Gemessen wird ab dem Klick, nicht ab dem Erkennen: auf einem ausgelasteten Rechner
+                    # liegen zwischen Erkennen und Klick sonst Sekunden, die nichts über das Produkt sagen.
+                    t_click = pg.evaluate('() => performance.now()')
                     pg.click('#round-done', force=True)
                     pg.wait_for_function('() => window.__kalemo._o', timeout=2000)
-                    dt = pg.evaluate('() => window.__kalemo._o.at') - t_rec
+                    dt = pg.evaluate('() => window.__kalemo._o.at') - t_click
                     S.check(f'Tipp auf „Fertig" → sofort weiter ({dt:.0f} ms), laufender Strich gehört dazu', dt < 1500 and pg.evaluate('() => window.__kalemo._o.strokes') == len(FIX['cat'][0]) + 1, dt)
             S.check('Deckel/Fertig: keine Seitenfehler', not errs, errs[:2])
         finally:
