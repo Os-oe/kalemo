@@ -292,12 +292,13 @@ export const SIBLING_NAMES = {
   palm_tree: { de: ['die', 'Palme'], en: 'palm tree', tr: 'palmiye' }, barn: { de: ['die', 'Scheune'], en: 'barn', tr: 'ahır' },
   police_car: { de: ['das', 'Polizeiauto'], en: 'police car', tr: 'polis arabası' }, van: { de: ['der', 'Lieferwagen'], en: 'van', tr: 'minibüs' },
   speedboat: { de: ['das', 'Schnellboot'], en: 'speedboat', tr: 'sürat teknesi' }, cello: { de: ['das', 'Cello'], en: 'cello', tr: 'çello' },
+  leg: { de: ['das', 'Bein'], en: 'leg', tr: 'bacak' }, // R3-P2-5: Nachbar von „ayak/Fuß"
 };
-/** „Fast — das ist eher eine Palme. Zählt trotzdem!" (UI-Sprache) */
+/** „Fast — das ist eher eine Palme. Zählt trotzdem!" (UI-Sprache). Iteration 3: nur noch für Nachbar-Klassen. */
 export function nearMissLine(near, lang) {
-  let de, en, tr;
-  if (near.kind === 'sibling') { const s = SIBLING_NAMES[near.cls]; if (!s) return t('finishHint', {}, lang); [de, en, tr] = [s.de, s.en, s.tr]; }
-  else { const w = near.w; de = [w.de.art, w.de.noun]; en = w.en.word; tr = w.tr.word; }
+  const s = near && near.kind === 'sibling' ? SIBLING_NAMES[near.cls] : null;
+  if (!s) return null;
+  const [de, en, tr] = [s.de, s.en, s.tr];
   const x = lang === 'de' ? `${{ der: 'ein', die: 'eine', das: 'ein' }[de[0]]} ${de[1]}` : lang === 'en' ? `${/^[aeiou]/i.test(en) ? 'an' : 'a'} ${en}` : tr;
   return t('nearMiss', { x }, lang);
 }

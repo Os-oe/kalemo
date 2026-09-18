@@ -292,8 +292,10 @@ export function installFlow(app) {
       const ft = pickFunniest([out]); // nur ein Tipp, der wirklich in der Blase stand (R2-P3-2)
       app.dict.put(w.id, { strokes, date: app.today(), articleOk, funny: ft ? ft.id : null }).then(() => app.onDictChange?.());
     }
-    // R2-P3-15: „Fast — das ist eher eine Brille. Zählt trotzdem!" auf der Treffer-Karte (nicht in der Blase, die erklärt das Fertigmalen)
-    const nearHtml = out.nearMiss ? `<p class="tipcard near">${escapeHtml(nearMissLine(out.nearMiss, app.settings.native))}</p>` : '';
+    // R2-P3-15: „Fast — das ist eher eine Palme. Zählt trotzdem!" auf der Treffer-Karte (nicht in der Blase, die erklärt das Fertigmalen)
+    // R3-P2-2: nur noch bei einer echten Nachbar-Klasse — sonst widersprach die Karte ihrer eigenen Sprechblase
+    const nearLine = out.nearMiss ? nearMissLine(out.nearMiss, app.settings.native) : null;
+    const nearHtml = nearLine ? `<p class="tipcard near">${escapeHtml(nearLine)}</p>` : '';
     const extraHtml = (plural && out.tip ? `<p class="tipcard">${escapeHtml(out.tip)}</p>` : '') + nearHtml;
     await app.round.resultCard(out, { plural, extraHtml, partial: !!(plural && out.partial) });
     return out; // Review P3-1: kein Luft-Angebot mehr direkt nach Treffer 1 — das Tagesende bietet es an

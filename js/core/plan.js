@@ -48,7 +48,11 @@ const mod = (a, n) => ((a % n) + n) % n;
 /**
  * Launch-Tage #1–#14 fest kuratiert (Iteration 1, Review P2-7 + Nachtrag 1.1): leicht + ikonisch, Tag #1 beginnt mit
  * der Katze. Nur Wörter mit Top-3 ≥ 90 % UND Top-1 ≥ 80 % im accuracy-report (Luft-Simulation), keine als mehrdeutig
- * markierten Wörter, kein Sandwich. Artikel-Schritt + Mehrzahl frühestens ab Tag #3 (Tag #1/#2: 5 Einzelwörter,
+ * markierten Wörter, kein Sandwich. Iteration 3 (R3-P2-5): „eye/göz" ist trotz Report-Werten (Top-3 98 %,
+ * Top-1 90 %) in echten Läufen durchgefallen (sauber 3/4, unordentlich 0/1 — die Fehlgriffe waren Schaf, Berg,
+ * Löwe) und musste Tag #4 verlassen; Ersatz „tooth/diş" (Top-3 94 %, Top-1 92 %). „foot/ayak" (Top-1 74 %)
+ * war nie in den Launch-Tagen und bleibt draußen — es zählt jetzt zusätzlich „leg" als Nachbar-Klasse.
+ * Artikel-Schritt + Mehrzahl frühestens ab Tag #3 (Tag #1/#2: 5 Einzelwörter,
  * DE-Lernende sehen den Artikel direkt in Farbe). Wiederholung = neues Wort von Tag−2 (Tag #2: von Tag #1),
  * Mehrzahl = frühes Launch-Wort. 14 Tage = Puffer, falls der Launch-Post später kommt.
  */
@@ -56,7 +60,7 @@ export const CURATED = [
   [['cat', 'new'], ['house', 'new'], ['sun', 'new'], ['tree', 'new'], ['fish', 'new']],
   [['apple', 'new'], ['car', 'new'], ['fish', 'review'], ['flower', 'new'], ['star', 'new']],
   [['cloud', 'new'], ['book', 'new'], ['cat', 'review'], ['cup', 'new'], ['apple', 'plural', 3]],
-  [['snail', 'new'], ['umbrella', 'new'], ['car', 'review'], ['eye', 'new'], ['tree', 'plural', 2]],
+  [['snail', 'new'], ['umbrella', 'new'], ['car', 'review'], ['tooth', 'new'], ['tree', 'plural', 2]],
   [['bicycle', 'new'], ['owl', 'new'], ['book', 'review'], ['snowman', 'new'], ['cat', 'plural', 2]],
   [['carrot', 'new'], ['guitar', 'new'], ['umbrella', 'review'], ['airplane', 'new'], ['star', 'plural', 3]],
   [['cake', 'new'], ['giraffe', 'new'], ['owl', 'review'], ['crown', 'new'], ['flower', 'plural', 2]],

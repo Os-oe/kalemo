@@ -91,10 +91,14 @@ export function installDuel(app) {
       const score = part ? d.score : [0, 0];
       const stale = !part && d.score[0] + d.score[1] > 0;
       const iso = app.today(), plan = planFor(iso, app.words);
-      const gate = !noGate && plan.slots.some((s) => s.id === w.id) && !dayResult(iso); // Punkt 2e: Tageswort, heute noch nicht gespielt
-      app.duelLanding = { gate, part, stale, number: plan.number };
+      const unplayed = !noGate && !dayResult(iso);
+      const gate = unplayed && plan.slots.some((s) => s.id === w.id); // Punkt 2e: Tageswort, heute noch nicht gespielt
+      // R3-P3-3: auch ohne Tageswort-Sperre (z. B. beim Rückspiel-Link) beide Wege anbieten — sonst verliert die
+      // Kette genau dort den Trichter in die Tagesskizze, wo neue Leute ankommen.
+      const offer = unplayed && !gate;
+      app.duelLanding = { gate, offer, part, stale, number: plan.number };
       if (needLanding || gate) {
-        const k = await landing({ gate, part, score, stale, number: plan.number });
+        const k = await landing({ gate, offer, part, score, stale, number: plan.number });
         if (k === 'daily') { store.set('pendingDuel', { code, date: iso }); app.startDaily?.(); return 'daily'; }
       }
       await app.ensureClf();
@@ -130,10 +134,11 @@ export function installDuel(app) {
     };
     teaserRaf = requestAnimationFrame(step);
   }
-  function landingHtml({ gate = null, part = false, score = [0, 0], stale = false, number = 1, loading = false } = {}) {
+  function landingHtml({ gate = null, offer = false, part = false, score = [0, 0], stale = false, number = 1, loading = false } = {}) {
     const acts = loading ? `<button class="btn primary big" disabled>${escapeHtml(t('loading'))}</button>`
       : gate ? `<button class="btn primary big" data-act="daily-first">${escapeHtml(t('duelDailyFirst', { n: number }))}</button><button class="btn" data-act="go">${escapeHtml(t('duelDirect'))}</button>`
-        : `<button class="btn primary big" data-act="go">${escapeHtml(t('duelWatch'))}</button>`;
+        : offer ? `<button class="btn primary big" data-act="go">${escapeHtml(t('duelWatch'))}</button><button class="btn" data-act="daily-first">${escapeHtml(t('duelDailyFirst', { n: number }))}</button>`
+          : `<button class="btn primary big" data-act="go">${escapeHtml(t('duelWatch'))}</button>`;
     const sc = part && score[0] + score[1] > 0 ? `<p class="landing-score">${escapeHtml(t('duelRematch', { a: score[1], b: score[0] }))}</p>` : stale ? `<p class="landing-score">${escapeHtml(t('duelNew'))}</p>` : '';
     return `<div class="landing"><header class="landing-head">${LOGO}<p class="tagline">${escapeHtml(t('tagline'))}</p></header>
       <div class="landing-art"><canvas aria-hidden="true"></canvas></div>

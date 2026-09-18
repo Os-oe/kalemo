@@ -9,9 +9,10 @@ import { drawPointerSilhouette } from './hands.js';
 import { t, word, cap, LANGS, ART_TEXT } from '../core/i18n.js';
 import { planFor, CURATED } from '../core/plan.js';
 
-export const LOOP = 11.6;
-const DRAW_START = 0.5, DRAW_END = 5.2, HIT_AT = 5.5, CARD_AT = 7.0, FADE = 0.5;
-const TIP_TIMES = [[1.8, 2.9], [3.1, 4.1], [4.2, 5.2]];
+// Iteration 3 (R3-P2-4): Malen füllt mehr als die Hälfte der Schleife, die Auflösungskarte ist deutlich kürzer.
+export const LOOP = 11.0;
+const DRAW_START = 0.4, DRAW_END = 6.4, HIT_AT = 6.6, CARD_AT = 7.6, FADE = 0.5;
+const TIP_TIMES = [[1.9, 3.3], [3.5, 4.9], [5.0, 6.4]];
 // Kuratierte Quick-Draw-Zeichnungen (data/examples.json, CC BY 4.0), eingebettet — der Start braucht so keine Datendatei
 export const MOTIFS = {
   mushroom: { tips: ['hat', 'ice cream', 'leaf'], strokes: [[[79,83,96,90,63,1,0,12,37,85,111,125,144,191,206,226,247,255,184,150,130,113,96,69],[234,197,146,143,140,118,114,94,69,27,7,1,0,20,31,55,100,148,120,112,112,156,233,218]],[[97,108,110,137],[144,102,105,113]],[[88,82,82,86,99,116,122,124,122,114,98,88],[49,66,80,82,82,74,67,53,41,36,36,41]],[[182,163,159,160,173,191,199,202,208,208,199,189],[66,82,89,93,102,106,104,98,69,54,50,50]],[[53,73,82,86,87,81,62,44,44],[115,130,133,122,99,92,90,105,108]],[[36,59,69,70],[64,68,50,33]],[[154,160],[17,29]]] },
@@ -25,20 +26,27 @@ const ORDER = { tr: ['mushroom', 'soccer ball', 'light bulb', 'rain', 'helicopte
 const SPARE_TIPS = ['moon', 'hat', 'clock', 'leaf', 'onion', 'cookie', 'potato', 'pear', 'ice cream', 'watermelon'];
 const CURATED_IDS = new Set(CURATED.flat().map(([id]) => id));
 
-/** Motiv + 3 Tipps für Lernsprache und Datum (pure, testbar) */
-export function pickMotif(learn, planIds, byId) {
+/**
+ * Motive + je 3 Tipps für Lernsprache und Datum (pure, testbar). Iteration 3 (R3-P2-4): 3–4 Motive im Wechsel
+ * statt dreimal derselbe Pilz — keins aus den kuratierten Tagen #1–#14, keins aus dem heutigen Plan.
+ */
+export function pickMotifs(learn, planIds, byId, count = 4) {
   const blocked = new Set([...CURATED_IDS, ...planIds]);
-  const id = (ORDER[learn] || ORDER.de).find((m) => !blocked.has(m) && byId.has(m)) || ORDER.de[0];
-  const tips = [...MOTIFS[id].tips, ...SPARE_TIPS].filter((x, i, a) => a.indexOf(x) === i && x !== id && !blocked.has(x) && byId.has(x)).slice(0, 3);
-  return { id, tips };
+  const ids = (ORDER[learn] || ORDER.de).filter((m) => !blocked.has(m) && byId.has(m)).slice(0, count);
+  const list = (ids.length ? ids : [ORDER.de[0]]).map((id) => ({
+    id, tips: [...MOTIFS[id].tips, ...SPARE_TIPS].filter((x, i, a) => a.indexOf(x) === i && x !== id && !blocked.has(x) && byId.has(x)).slice(0, 3),
+  }));
+  return list;
 }
+/** Erstes Motiv (Rückwärtskompatibilität für Werkzeuge) */
+export function pickMotif(learn, planIds, byId) { return pickMotifs(learn, planIds, byId)[0]; }
 // Rückwärtskompatibel für Werkzeuge (Szenen, OG-Bild): früheres Katzen-Motiv
 export const CAT = MOTIFS.mushroom.strokes;
 
 export function installAttract(app) {
   const canvas = document.getElementById('attract'); const ctx = canvas.getContext('2d');
   const bubble = document.getElementById('attract-bubble'); const tag = document.getElementById('tagline');
-  let raf = null, t0 = 0, loopN = -1, lastBubble = '', staticKey = '', lastPair = '', motif = null;
+  let raf = null, t0 = 0, loopN = -1, lastBubble = '', staticKey = '', lastPair = '', motifs = null;
 
   function setBubble(key, html) {
     if (key === lastBubble) return; lastBubble = key;
@@ -51,16 +59,21 @@ export function installAttract(app) {
     if (!w) return '';
     return order.map((l, i) => `<span class="${i === 0 ? 'rw-first' : 'rw'}" lang="${l}"${l === 'de' ? ` style="color:${ART_TEXT[w.de.art]}"` : ''}>${esc(word(w, l))}</span>`).join('<i> · </i>');
   }
-  /** Motiv neu wählen (Sprachwechsel, neuer Tag) */
+  /** Motiv-Reihe neu wählen (Sprachwechsel, neuer Tag) */
   function choose() {
     const { learn } = app.settings; const iso = app.today();
-    const planIds = app.words.length ? planFor(iso, app.words).slots.map((s) => s.id) : [];
     const key = `${learn}|${iso}|${app.words.length}`;
-    if (motif && motif.key === key) return motif;
-    const m = pickMotif(learn, planIds, app.byId);
-    motif = { ...m, key, strokes: MOTIFS[m.id].strokes };
-    app.attract.info = { motif: m.id, tips: m.tips.slice(), date: iso, learn };
-    return motif;
+    if (motifs && motifs.key === key) return motifs;
+    const planIds = app.words.length ? planFor(iso, app.words).slots.map((s) => s.id) : [];
+    const list = pickMotifs(learn, planIds, app.byId).map((m) => ({ ...m, strokes: MOTIFS[m.id].strokes }));
+    motifs = { key, list, iso, learn };
+    setInfo(0);
+    return motifs;
+  }
+  /** Sichtbares Motiv melden (Spoiler-Wächter G1 und Tests lesen app.attract.info) */
+  function setInfo(i) {
+    const m = motifs.list[i];
+    app.attract.info = { motif: m.id, tips: m.tips.slice(), motifs: motifs.list.map((x) => x.id), date: motifs.iso, learn: motifs.learn };
   }
 
   function frame(now) {
@@ -70,15 +83,19 @@ export function installAttract(app) {
     if (!W || !H) return;
     const reduce = reducedMotion();
     const { learn, native } = app.settings;
-    const m = choose(); const mw = app.byId.get(m.id);
+    const list = choose().list;
+    const time = (now - t0) / 1000, n = Math.floor(time / LOOP);
+    // R3-P2-4: je Schleife ein anderes Motiv (Standbild bei prefers-reduced-motion bleibt bei einem)
+    const mi = reduce ? 0 : ((n % list.length) + list.length) % list.length;
+    const m = list[mi]; const mw = app.byId.get(m.id);
     if (!mw) return;
+    if (app.attract.info?.motif !== m.id) setInfo(mi);
     const third = LANGS.find((l) => l !== learn && l !== native);
     const order = [learn, native, third];
     const key = `${W}x${H}|${learn}|${native}|${m.id}`;
     if (reduce && staticKey === key) return; // Standbild: nur bei Größen-/Sprachwechsel neu zeichnen
     if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
     if (lastPair !== learn + native) { lastPair = learn + native; loopN = -1; lastBubble = ''; } // Sprachwechsel: Tagline + Blase sofort neu
-    const time = (now - t0) / 1000, n = Math.floor(time / LOOP);
     const lt = reduce ? CARD_AT + 1 : time % LOOP;
     if (n !== loopN || reduce) {
       loopN = n; const tl = reduce ? native : [native, learn, third][n % 3]; // Tagline zuerst in der Muttersprache
@@ -137,8 +154,8 @@ export function installAttract(app) {
     stop() { if (raf) cancelAnimationFrame(raf); raf = null; },
     /** Test: Zustand zu einem Schleifen-Zeitpunkt */
     at: (sec) => { t0 = performance.now() - sec * 1000; loopN = -1; },
-    /** Tageswechsel/Sprachwechsel: Motiv neu wählen */
-    refresh: () => { motif = null; lastBubble = ''; staticKey = ''; },
+    /** Tageswechsel/Sprachwechsel: Motive neu wählen */
+    refresh: () => { motifs = null; lastBubble = ''; staticKey = ''; },
   };
   choose();
 }

@@ -10,7 +10,7 @@ const CLASSIFY_MS = 450;
  * Fertig malen nach dem Erkennen. Iteration 2: Karte nach 1,2 s Stift-Pause.
  * Iteration 3 (R3-P2-1): Der Deckel zählt nur **Ruhe** — jeder neue Strich setzt ihn zurück; vorher schnitt er
  * auch mitten im Strich ab (eine fünfstrichige Zeichnung war nach Strich 2 weg). Absolutes Ende nach 12 s ab
- * dem Erkennen; läuft dann noch ein Strich, endet die Runde beim Absetzen.
+ * dem Erkennen (ein laufender Strich wird dabei abgesetzt und gehört dazu), früher beim Absetzen über die Pause.
  */
 export const FINISH = { pauseMs: 1200, capMs: 4000, hardMs: 12000 };
 const $ = (s, r = document) => r.querySelector(s);
@@ -82,7 +82,6 @@ export class RoundController {
       this.stage.cb.onStrokeEnd = () => {
         app.sfx?.scribbleStop();
         if (!r.finishing) return this._classify(true);
-        if (r.hardDue) return this._complete(r, 'hit'); // 12 s sind um, der Strich durfte zu Ende gemalt werden
         this._armFinish(r); this._armCap(r); // Ruhe beginnt: Karte nach der Pause, Deckel als Sicherheitsnetz
       };
       this.stage.cb.onStrokeStart = (x, y) => {
@@ -127,14 +126,15 @@ export class RoundController {
         app.sfx?.play('guessPop');
         app.voice?.guess(e.id, learn).then((dur) => { if (dur && this.active === r) r.engine.speechStarted(performance.now() - 10, dur * 1000); });
       } else if (e.type === 'hard') {
-        this.showBubble(t('guessHard', {}, learn));
+        // R3-P3-5: zweisprachig wie die Rate-Blasen — wer gerade erst anfängt, versteht sonst ausgerechnet diese Zeile nicht
+        this.showBubble(t('guessHard', {}, learn), null, t('guessHard', {}, app.settings.native));
         app.voice?.prefix('hard', learn);
       } else if (e.type === 'hit') this._end(r, 'hit');
       else if (e.type === 'timeout') this._end(r, 'timeout');
     }
   }
 
-  showBubble(text, g = null) {
+  showBubble(text, g = null, nativeText = null) {
     const b = this.bubble; b.hidden = false; b.textContent = text;
     b.style.color = '';
     // DE: getipptes Wort in Artikel-Farbe (Text-Variante, Kontrast ≥ 4,5:1)
@@ -143,8 +143,11 @@ export class RoundController {
       if (i >= 0) { b.textContent = ''; const span = document.createElement('span'); span.textContent = wd; span.style.color = ART_TEXT[g.de.art]; b.append(text.slice(0, i), span, text.slice(i + wd.length)); }
     }
     // Review P3-16: winzig die Muttersprache des GERATENEN Worts (g ist nie das Zielwort — Tipps sprechen nur Fehl-Rateversuche)
+    // R3-P3-7: nicht bei Wörtern, die dem Zielwort zu nah sind (Fuß ↔ Bein, Gesicht ↔ Auge) — das schöbe die Bedeutung vorweg
     const { native, learn } = this.app.settings;
-    if (g && native !== learn && (!this.active || g.id !== this.active.w.id)) { const s = document.createElement('small'); s.className = 'bubble-sub'; s.lang = native; s.textContent = word(g, native); b.append(s); }
+    const target = this.active?.w.id || null;
+    if (g && native !== learn && g.id !== target && !nearWord(target, g.id)) { const s = document.createElement('small'); s.className = 'bubble-sub'; s.lang = native; s.textContent = word(g, native); b.append(s); }
+    if (nativeText && native !== learn && nativeText !== text) { const s = document.createElement('small'); s.className = 'bubble-sub'; s.lang = native; s.textContent = nativeText; b.append(s); }
     b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
     if (this.app.TEST) (this.app.bubbleLog ||= []).push({ target: this.active?.w.id || null, guess: g?.id || null, text: b.textContent }); // Iteration 2: Zitat-Quelle prüfbar
   }
@@ -183,7 +186,7 @@ export class RoundController {
     setTimeout(() => app.sfx?.play(r.w.sfx), 520);
     r.opts.onRecognized?.(r);
     app.musicOk = true; // R2-P3-14: Musik-Loop (460 KB) lädt erst nach dem ersten Treffer
-    const near = nearMiss(r.w, r.lastRes, app.clf?.classNames, app.byId); r.nearMiss = near; // R2-P3-15
+    const near = nearMiss(r.w, r.lastRes, app.clf?.classNames); r.nearMiss = near; // R2-P3-15 / R3-P2-2
     if (r.opts.finish === false) return this._complete(r, 'hit');
     // Fertig malen: Hinweis in der Blase (UI-Sprache), „Fertig"-Knopf, Karte nach Stift-Pause bzw. Deckel
     r.finishing = true; r.recognizedAt = performance.now(); r.recognizedStrokes = this.stage.strokes.length + (this.stage.active ? 1 : 0);
@@ -193,8 +196,8 @@ export class RoundController {
     const done = document.getElementById('round-done'); done.hidden = false; done.textContent = t('finish', {}, ui);
     done.onclick = () => { app.sfx?.play('tap'); this._complete(r, 'hit', { carry: false }); };
     app.hooks.finishNow = () => this._complete(r, 'hit');
-    // Absolutes Ende: 12 s nach dem Erkennen — läuft dann noch ein Strich, endet die Runde beim Absetzen (onStrokeEnd)
-    r.hardT = setTimeout(() => { if (this.stage.active) r.hardDue = true; else this._complete(r, 'hit', { carry: !!r.opts.carryOutside }); }, r.opts.finishHardMs ?? FINISH.hardMs);
+    // Absolutes Ende: 12 s nach dem Erkennen. Ein laufender Strich geht dabei nicht verloren — _complete setzt ihn ab.
+    r.hardT = setTimeout(() => this._complete(r, 'hit', { carry: !!r.opts.carryOutside }), r.opts.finishHardMs ?? FINISH.hardMs);
     if (!this.stage.active) { this._armFinish(r); this._armCap(r); }
   }
 
@@ -236,7 +239,7 @@ export class RoundController {
     app.sfx?.scribbleStop();
     document.getElementById('round-help').hidden = true;
     if (result !== 'hit') {
-      this.showBubble(t('timeUp', {}, learn));
+      this.showBubble(t('timeUp', {}, learn), null, t('timeUp', {}, app.settings.native)); // R3-P3-5
       this.stage.crumble();
       app.sfx?.play('crumble'); app.sfx?.play('timeup');
     }
@@ -351,18 +354,27 @@ export class RoundController {
 }
 
 /**
- * R2-P3-15: Treffer über eine Nachbar-Klasse? → { kind: 'sibling', cls } (z. B. Palme für Baum, Scheune für Haus) oder
- * { kind: 'word', id } (anderes Pool-Wort liegt klar vorn, z. B. Wal statt Fisch). Zählt trotzdem — nur ein ehrlicher Hinweis.
+ * R2-P3-15: Treffer über eine **Nachbar-Klasse** (kuratierte Liste) → { kind: 'sibling', cls }, z. B. Palme für Baum,
+ * Scheune für Haus. Zählt trotzdem — nur ein ehrlicher Hinweis auf der Treffer-Karte.
+ * Iteration 3 (R3-P2-2): Die frühere Variante „anderes Pool-Wort liegt vorn" ({ kind: 'word' }) ist ersatzlos weg.
+ * Sie widersprach der Karte: Überschrift „Erkannt!" + Blase „Buldum! Salyangoz!" und darunter „eher ein Gesicht".
  */
-export const NEAR_SIBLINGS = new Set(['palm_tree', 'barn', 'police_car', 'van', 'speedboat', 'cello']);
-export function nearMiss(w, res, classNames, byId) {
+export const NEAR_SIBLINGS = new Set(['palm_tree', 'barn', 'police_car', 'van', 'speedboat', 'cello', 'leg']);
+export function nearMiss(w, res, classNames) {
   if (!res?.top?.length || !w) return null;
   const mine = res.top.find((x) => x.id === w.id);
   if (mine && mine.sub != null && classNames && mine.subP > (mine.ownP ?? 0) * 1.5) { const cls = classNames[mine.sub]; if (cls && cls !== w.cls && NEAR_SIBLINGS.has(cls)) return { kind: 'sibling', cls }; }
-  const top = res.top[0];
-  if (top.id !== w.id && top.p >= 0.4 && byId?.has(top.id) && (!mine || top.p > mine.p * 1.3)) return { kind: 'word', id: top.id, w: byId.get(top.id) };
   return null;
 }
+
+/**
+ * R3-P3-7: Wortpaare, bei denen die Übersetzung eines Fehltipps die Bedeutung des Zielworts vorwegnähme —
+ * Körperteile derselben Familie („ayak?/der Fuß" während „bacak" gesucht ist). Bei allen anderen Tipps
+ * (Löwe statt Katze) hilft die Übersetzung und verrät nichts. Symmetrisch, kuratiert, klein gehalten.
+ */
+export const NEAR_WORDS = [['foot', 'leg'], ['face', 'eye'], ['face', 'mouth'], ['face', 'nose'], ['face', 'ear'], ['mouth', 'tooth'], ['eye', 'ear'], ['eye', 'nose']];
+const NEAR_KEYS = new Set(NEAR_WORDS.flatMap(([a, c]) => [a + '|' + c, c + '|' + a]));
+export function nearWord(a, c) { return !!a && !!c && NEAR_KEYS.has(a + '|' + c); }
 
 /** Bounding-Box fertiger Striche in Bühnen-Pixeln (null = leer) */
 function bboxOf(strokes) {

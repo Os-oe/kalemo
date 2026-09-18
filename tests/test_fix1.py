@@ -483,19 +483,20 @@ with server() as base, sync_playwright() as p:
             pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000)
             pg.evaluate('(p) => window.__settings(p)', {'native': native, 'learn': learn, 'chosenPair': True})
             seen = {}
-            for sec in (2.4, 3.6, 4.7, 6.0, 8.5):
+            # Iteration 3 (R3-P2-4): längere Mal-Phase, kürzere Auflösung → Abtastzeiten verschoben
+            for sec in (2.5, 4.0, 5.6, 6.9, 9.0):
                 pg.evaluate('(s) => window.__kalemo.attract.at(s)', sec); pg.wait_for_timeout(120)
                 seen[sec] = (pg.text_content('#attract-bubble') or '').strip()
             info = pg.evaluate('() => window.__kalemo.attract.info')
             mw = WORDS[info['motif']]
             tips = [fw(WORDS[x], learn) + '?' for x in info['tips']]
-            ok_tips = all(tip in seen[s] for tip, s in zip(tips, (2.4, 3.6, 4.7)))
+            ok_tips = all(tip in seen[s] for tip, s in zip(tips, (2.5, 4.0, 5.6)))
             third = next(l for l in ('de', 'en', 'tr') if l not in (native, learn))
-            card = seen[8.5]
-            S.check(f'{native}→{learn}: Tipps nur in der Lernsprache', ok_tips, [seen[s] for s in (2.4, 3.6, 4.7)])
-            S.check(f'{native}→{learn}: Treffer-Ausruf in der Lernsprache', seen[6.0].startswith({'tr': 'Buldum', 'en': 'I know', 'de': 'Ich weiß'}[learn]), seen[6.0])
+            card = seen[9.0]
+            S.check(f'{native}→{learn}: Tipps nur in der Lernsprache', ok_tips, [seen[s] for s in (2.5, 4.0, 5.6)])
+            S.check(f'{native}→{learn}: Treffer-Ausruf in der Lernsprache', seen[6.9].startswith({'tr': 'Buldum', 'en': 'I know', 'de': 'Ich weiß'}[learn]), seen[6.9])
             S.check(f'{native}→{learn}: Belohnungs-Karte „{fw(mw, learn)} · {fw(mw, native)} · {fw(mw, third)}" (Lern-, Mutter-, dritte Sprache)', card == f'{fw(mw, learn)} · {fw(mw, native)} · {fw(mw, third)}', card)
-            pg.evaluate('() => window.__kalemo.attract.at(6.05)'); pg.wait_for_timeout(60); a = pg.evaluate(BRIGHT_BOX)
+            pg.evaluate('() => window.__kalemo.attract.at(7.0)'); pg.wait_for_timeout(60); a = pg.evaluate(BRIGHT_BOX)
             ys = []
             for _ in range(8):
                 pg.wait_for_timeout(90); ys.append(pg.evaluate(BRIGHT_BOX)[1])

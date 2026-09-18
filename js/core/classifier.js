@@ -16,6 +16,9 @@ export const SYNONYMS = {
   computer: ['laptop'],
   tree: ['palm_tree'],
   face: ['smiley_face'],
+  // R3-P2-5: „ayak/Fuß" wurde reproduzierbar als „bacak/Bein" gelesen — Nachbarn, die als Treffer zählen
+  // (mit ehrlichem Hinweis „Fast — das ist eher ein Bein. Zählt trotzdem!" über NEAR_SIBLINGS).
+  foot: ['leg'],
 };
 
 /**

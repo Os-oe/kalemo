@@ -88,11 +88,12 @@ with server(8792) as base, sync_playwright() as p:
                 pg.evaluate('(st) => window.__feedStrokes(st, {timing: "instant"})', FIX['cat'][0])  # Striche sofort, dann erkennt die KI bei ruhendem Stift
                 t_rec = wait_state(pg, 's.round && s.round.recognized', 10000)['round']['recognizedAt']
                 if variant == 'cap':
-                    # ununterbrochen weitermalen (Stift nie oben) → Karte spätestens nach 4 s
-                    pg.evaluate('''() => { const st = window.__kalemo.stage; st.beginStroke(st.w * 0.2, st.h * 0.8); let i = 0; const iv = setInterval(() => { if (!st.active || i > 400) { clearInterval(iv); return; } st.addPoint(st.w * (0.2 + 0.3 * Math.sin(i / 9)), st.h * (0.8 - 0.1 * Math.cos(i / 7))); i++; }, 16); return 1; }''')
-                    pg.wait_for_function('() => window.__kalemo._o', timeout=7000)
+                    # Iteration 3 (R3-P2-1): ununterbrochen weitermalen (Stift nie oben) → Karte erst nach dem
+                    # absoluten Deckel von 12 s; der 4-s-Deckel zählt jetzt nur noch Ruhe.
+                    pg.evaluate('''() => { const st = window.__kalemo.stage; st.beginStroke(st.w * 0.2, st.h * 0.8); let i = 0; const iv = setInterval(() => { if (!st.active || i > 900) { clearInterval(iv); return; } st.addPoint(st.w * (0.2 + 0.3 * Math.sin(i / 9)), st.h * (0.8 - 0.1 * Math.cos(i / 7))); i++; }, 16); return 1; }''')
+                    pg.wait_for_function('() => window.__kalemo._o', timeout=20000)
                     dt = pg.evaluate('() => window.__kalemo._o.at') - t_rec
-                    S.check(f'Dauer-Malen nach dem Erkennen → Karte nach dem 4-s-Deckel ({dt:.0f} ms ab Erkennen)', 3800 <= dt <= 4600, dt)
+                    S.check(f'Dauer-Malen nach dem Erkennen → Karte erst nach dem absoluten 12-s-Deckel ({dt:.0f} ms ab Erkennen)', 11500 <= dt <= 14500, dt)
                 else:
                     pg.evaluate('() => { const st = window.__kalemo.stage; st.beginStroke(10, 10); st.addPoint(30, 30); return 1; }')
                     # Gemessen wird ab dem Klick, nicht ab dem Erkennen: auf einem ausgelasteten Rechner
@@ -128,12 +129,16 @@ with server(8792) as base, sync_playwright() as p:
             c.close()
 
     def t1_sizes():
-        for (vw, vh), old in (((1280, 800), 427), ((1440, 900), 460), ((1366, 657), 350)):
+        # Iteration 3 (R3-P2-3): hochkant ab 700 px Fensterhöhe (Karte ~560 px, Zeichnung füllt sie),
+        # zweispaltig nur auf flachen Fenstern — geprüft wird jetzt der Füllgrad, nicht die absolute Breite.
+        for (vw, vh), tall in (((1280, 800), True), ((1440, 900), True), ((1366, 657), False)):
             c, pg, errs = fresh(b, viewport={'width': vw, 'height': vh})
             try:
                 pg.goto(base + '/?test=1&scene=hit&word=cat&k=0'); pg.wait_for_selector('#round-overlay canvas.alive', timeout=30000); pg.wait_for_timeout(900)
-                m = pg.evaluate('() => { const r = document.querySelector("#round-overlay canvas.alive").getBoundingClientRect(), k = document.querySelector("#round-overlay .card").getBoundingClientRect(); return { w: Math.round(r.width), cardTop: Math.round(k.top), cardBottom: Math.round(k.bottom), ih: innerHeight }; }')
-                S.check(f'Desktop {vw}×{vh}: Treffer-Zeichnung ≥ 1,3× so groß wie vorher ({m["w"]} px statt {old} px), Karte passt ins Bild', m['w'] >= old * 1.3 and m['cardTop'] >= 0 and m['cardBottom'] <= m['ih'], m)
+                m = pg.evaluate('() => { const r = document.querySelector("#round-overlay canvas.alive").getBoundingClientRect(), k = document.querySelector("#round-overlay .card").getBoundingClientRect(); return { w: Math.round(r.width), card: Math.round(k.width), cardTop: Math.round(k.top), cardBottom: Math.round(k.bottom), ih: innerHeight }; }')
+                fits = m['cardTop'] >= 0 and m['cardBottom'] <= m['ih']
+                ok = (m['card'] <= 600 and m['w'] >= m['card'] * 0.7) if tall else (m['card'] > 700 and m['w'] >= 455)
+                S.check(f'Desktop {vw}×{vh}: {"hochkant, Zeichnung füllt die Karte" if tall else "zweispaltig (flaches Fenster)"} ({m["w"]} px in {m["card"]} px), Karte passt ins Bild', ok and fits, m)
             finally:
                 c.close()
         c, pg, errs = fresh(b, **PHONE)
@@ -770,10 +775,12 @@ with server(8792) as base, sync_playwright() as p:
             r = pg.evaluate('''async () => { const m = await import('/js/game/round.js'); const i = await import('/js/core/i18n.js'); const a = window.__kalemo; const names = a.clf.classNames; const idx = (c) => names.indexOf(c);
               const tree = a.byId.get('tree'), fish = a.byId.get('fish');
               const s1 = m.nearMiss(tree, { top: [{ id: 'tree', p: 0.7, sub: idx('palm_tree'), subP: 0.6, ownP: 0.1 }] }, names, a.byId);
+              const s1en = m.nearMiss(tree, { top: [{ id: 'tree', p: 0.7, sub: idx('palm_tree'), subP: 0.6, ownP: 0.1 }] }, names);
               const s2 = m.nearMiss(fish, { top: [{ id: 'whale', p: 0.6 }, { id: 'fish', p: 0.3 }] }, names, a.byId);
               const s3 = m.nearMiss(tree, { top: [{ id: 'tree', p: 0.8, sub: idx('tree'), subP: 0.7, ownP: 0.7 }] }, names, a.byId);
-              return { s1: s1 && i.nearMissLine(s1, 'de'), s2: s2 && i.nearMissLine(s2, 'de'), s2en: s2 && i.nearMissLine(s2, 'en'), s3 }; }''')
-            S.check('R2-P3-15: Nachbar-Klasse → „Fast — das ist eher eine Palme. Zählt trotzdem!" / „… ein Wal …", sonst kein Hinweis', r['s1'] == 'Fast — das ist eher eine Palme. Zählt trotzdem!' and r['s2'] == 'Fast — das ist eher ein Wal. Zählt trotzdem!' and r['s2en'].startswith('Almost — that’s more like a whale') and r['s3'] is None, r)
+              return { s1: s1 && i.nearMissLine(s1, 'de'), s1en: s1en && i.nearMissLine(s1en, 'en'), s2, s3 }; }''')
+            # Iteration 3 (R3-P2-2): nur noch echte Nachbar-Klassen; „anderes Pool-Wort liegt vorn" (Wal statt Fisch) ist weg
+            S.check('R2-P3-15/R3-P2-2: Nachbar-Klasse → „Fast — das ist eher eine Palme. Zählt trotzdem!", sonst kein Hinweis', r['s1'] == 'Fast — das ist eher eine Palme. Zählt trotzdem!' and r['s1en'].startswith('Almost — that’s more like a palm tree') and r['s2'] is None and r['s3'] is None, r)
             S.check('Punkt 14: keine Seitenfehler', not errs, errs[:2])
         finally:
             c.close()
