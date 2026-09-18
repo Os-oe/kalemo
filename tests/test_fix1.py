@@ -195,20 +195,21 @@ with server() as base, sync_playwright() as p:
         pg.on('pageerror', lambda e: errs.append(str(e)))
         pg.goto(base + '/?test=1&scene=dayend'); wait_state(pg, 's.screen === "dayend" && s.summary', 30000)
         pg.click('#btn-share', force=True)
-        st = wait_state(pg, 's.lastCard && s.lastCard.gates && s.sheet', 30000); lc = st['lastCard']; fz = st['summary']['funniest']
+        st = wait_state(pg, 's.lastCard && s.lastCard.rows && s.sheet', 30000); lc = st['lastCard']; fz = st['summary']['funniest']
         lines = lc['text'].split('\n')
         # Iteration 2 (Orchestrator-Entscheidung Punkt 2a, ersetzt Iteration-1-Punkt „genau EINE Zeichnung scharf"): Zitat OHNE Zielwort
         S.check('Heute-Karte 1080×1350 + Zitat als Neugier-Lücke auf Karte UND im Teilen-Text („hielt Wort N erst für … Was hab ich gemalt?")', lc['w'] == 1080 and lc['h'] == 1350 and lc['quote'] and 'hielt Wort ' in lc['quote'] and 'Was hab ich gemalt?' in lc['quote'] and len(lines) == 2 and lc['quote'] in lines[1] and lines[1].startswith('„'), lc['text'])
-        S.check('Keine scharfe Zeichnung mehr: alle 5 als abstrakte Leuchtspuren mit Spoiler-Gate (Iteration 2)', lc['hero'] is None and len(lc['gates']) == 5 and all(g['ok'] and g['id'] not in (g['top'] or []) for g in lc['gates']), (lc['hero'], [(g['id'], g['level'], g['top']) for g in lc['gates']]))
+        # Iteration 3 (R3-P1-1): statt fünf Leuchtspuren eine saubere Textreihe je Wort; Held nur, wenn er nichts verrät
+        S.check('Heute-Karte: eine Textzeile je Wort, kein Wort des Tages als Zeichnung (Iteration 3)', len(lc['rows']) == len(st['summary']['results'][:5]) and all(r_['text'] for r_ in lc['rows']), lc['rows'])
         probe = pg.evaluate('''async () => { const app = window.__kalemo; const m = await import('/js/game/cards.js'); const card = await m.todayCard(app, app.lastSummary);
           const ctx = card.canvas.getContext('2d');
-          const tile = ctx.getImageData(72, 610, 300, 150).data; let lit = 0, dark = 0; for (let i = 0; i < tile.length; i += 4) { const l = tile[i] + tile[i + 1] + tile[i + 2]; if (l > 600) lit++; else if (l < 200) dark++; }
-          return { lit, dark, n: tile.length / 4 }; }''')
-        S.check('Spur-Kachel: Navy mit Leuchtspur (Langzeitbelichtung, nicht verwaschen)', probe['dark'] > probe['n'] * 0.3 and probe['lit'] > 150, probe)
-        # ohne lustigen Tipp: keine scharfe Zeichnung, 5 Spuren, einzeiliger Text
+          const band = ctx.getImageData(72, 420, 936, 700).data; let sum = 0, dark = 0; for (let i = 0; i < band.length; i += 4) { const l = (band[i] + band[i + 1] + band[i + 2]) / 3; sum += l; if (l < 90) dark++; }
+          return { avg: Math.round(sum / (band.length / 4)), dark, n: band.length / 4, hero: card.hero }; }''')
+        S.check('Karte bleibt Papier (keine Navy-Kacheln mehr), Tinte sparsam — kein Gewusel', probe['avg'] > 190 and probe['dark'] < probe['n'] * 0.25, probe)
+        # ohne lustigen Tipp: kein Zitat, Text einzeilig, Zeilen trotzdem da
         r = pg.evaluate('''async () => { const app = window.__kalemo; const m = await import('/js/game/cards.js'); const sum = { ...app.lastSummary, funniest: null };
-          const card = await m.todayCard(app, sum); return { gates: card.gates.map(g => g.ok), hero: card.hero, text: card.text, quote: card.quote }; }''')
-        S.check('Ohne lustigen Tipp: alle 5 Spuren abstrakt (Gate je Spur), kein Zitat, Text einzeilig', r['hero'] is None and len(r['gates']) == 5 and all(r['gates']) and r['quote'] is None and '\n' not in r['text'], r)
+          const card = await m.todayCard(app, sum); return { rows: card.rows.length, hero: card.hero, text: card.text, quote: card.quote }; }''')
+        S.check('Ohne lustigen Tipp: kein Zitat, Text einzeilig, Zeilen bleiben', r['rows'] >= 1 and r['quote'] is None and '\n' not in r['text'], r)
         # EN/TR-Sätze
         s2 = pg.evaluate('''async () => { const i = await import('/js/core/i18n.js'); const w = window.__kalemo.byId; return [i.funnyLine(w.get('hospital'), w.get('leg'), 'de'), i.funnyLine(w.get('hospital'), w.get('leg'), 'en'), i.funnyLine(w.get('hospital'), w.get('leg'), 'tr'), i.funnyLine(w.get('lion'), w.get('owl'), 'de'), i.funnyLine(w.get('cat'), w.get('eyeglasses'), 'en'), i.funnyLine(w.get('stairs'), w.get('apple'), 'en')]; }''')
         S.check('Zitat-Sätze DE/EN/TR („erst an", n-Deklination, Plural-only)', s2 == ['Die KI dachte bei meinem Krankenhaus erst an ein Bein.', 'At first, the AI thought my hospital was a leg.', 'Yapay zekâ hastane yerine önce bacak dedi.', 'Die KI dachte bei meinem Löwen erst an eine Eule.', 'At first, the AI thought my cat was a pair of glasses.', 'At first, the AI thought my stairs were an apple.'], s2)
@@ -244,7 +245,7 @@ with server() as base, sync_playwright() as p:
         S.check('Kachel überlebt Reload (localStorage)', pg.is_visible('#today-tile') and pg.text_content('#today-score') == f'Heute {hits}/5')
         pg.click('#today-share')
         st = wait_state(pg, 's.lastCard && s.sheet', 30000)
-        S.check('Kachel → Teilen: Heute-Karte (gleiche Tagesnummer, Gates ok)', f'#{plan["number"]}' in st['lastCard']['text'] and all(g['ok'] for g in st['lastCard']['gates']) and pg.query_selector('#sheet img.share-img') is not None, st['lastCard']['text'])
+        S.check('Kachel → Teilen: Heute-Karte (gleiche Tagesnummer, Zeilen da)', f'#{plan["number"]}' in st['lastCard']['text'] and len(st['lastCard']['rows']) >= 1 and pg.query_selector('#sheet img.share-img') is not None, st['lastCard']['text'])
         pg.click('#sheet [data-act=close]', force=True)
         pg.click('#today-challenge')
         pg.wait_for_selector('#sheet .pick', timeout=5000); pg.locator('#sheet .pick').first.click(force=True)

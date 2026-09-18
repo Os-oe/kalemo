@@ -1,9 +1,10 @@
 // Teilen-Karten (PNG, 0 €): Heute-Karte spoilerfrei (+ Spoiler-Gate per Klassifikator), Gestern-Karte, Poster.
-import { t, word, ART_COLOR, ART_TEXT, FRINGE, LANG_CODE, funnyLine, funnyQuiz, quoted } from '../core/i18n.js';
+import { t, word, ART_COLOR, ART_TEXT, FRINGE, LANG_CODE, funnyLine, funnyQuiz, funnyAllowed, quoted } from '../core/i18n.js';
 import { funnyValid } from '../core/funny.js';
-import { planFor } from '../core/plan.js';
+import { planFor, addDays } from '../core/plan.js';
 import { drawStrokes } from './ink.js';
 import { makeRng } from '../core/raster.js';
+import { all as dictAll } from '../core/dictstore.js';
 
 const PAPER = '#F7F1E3', INK = '#1E2A3A', PENCIL = '#5F6672', NIGHT = '#13203A';
 const fontsReady = () => Promise.all(['700 80px Caveat', '800 40px Nunito', '400 30px Nunito', '600 60px Caveat'].map((f) => document.fonts.load(f, 'ğüşıöçİĞÜŞÖÇäöüß'))).catch(() => {});
@@ -144,9 +145,58 @@ function quoteBlock(ctx, label, text, y0, W, { size = 70, lh = 74, maxLines = 3 
 }
 
 /**
- * Heute-Karte 1080×1350 — Iteration 2 (Spoiler-Entscheidung Punkt 2a): KEINE scharfe Zeichnung. 5 abstrakte Leuchtspuren
- * (Spoiler-Gate je Spur) + Zitat OHNE Zielwort als Neugier-Lücke: „Die KI hielt Wort 3 erst für ein Bein. Was hab ich gemalt?".
- * Der Rateversuch stand wirklich in der Sprechblase und ist nie ein Wort der Tagesskizze (core/funny.js).
+ * Eine Textzeile je Wort für die Heute-Karte (pure, testbar): „1 · die KI dachte: Berg · ✓ 5 s".
+ * Der zitierte Fehltipp stand wirklich in der Sprechblase, ist nie das Zielwort und nie ein anderes Wort der
+ * heutigen Tagesskizze (Wächter G1) — sonst „die KI hat gerätselt". Ohne Fehltipp: „sofort erkannt".
+ */
+export function cardRows(app, sum, ui, exclude = []) {
+  const ex = new Set(exclude);
+  return sum.results.slice(0, 5).map((r, i) => {
+    const ok = okOf(r);
+    const partial = r.kind === 'plural' && r.parts > 0 && r.parts < r.n;
+    let guess = null;
+    if (ok) {
+      for (const tip of r.tips || []) {
+        if (!tip?.id || tip.id === r.id || ex.has(tip.id) || !app.byId.get(tip.id) || !funnyAllowed(r.id, tip.id)) continue;
+        if (!guess || tip.p > guess.p) guess = { id: tip.id, p: tip.p };
+      }
+    }
+    const text = ok
+      ? guess ? t('cardThought', { w: word(app.byId.get(guess.id), ui) }, ui) : (r.tips || []).length ? t('cardPuzzled', {}, ui) : t('cardInstant', {}, ui)
+      : partial ? t('pluralPartial', { x: r.parts, n: r.n }, ui) : t('cardTimeUp', {}, ui);
+    return { i, id: r.id, kind: r.kind || 'new', ok, guess: guess?.id || null, secs: ok ? secsLabel(r, ui) : '', text };
+  });
+}
+
+/**
+ * Held der Teilen-Karte (R3-P1-1): die schärfste Zeichnung aus dem Bildwörterbuch, deren Wort weder heute noch in den
+ * nächsten zwei Tagesskizzen vorkommt (also z. B. von gestern oder aus einem Duell) — verrät nichts und ist trotzdem
+ * ein Bild, das man zeigen will. Findet sich keine, bleibt die Karte ohne Held.
+ */
+export async function pickHero(app, sum, { min = 0.5, look = 12 } = {}) {
+  if (!app.clf) return null;
+  const iso = (app.today?.() || sum.date);
+  const blocked = new Set([...planIdsOf(app, iso), ...planIdsOf(app, addDays(iso, 1)), ...planIdsOf(app, addDays(iso, 2)), ...sum.results.map((r) => r.id)]);
+  let entries;
+  try { entries = await dictAll(); } catch { return null; }
+  const cand = (entries || []).filter((e) => e?.strokes?.length && app.byId.get(e.id) && !blocked.has(e.id));
+  if (!cand.length) return null;
+  cand.sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))); // zuletzt gemalt zuerst
+  let best = null;
+  for (const e of cand.slice(0, look)) {
+    let p = 0;
+    try { p = (await app.clf.classify(e.strokes))?.top?.find((x) => x.id === e.id)?.p ?? 0; } catch { p = 0; }
+    if (!best || p > best.p) best = { id: e.id, p: +p.toFixed(3), date: e.date || null, strokes: e.strokes };
+  }
+  return best && best.p >= min ? best : null;
+}
+
+/**
+ * Heute-Karte 1080×1350 — Iteration 3 (R3-P1-1, ersetzt die fünf abstrakten Leuchtspuren aus Iteration 2: sie sahen
+ * als Bild wie gelbe Wollknäuel aus). Jetzt: Kopf + Zitat OHNE Zielwort + eine saubere Textreihe je Wort
+ * („1 · die KI dachte: Berg · ✓ 5 s") + optional EINE scharfe Held-Zeichnung aus dem Bildwörterbuch, deren Wort
+ * weder heute noch in den nächsten zwei Tagesskizzen drankommt. Spoilerfrei bleibt es, weil keine Zeichnung und
+ * kein Wort des Tages auf die Karte kommt (CONCEPT-Entscheidung 7: die Tagesskizze ist für alle gleich).
  */
 export async function todayCard(app, sum) {
   await fontsReady();
@@ -154,47 +204,69 @@ export async function todayCard(app, sum) {
   // gespieltes Paar aus dem Tagesergebnis (auch wenn die Sprachwahl seitdem geändert wurde), Texte in aktueller UI-Sprache
   const learn = sum.learn || app.settings.learn, native = sum.native || app.settings.native; const ui = app.settings.native;
   paper(ctx, W, H, sum.number * 17);
-  ctx.fillStyle = INK; ctx.font = '700 132px Caveat'; ctx.textBaseline = 'alphabetic'; ctx.fillText('Kalemo', 70, 160);
+  ctx.fillStyle = INK; ctx.font = '700 132px Caveat'; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left'; ctx.fillText('Kalemo', 70, 160);
   ctx.textAlign = 'right'; ctx.font = '700 120px Caveat'; ctx.fillText('#' + sum.number, W - 70, 160); ctx.textAlign = 'left';
   const streakN = sum.streak ?? 1;
   ctx.font = '800 44px Nunito'; ctx.fillStyle = INK;
   ctx.fillText(`${LANG_CODE[native]} → ${LANG_CODE[learn]}  ·  ${sum.hits}/5  ·  ${t('streak', { n: streakN }, ui)}`, 72, 236);
-  const gates = [];
   const exclude = planIdsOf(app, sum.date);
   const fz = sum.funniest && app.byId.get(sum.funniest.target) && app.byId.get(sum.funniest.id) && funnyValid(sum, sum.funniest, exclude) ? sum.funniest : null;
   const qIdx = fz ? (fz.idx ?? sum.results.findIndex((r) => r.id === fz.target)) : -1;
   const quote = fz ? funnyQuiz(qIdx + 1, app.byId.get(fz.id), ui) : null;
-  const trailTile = async (r, i, x, y, w, h, mark) => {
-    const wd = app.byId.get(r.id), col = slotColor(wd, r, learn);
-    ctx.save(); ctx.shadowColor = 'rgba(30,42,58,0.35)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 8; ctx.fillStyle = NIGHT; rr(ctx, x, y, w, h, 26); ctx.fill(); ctx.restore();
-    const strokes = r.drawings?.length ? r.drawings[0] : r.strokes;
-    if (strokes?.length && app.clf) {
-      const g = await spoilerGate(app.clf, r.id, strokes, col); gates.push({ id: r.id, ...g });
-      if (g.ok) drawExposure(ctx, strokes, { x, y, w, h, color: col, seed: seedOf(r.id), level: g.level });
-    }
-    if (mark) { ctx.save(); ctx.strokeStyle = '#FFC857'; ctx.lineWidth = 6; ctx.shadowColor = 'rgba(255,200,87,0.8)'; ctx.shadowBlur = 14; rr(ctx, x - 3, y - 3, w + 6, h + 6, 28); ctx.stroke(); ctx.restore(); }
-    ctx.save(); rr(ctx, x, y, w, h, 26); ctx.clip(); const sg = ctx.createLinearGradient(0, y + h - 64, 0, y + h); sg.addColorStop(0, 'rgba(19,32,58,0)'); sg.addColorStop(1, 'rgba(19,32,58,0.92)'); ctx.fillStyle = sg; ctx.fillRect(x, y + h - 64, w, 64); ctx.restore();
-    ctx.fillStyle = mark ? '#FFC857' : col; ctx.beginPath(); ctx.arc(x + 34, y + 34, 22, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = INK; ctx.font = '800 26px Nunito'; ctx.textAlign = 'center'; ctx.fillText(String(i + 1), x + 34, y + 43);
-    ctx.textAlign = 'right'; ctx.fillStyle = okOf(r) ? '#FFF6D8' : 'rgba(255,251,239,0.6)'; ctx.font = '800 28px Nunito';
-    ctx.fillText(secsLabel(r, ui), x + w - 18, y + h - 20); ctx.textAlign = 'left';
-    const tw2 = ctx.measureText(secsLabel(r, ui)).width;
-    ctx.save(); ctx.strokeStyle = okOf(r) ? '#86EFAC' : 'rgba(255,251,239,0.55)'; ctx.lineWidth = 4.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath();
-    const bx = x + w - 30 - tw2 - 26, by = y + h - 40;
-    if (okOf(r)) { ctx.moveTo(bx, by + 11); ctx.lineTo(bx + 8, by + 19); ctx.lineTo(bx + 22, by + 2); } else { ctx.moveTo(bx + 3, by + 3); ctx.lineTo(bx + 19, by + 19); ctx.moveTo(bx + 19, by + 3); ctx.lineTo(bx + 3, by + 19); }
-    ctx.stroke(); ctx.restore();
-  };
+  const rows = cardRows(app, sum, ui, exclude);
+  const hero = await pickHero(app, sum); // vor dem Zitat: mit Held wird das Zitat kompakter gesetzt, damit die Zeichnung groß bleibt
   let y0 = 300;
-  if (quote) y0 = quoteBlock(ctx, t('funniest', {}, ui).toLocaleUpperCase(ui), quoted(quote, ui), 318, W).bottom + 30;
-  const n = Math.min(5, sum.results.length), tw = 300, th = quote ? Math.min(250, Math.floor((1160 - y0 - 28) / 2)) : 250, gapX = (W - 144 - tw * 3) / 2;
-  const pos = [[0, 0], [1, 0], [2, 0], [0.5, 1], [1.5, 1]];
-  for (let i = 0; i < n; i++) await trailTile(sum.results[i], i, 72 + pos[i][0] * (tw + gapX), y0 + pos[i][1] * (th + 28), tw, th, i === qIdx);
-  ctx.fillStyle = INK; ctx.font = '700 80px Caveat'; ctx.textAlign = 'center'; ctx.fillText(t('aiRecognized', { x: sum.hits }, ui), W / 2, Math.min(H - 120, y0 + 2 * th + 28 + 92)); ctx.textAlign = 'left';
+  if (quote) {
+    const q = hero ? { size: 54, lh: 58, maxLines: 2 } : { size: 70, lh: 74, maxLines: 3 };
+    y0 = quoteBlock(ctx, t('funniest', {}, ui).toLocaleUpperCase(ui), quoted(quote, ui), 318, W, q).bottom + (hero ? 26 : 34);
+  }
+  // Mit Held: Zeilen kompakt unten, Held dazwischen groß. Ohne Held: Zeilen mit Luft mittig + „Die KI erkannte x/5" groß.
+  const bottom = hero ? H - 110 : H - 216;
+  const rowH = hero ? 60 : Math.min(112, Math.max(76, Math.floor((bottom - y0) / (rows.length + 0.6))));
+  const rowsTop = hero ? bottom - rows.length * rowH : y0 + Math.max(0, Math.floor((bottom - y0 - rows.length * rowH) / 2));
+  let heroBox = null;
+  if (hero) {
+    const top = y0 + 8, blockH = Math.max(230, rowsTop - 40 - top);
+    const h = blockH - 92, w = Math.min(W - 300, Math.round(h * 1.5));
+    heroBox = { x: Math.round((W - w) / 2), y: top, w, h };
+    const hw = app.byId.get(hero.id);
+    const col = learn === 'de' ? ART_TEXT[hw.de.art] : INK;
+    ctx.save(); ctx.shadowColor = 'rgba(30,42,58,0.20)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 7; ctx.fillStyle = '#FFFDF7';
+    rr(ctx, heroBox.x - 26, heroBox.y - 14, heroBox.w + 52, blockH, 28); ctx.fill(); ctx.restore();
+    tape(ctx, W / 2, heroBox.y - 14, 150, -0.03);
+    drawStrokes(ctx, hero.strokes, { style: 'crayon', color: col, fringe: learn === 'de' ? FRINGE[hw.de.art] : FRINGE.neutral, paper: 'rgba(255,253,247,0.6)', width: Math.max(7, Math.min(13, heroBox.w / 46)), box: heroBox, seed: 9 });
+    ctx.textAlign = 'center'; ctx.fillStyle = col; const fit = fitText(ctx, word(hw, learn), heroBox.w - 40, 60);
+    ctx.fillText(word(hw, learn), W / 2, heroBox.y + h + 44);
+    ctx.fillStyle = PENCIL; ctx.font = '700 24px Nunito'; ctx.fillText(t('cardHero', {}, ui), W / 2, heroBox.y + h + 74);
+    ctx.textAlign = 'left';
+    heroBox.fit = fit.size;
+  }
+  rows.forEach((row, i) => drawCardRow(ctx, app, sum, row, learn, rowsTop + i * rowH + rowH / 2, W, rowH, i === qIdx));
+  if (!hero) { ctx.fillStyle = INK; ctx.font = '700 76px Caveat'; ctx.textAlign = 'center'; ctx.fillText(t('aiRecognized', { x: sum.hits }, ui), W / 2, H - 132); ctx.textAlign = 'left'; }
   ctx.fillStyle = PENCIL; ctx.font = '600 54px Caveat'; ctx.fillText(t('tagline', {}, ui), 72, H - 46);
   ctx.textAlign = 'right'; ctx.font = '700 28px Nunito'; ctx.fillText('kalemo.demo.osai.solutions', W - 72, H - 54); ctx.textAlign = 'left';
   const blob = await toBlob(c);
   const head = t('shareText', { n: sum.number, pair: `${LANG_CODE[native]} → ${LANG_CODE[learn]}`, x: sum.hits, s: streakN }, ui);
-  return { blob, canvas: c, gates, quote, hero: null, quoteIdx: qIdx >= 0 ? qIdx : null, text: quote ? `${head}\n${quoted(quote, ui)}` : head };
+  return { blob, canvas: c, gates: [], rows, quote, hero: hero ? { id: hero.id, p: hero.p, date: hero.date } : null, heroBox, quoteIdx: qIdx >= 0 ? qIdx : null, text: quote ? `${head}\n${quoted(quote, ui)}` : head };
+}
+
+/** Eine Zeile der Heute-Karte: Nummernkreis (Artikel-Farbe) · Handschrift-Satz · ✓/✗ + Sekunden. Viel Luft, kein Gewusel. */
+function drawCardRow(ctx, app, sum, row, learn, cy, W, rowH, mark) {
+  const r = sum.results[row.i], wd = app.byId.get(r.id), col = slotColor(wd, r, learn);
+  const x0 = 78, x1 = W - 78;
+  ctx.save(); ctx.strokeStyle = 'rgba(30,42,58,0.16)'; ctx.lineWidth = 2; ctx.setLineDash([2, 10]); ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x0, cy + rowH / 2 - 4); ctx.lineTo(x1, cy + rowH / 2 - 4); ctx.stroke(); ctx.restore();
+  ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x0 + 24, cy - 6, 24, 0, Math.PI * 2); ctx.fill();
+  if (mark) { ctx.save(); ctx.strokeStyle = '#FFC857'; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(x0 + 24, cy - 6, 31, 0, Math.PI * 2); ctx.stroke(); ctx.restore(); }
+  ctx.fillStyle = '#FFF6D8'; ctx.font = '800 26px Nunito'; ctx.textAlign = 'center'; ctx.fillText(String(row.i + 1), x0 + 24, cy + 3); ctx.textAlign = 'left';
+  ctx.fillStyle = PENCIL; ctx.font = '800 30px Nunito'; ctx.fillText('·', x0 + 62, cy + 2);
+  const right = x1 - 150;
+  ctx.fillStyle = row.ok ? INK : PENCIL; fitText(ctx, row.text, right - (x0 + 92) - 20, 50, 700, 'Caveat', 28);
+  ctx.fillText(row.text, x0 + 92, cy + 10);
+  ctx.save(); ctx.strokeStyle = row.ok ? '#15803D' : '#B91C1C'; ctx.lineWidth = 5; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.beginPath();
+  if (row.ok) { ctx.moveTo(right + 6, cy - 3); ctx.lineTo(right + 16, cy + 7); ctx.lineTo(right + 34, cy - 15); } else { ctx.moveTo(right + 8, cy - 13); ctx.lineTo(right + 28, cy + 7); ctx.moveTo(right + 28, cy - 13); ctx.lineTo(right + 8, cy + 7); }
+  ctx.stroke(); ctx.restore();
+  if (row.secs) { ctx.fillStyle = PENCIL; ctx.font = '800 30px Nunito'; ctx.textAlign = 'right'; ctx.fillText(row.secs, x1, cy + 4); ctx.textAlign = 'left'; }
 }
 
 /** Raster für 1–5 Kacheln ohne Überlappung: ≤3 eine Reihe, 4 = 2+2, 5 = 3+2 (letzte Reihe mittig) */

@@ -106,11 +106,12 @@ with server() as base, sync_playwright() as p:
                 # Heute-Karte + Spoiler-Gate
                 pg.click('#btn-share')
                 st2 = wait_state(pg, 's.lastCard && s.sheet', 30000)
-                gates = st2['lastCard']['gates']
+                rows = st2['lastCard']['rows']
                 S.check('Heute-Karte-PNG erzeugt (1080×1350) + Fallback-Sheet mit Bild', st2['lastCard']['bytes'] > 20000 and pg.query_selector('#sheet img.share-img') is not None, st2['lastCard']['bytes'])
-                S.check('Spoiler-Gate: Luftspur-Grafik → Zielwort nicht in Top-3 (alle Wörter)', len(gates) >= 4 and all(g['ok'] and g['id'] not in (g['top'] or []) for g in gates), [(g['id'], g['level'], g['top']) for g in gates])
-                teeth = pg.evaluate('''async (ids) => { const out = []; const sum = window.__kalemo.lastSummary; for (const r of sum.results) { if (!ids.includes(r.id) || !r.strokes.length) continue; const res = await window.__kalemo.clf.classify(r.strokes); out.push([r.id, res.top.slice(0, 3).map(x => x.id).includes(r.id)]); } return out; }''', [g['id'] for g in gates])
-                S.check('Spoiler-Gate hat Zähne: dieselben Zeichnungen als Striche werden erkannt', sum(1 for _, ok in teeth if ok) >= len(teeth) - 1, teeth)
+                # Iteration 3 (R3-P1-1): keine Zeichnung eines Tageswortes auf der Karte — Spoilerfreiheit über die Auswahl, nicht über Verwischen
+                plan_ids = [s['id'] for s in plan['slots']]
+                S.check('Heute-Karte: je Wort eine Textzeile, zitierter Fehltipp nie ein Tageswort', len(rows) >= 4 and all(r['guess'] is None or r['guess'] not in plan_ids for r in rows), rows)
+                S.check('Heute-Karte: Held (falls vorhanden) ist kein Wort der heutigen Tagesskizze', st2['lastCard']['hero'] is None or st2['lastCard']['hero']['id'] not in plan_ids, st2['lastCard']['hero'])
                 # Iteration 1 (P2-1): zweite Zeile = Zitat der lustigsten KI-Rate (verrät höchstens dieses eine Wort, in der Muttersprache)
                 head = st2['lastCard']['text'].split('\n')[0]
                 S.check('Teilen-Text: Kopfzeile spoilerfrei (#, Paar, x/5, Serie — keine Wörter) + ggf. Zitat', not any(WORDS[s['id']]['tr']['word'] in head or WORDS[s['id']]['de']['noun'] in head for s in plan['slots']) and re.search(r'#\d+ · DE → TR · \d/5', head) and (not st2['lastCard']['quote'] or st2['lastCard']['quote'] in st2['lastCard']['text']), st2['lastCard']['text'])

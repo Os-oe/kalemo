@@ -227,10 +227,11 @@ with server(8792) as base, sync_playwright() as p:
             else:
                 S.check('Kein Zitat, weil keine zitierbare Rate-Blase gezeigt wurde', not cands, cands[:3])
             pg.click('#btn-share', force=True)
-            st = wait_state(pg, 's.lastCard && s.lastCard.gates && s.sheet', 40000)
+            st = wait_state(pg, 's.lastCard && s.lastCard.rows && s.sheet', 40000)
             lc = st['lastCard']
             clip_before = pg.evaluate('() => window.__clip || null')
-            S.check('Heute-Karte: 5 abstrakte Leuchtspuren mit Gate, keine scharfe Zeichnung, Text ohne Tageswort', lc['hero'] is None and len(lc['gates']) == 5 and all(g_['ok'] for g_ in lc['gates']) and not leaks(lc['text'], forms), (lc['hero'], len(lc['gates']), lc['text']))
+            # Iteration 3 (R3-P1-1): Textreihe statt Leuchtspuren; ein Held darf nie ein Wort des Tages sein
+            S.check('Heute-Karte: Textreihe je Wort, kein Tageswort als Held, Text ohne Tageswort', len(lc['rows']) >= 1 and (lc['hero'] is None or lc['hero']['id'] not in ids) and not leaks(lc['text'], forms), (lc['hero'], lc['rows'], lc['text']))
             if lc['quote']:
                 S.check('Heute-Karte: Zitat als Neugier-Lücke („Wort N … Was hab ich gemalt?") auf Karte UND im Text', 'Wort ' in lc['quote'] and 'Was hab ich gemalt?' in lc['quote'] and lc['quote'] in lc['text'], lc['text'])
             S.check('R2-P3-4: Öffnen des Teilen-Dialogs überschreibt die Zwischenablage nicht', clip_before is None, clip_before)
@@ -672,7 +673,7 @@ with server(8792) as base, sync_playwright() as p:
                 elif scene == 'dayend':
                     pg.wait_for_selector('#sheet img.share-img', timeout=60000)
                     card = pg.evaluate('() => window.__kalemo.demoResult && window.__kalemo.demoResult.card')
-                    S.check('Demo dayend: Tagesende → spoilerfreie Teilen-Karte (keine Heldenzeichnung, 5 Spuren)', card and card['hero'] is None and card['gates'] == 5, card)
+                    S.check('Demo dayend: Tagesende → spoilerfreie Teilen-Karte (Textreihe je Wort, Held höchstens fremdes Wort)', card and card['rows'] >= 1 and card['gates'] == 0, card)
                 elif scene == 'duel':
                     pg.wait_for_function('() => window.__kalemo.duelState && window.__kalemo.duelState.phase === "options"', timeout=60000)
                     S.check('Demo duel (Handy): Replay → 4 Antworten', pg.evaluate('() => window.__kalemo.duelState.options.length') == 4)

@@ -62,7 +62,7 @@ export function installDayEnd(app) {
       if (!app.clf) await app.ensureClf?.();
       sum.streak ??= streak(sum.date, addDays(sum.date, -1)) || 1;
       const card = await todayCard(app, sum);
-      app.lastCard = { gates: card.gates, text: card.text, bytes: card.blob.size, quote: card.quote, hero: card.hero, w: card.canvas.width, h: card.canvas.height };
+      app.lastCard = { gates: card.gates, rows: card.rows, text: card.text, bytes: card.blob.size, quote: card.quote, hero: card.hero, w: card.canvas.width, h: card.canvas.height };
       await shareImage(app, { blob: card.blob, filename: `kalemo-${sum.number}.png`, text: card.text, url: location.origin + location.pathname.replace(/index\.html$/, ''), forceFallback: !!app.TEST });
     } finally { if (btn) btn.disabled = false; }
   };

@@ -83,14 +83,20 @@ with server(8791) as base, sync_playwright() as p:
             ids = [s['id'] for s in pg.evaluate('() => window.__plan()')['slots']]; forms = word_forms(ids)
             play_daily_hooks(pg, 'tr')
             pg.click('#btn-share', force=True)
-            st = wait_state(pg, 's.lastCard && s.lastCard.gates && s.sheet', 40000)
+            st = wait_state(pg, 's.lastCard && s.lastCard.rows && s.sheet', 40000)
             if pg.query_selector('#sheet [data-act=copytext]'):
                 pg.click('#sheet [data-act=copytext]', force=True); pg.wait_for_timeout(300)
             clip = pg.evaluate('() => window.__clip || null')
             txt = st['lastCard']['text']
             S.check('G1 Heute-Karte: Teilen-Text ohne Wortform der Tagesskizze', not leaks(txt, forms), (txt, leaks(txt, forms)))
             S.check('G1 Heute-Karte: Zwischenablage ohne Wortform der Tagesskizze', clip is not None and not leaks(clip, forms), (clip, leaks(clip or '', forms)))
-            S.check('G1 Heute-Karte: keine scharfe Zeichnung (5 abstrakte Spuren mit Gate)', st['lastCard'].get('hero') is None and len(st['lastCard']['gates']) == 5 and all(g['ok'] for g in st['lastCard']['gates']), (st['lastCard'].get('hero'), len(st['lastCard']['gates'])))
+            # Iteration 3 (R3-P1-1): Textreihe statt Leuchtspuren. Spoilerfrei heißt jetzt: kein Wort des heutigen und der
+            # nächsten zwei Tagespläne kommt auf die Karte — weder als Held noch als zitierter Fehltipp.
+            soon = pg.evaluate('''async (n) => { const p = await import('/js/core/plan.js'); const app = window.__kalemo; const out = [];
+              for (let k = 0; k <= n; k++) out.push(...p.planFor(p.addDays(app.today(), k), app.words).slots.map(s => s.id)); return out; }''', 2)
+            lc = st['lastCard']
+            S.check('G1 Heute-Karte: Held ist nie ein Wort von heute oder der nächsten 2 Tage', lc.get('hero') is None or lc['hero']['id'] not in soon, (lc.get('hero'), soon))
+            S.check('G1 Heute-Karte: kein zitierter Fehltipp ist ein Wort der heutigen Tagesskizze', all(r['guess'] is None or r['guess'] not in ids for r in lc['rows']), lc['rows'])
             png = pg.evaluate('''async () => { const app = window.__kalemo; const m = await import('/js/game/cards.js'); const card = await m.todayCard(app, app.lastSummary);
               const buf = new Uint8Array(await card.blob.arrayBuffer()); let s = ''; for (let i = 0; i < buf.length; i += 8192) s += String.fromCharCode(...buf.subarray(i, i + 8192)); return btoa(s); }''')
             meta = png_text_chunks(base64.b64decode(png))
@@ -98,8 +104,8 @@ with server(8791) as base, sync_playwright() as p:
             adv = pg.evaluate('''async (ids) => { const app = window.__kalemo; const m = await import('/js/game/cards.js');
               const sum = JSON.parse(JSON.stringify(app.lastSummary)); sum.funniest = { target: ids[2], id: ids[0], p: 0.95, idx: 2 };
               sum.results[2].tips = [{ id: ids[0], p: 0.95 }]; sum.results[2].bestWrong = { id: ids[0], p: 0.95 };
-              const card = await m.todayCard(app, sum); return { text: card.text, quote: card.quote }; }''', ids)
-            S.check('G1 Heute-Karte: Rateversuch = anderes Tageswort wird nie zitiert', not leaks(adv['text'], forms), adv)
+              const card = await m.todayCard(app, sum); return { text: card.text, quote: card.quote, rows: card.rows }; }''', ids)
+            S.check('G1 Heute-Karte: Rateversuch = anderes Tageswort wird nie zitiert (Text UND Zeile)', not leaks(adv['text'], forms) and all(r['guess'] is None or r['guess'] not in ids for r in adv['rows']), adv)
             S.check('G1 Teilen: keine Seitenfehler', not errs, errs[:2])
         finally:
             c.close()

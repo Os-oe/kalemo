@@ -66,7 +66,7 @@ export async function runDemo(app) {
     await app.showDayEnd(sum);
     await sleep(Number(Q.get('cardAt') || 2600));
     await app.shareToday(sum); // spoilerfreie Heute-Karte (5 Spuren + Neugier-Satz)
-    app.demoResult = { card: app.lastCard ? { hero: app.lastCard.hero, text: app.lastCard.text, gates: app.lastCard.gates.length } : null };
+    app.demoResult = { card: app.lastCard ? { hero: app.lastCard.hero, text: app.lastCard.text, gates: app.lastCard.gates.length, rows: (app.lastCard.rows || []).length } : null };
     return;
   }
   if (scene === 'duel' || landing) {

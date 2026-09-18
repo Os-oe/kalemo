@@ -71,7 +71,7 @@ with server(8797) as base, sync_playwright() as p:
         page.click('#sheet [data-act=done]', force=True)
         page.click('#btn-share')
         st = wait_state(page, 's.lastCard && s.sheet', 40000)
-        S.check('Heute-Karte-Teilen-Fallback (Bild + Speichern + Text kopiert)', page.query_selector('#sheet img.share-img') is not None and page.query_selector('#sheet a[download]') is not None and all(g['ok'] for g in st['lastCard']['gates']), st['lastCard']['text'])
+        S.check('Heute-Karte-Teilen-Fallback (Bild + Speichern + Textreihe je Wort)', page.query_selector('#sheet img.share-img') is not None and page.query_selector('#sheet a[download]') is not None and len(st['lastCard']['rows']) >= 4, st['lastCard']['text'])
         page.click('#sheet [data-act=close]')
         # Duell erstellen über die Oberfläche
         page.evaluate('() => window.__home()')
