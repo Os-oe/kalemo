@@ -78,5 +78,67 @@ with server(8796) as base, sync_playwright() as p:
     if on('R3-P1-1'):
         S.run('R3-P1-1 Teilen-Karte', p1_1); S.run('R3-P1-1 ohne Held', p1_1_nohero)
 
+    # ---------------- R3-P2-1 Fertigmal-Fenster: Deckel zählt nur Ruhe ----------------
+    def line(y, x0=30, x1=210):
+        return [[x0, (x0 + x1) // 2, x1], [y, y, y]]
+
+    def start_round(pg):
+        """Frischer Kontext, Wort 1 der Tagesskizze bis zum Erkennen malen. Liefert (plan, Zustand nach dem Treffer)."""
+        pg.goto(base + '/?test=1'); wait_state(pg, 's.clfReady', 60000); pg.evaluate(SETUP)
+        plan = pg.evaluate('() => window.__plan()')
+        pg.evaluate('() => window.__startDaily()')
+        wid = plan['slots'][0]['id']
+        wait_state(pg, f's.round && s.round.target === {json.dumps(wid)}', 30000)
+        pg.evaluate('(st) => window.__feedStrokes(st, {timing: "real", ptMs: 8, gapMs: 120})', FIX[wid][0])
+        return plan, wait_state(pg, 's.round && s.round.finishing', 40000)
+
+    def p2_1_strokes():
+        c, pg, errs = fresh()
+        try:
+            plan, st = start_round(pg)
+            after = [line(60), line(90), line(120), line(150), line(180)]
+            before = pg.evaluate('() => window.__kalemo.stage.strokes.length')
+            t0 = pg.evaluate('() => performance.now()')
+            pg.evaluate('(st) => window.__feedStrokes(st, {timing: "real", ptMs: 16, gapMs: 700})', after)
+            t1 = pg.evaluate('() => performance.now()')
+            res = wait_state(pg, 's.lastResult && s.overlay', 20000)
+            t2 = pg.evaluate('() => performance.now()')
+            lr = res['lastResult']
+            S.check('R3-P2-1 fünf Striche nach dem Erkennen (≈ 5 s Malzeit) landen alle in der Zeichnung', lr['strokes'] - before == 5, (lr['strokes'], before, round(t1 - t0)))
+            pause = (t2 - t1) + 700  # __feedStrokes wartet nach dem letzten Strich noch gapMs = 700 ms
+            S.check('R3-P2-1 Karte kommt ~1,2 s nach dem letzten Strich (nicht mitten im Malen)', t1 - t0 > 3800 and 1000 <= pause <= 3200, (round(t1 - t0), round(pause)))
+            S.check('R3-P2-1 Striche: keine Seitenfehler', not errs, errs[:2])
+        finally:
+            c.close()
+
+    def p2_1_hard():
+        c, pg, errs = fresh()
+        try:
+            plan, st = start_round(pg)
+            rec = st['round']['recognizedAt']  # der absolute Deckel zählt ab dem Erkennen, nicht ab dem Teststart
+            before = pg.evaluate('() => window.__kalemo.stage.strokes.length')
+            pg.evaluate('(st) => window.__feedStrokes(st, {timing: "real", ptMs: 20, gapMs: 250})', [line(40 + 6 * k) for k in range(30)])
+            res = wait_state(pg, 's.lastResult && s.overlay', 30000)
+            dt = pg.evaluate('() => performance.now()') - rec
+            S.check('R3-P2-1 Dauer-Malen endet nach dem absoluten Deckel von 12 s ab dem Erkennen', 11500 <= dt <= 17000, round(dt))
+            S.check('R3-P2-1 Dauer-Malen: die bis dahin gemalten Striche sind gespeichert (mehr als der alte 4-s-Deckel zuließ)', res['lastResult']['strokes'] - before >= 8, (res['lastResult']['strokes'], before))
+            S.check('R3-P2-1 Deckel: keine Seitenfehler', not errs, errs[:2])
+        finally:
+            c.close()
+
+    def p2_1_finish_btn():
+        c, pg, errs = fresh()
+        try:
+            plan, st = start_round(pg)
+            btn = pg.evaluate('() => { const b = document.getElementById("round-done"); return { hidden: b.hidden, text: b.textContent }; }')
+            pg.click('#round-done', force=True)
+            res = wait_state(pg, 's.lastResult && s.overlay', 10000)
+            S.check('R3-P2-1 „Fertig" bleibt: Knopf sichtbar und beendet sofort', btn['hidden'] is False and btn['text'] == 'Fertig' and res['lastResult']['result'] == 'hit', btn)
+        finally:
+            c.close()
+
+    if on('R3-P2-1'):
+        S.run('R3-P2-1 Striche nach dem Treffer', p2_1_strokes); S.run('R3-P2-1 absoluter Deckel', p2_1_hard); S.run('R3-P2-1 Fertig-Knopf', p2_1_finish_btn)
+
     b.close()
 S.finish()

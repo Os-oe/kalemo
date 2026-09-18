@@ -6,8 +6,13 @@ import { drawStrokes } from './ink.js';
 import { mount as mountAlive, confetti, unmountAll } from './alive.js';
 
 const CLASSIFY_MS = 450;
-/** Iteration 2 (R2-P2-1): nach dem Erkennen fertig malen — Karte erst nach Stift-Pause, spätestens nach dem Deckel */
-export const FINISH = { pauseMs: 1200, capMs: 4000 };
+/**
+ * Fertig malen nach dem Erkennen. Iteration 2: Karte nach 1,2 s Stift-Pause.
+ * Iteration 3 (R3-P2-1): Der Deckel zählt nur **Ruhe** — jeder neue Strich setzt ihn zurück; vorher schnitt er
+ * auch mitten im Strich ab (eine fünfstrichige Zeichnung war nach Strich 2 weg). Absolutes Ende nach 12 s ab
+ * dem Erkennen; läuft dann noch ein Strich, endet die Runde beim Absetzen.
+ */
+export const FINISH = { pauseMs: 1200, capMs: 4000, hardMs: 12000 };
 const $ = (s, r = document) => r.querySelector(s);
 
 export class RoundController {
@@ -74,11 +79,17 @@ export class RoundController {
         stop.hidden = false; stop.textContent = t('stopRound', {}, app.settings.native);
         stop.onclick = () => { app.sfx?.play('tap'); this._complete(r, 'timeout'); };
       }
-      this.stage.cb.onStrokeEnd = () => { app.sfx?.scribbleStop(); if (r.finishing) this._armFinish(r); else this._classify(true); };
+      this.stage.cb.onStrokeEnd = () => {
+        app.sfx?.scribbleStop();
+        if (!r.finishing) return this._classify(true);
+        if (r.hardDue) return this._complete(r, 'hit'); // 12 s sind um, der Strich durfte zu Ende gemalt werden
+        this._armFinish(r); this._armCap(r); // Ruhe beginnt: Karte nach der Pause, Deckel als Sicherheitsnetz
+      };
       this.stage.cb.onStrokeStart = (x, y) => {
         app.sfx?.play('penDown');
         if (r.firstStrokeAt == null && !engine.done) r.firstStrokeAt = engine.elapsed(performance.now()); // Malzeit ab erstem Strich (Duell)
-        if (r.finishing) { clearTimeout(r.finishT); r.finishT = null; if (r.opts.carryOutside && this._outside(r, x, y)) this._complete(r, 'hit', { carry: true }); }
+        // R3-P2-1: ein neuer Strich setzt Pause UND Deckel zurück — der Deckel zählt nur Ruhe, nie Malen
+        if (r.finishing) { clearTimeout(r.finishT); r.finishT = null; clearTimeout(r.capT); r.capT = null; if (r.opts.carryOutside && this._outside(r, x, y)) this._complete(r, 'hit', { carry: true }); }
       };
       this.stage.cb.onPoint = (x, y, t, v) => app.sfx?.scribble(v);
       if (!this.raf) this.raf = requestAnimationFrame(this._loop);
@@ -182,11 +193,14 @@ export class RoundController {
     const done = document.getElementById('round-done'); done.hidden = false; done.textContent = t('finish', {}, ui);
     done.onclick = () => { app.sfx?.play('tap'); this._complete(r, 'hit', { carry: false }); };
     app.hooks.finishNow = () => this._complete(r, 'hit');
-    r.capT = setTimeout(() => this._complete(r, 'hit', { carry: !!r.opts.carryOutside }), r.opts.finishCapMs ?? FINISH.capMs);
-    if (!this.stage.active) this._armFinish(r);
+    // Absolutes Ende: 12 s nach dem Erkennen — läuft dann noch ein Strich, endet die Runde beim Absetzen (onStrokeEnd)
+    r.hardT = setTimeout(() => { if (this.stage.active) r.hardDue = true; else this._complete(r, 'hit', { carry: !!r.opts.carryOutside }); }, r.opts.finishHardMs ?? FINISH.hardMs);
+    if (!this.stage.active) { this._armFinish(r); this._armCap(r); }
   }
 
   _armFinish(r) { clearTimeout(r.finishT); r.finishT = setTimeout(() => this._complete(r, 'hit'), r.opts.finishPauseMs ?? FINISH.pauseMs); }
+  /** Deckel als Sicherheitsnetz: läuft nur in der Ruhe zwischen zwei Strichen, jeder neue Strich setzt ihn zurück */
+  _armCap(r) { clearTimeout(r.capT); r.capT = setTimeout(() => this._complete(r, 'hit', { carry: !!r.opts.carryOutside }), r.opts.finishCapMs ?? FINISH.capMs); }
 
   /** Mehrzahl: beginnt ein neuer Strich klar außerhalb des erkannten Objekts, ist es schon das nächste */
   _outside(r, x, y) {
@@ -198,9 +212,9 @@ export class RoundController {
   /** Runde abschließen (Treffer nach dem Fertigmalen oder Zeit um). carry: laufenden Strich fürs nächste Mehrzahl-Objekt stehen lassen */
   _complete(r, result, { carry = false } = {}) {
     if (r.completed) return; r.completed = true;
-    clearTimeout(r.finishT); clearTimeout(r.capT); r.finishing = false;
+    clearTimeout(r.finishT); clearTimeout(r.capT); clearTimeout(r.hardT); r.finishing = false; r.hardDue = false;
     const app = this.app, learn = app.settings.learn;
-    document.getElementById('round-done').hidden = true; app.hooks.finishNow = null;
+    const doneBtn = document.getElementById('round-done'); doneBtn.hidden = true; doneBtn.onclick = null; app.hooks.finishNow = null;
     if (this.active !== r) return; // Runde inzwischen geschlossen
     let strokes;
     if (carry) { strokes = this.stage.detach(); } // Mehrzahl: fertige Striche raus, laufender Strich bleibt für das nächste Objekt
