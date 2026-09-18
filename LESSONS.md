@@ -89,3 +89,43 @@ Der Mehrpreis gegenüber der Schätzung kam fast vollständig aus der TTS: lange
 | Neue Audio-Clips | 0,00 € (Mehrzahl-Ausruf aus vorhandenen Zahl- + Plural-Clips, Audio-Tages-Cap nicht angefasst) |
 | KI-Bilder/-Videos | 0,00 € (keine) |
 | **Iteration 1 gesamt** | **0,00 €** (Lauf gesamt weiter 0,97 €) |
+
+---
+
+# Iteration 3 (Fix-Session nach Fresh-Eyes-Review 3, 18.09.2026)
+
+## Produkt
+- **Spoilerfreiheit besser über Auswahl als über Verwischen.** Iteration 2 machte die Teilen-Karte
+  spoilerfrei, indem sie die eigenen Zeichnungen abstrahierte — als Bild kamen fünf gelbe Wollknäuel
+  heraus. Iteration 3 zeigt stattdessen *was nichts verrät*: Textzeilen über die Fehltipps und
+  optional **eine** scharfe Zeichnung, deren Wort heute und in den nächsten zwei Tagen nicht drankommt.
+  Regel: erst fragen „welcher Inhalt ist ohnehin unverfänglich?", dann erst „wie mache ich Inhalt unkenntlich?".
+- **Die Karte muss auch in der leeren Variante tragen.** Der Held existiert nur, wenn das Bildwörterbuch
+  einen passenden Eintrag hat — beim allerersten Spieler nie. Beide Fassungen wurden gerendert und
+  angesehen, das Layout schaltet um (ohne Held: größere Zeilen + Schlusszeile „Die KI erkannte x/5").
+- **Zeitdeckel, die Eingaben abschneiden, müssen Ruhe zählen, nicht Zeit.** „Karte spätestens nach 4 s"
+  klang harmlos und schnitt jede fünfstrichige Zeichnung in der Mitte ab. Richtig: jeder neue Strich
+  setzt den Deckel zurück, und es gibt eine zweite, deutlich größere Grenze (12 s) gegen Endlosfälle.
+  Beim Erzwingen darf nichts verloren gehen — der laufende Strich wird abgesetzt, nicht verworfen.
+- **Zwei ehrliche Meldungen können sich widersprechen.** „Erkannt! Buldum! Salyangoz!" neben „Fast —
+  das ist eher ein Gesicht" entzaubert genau den Moment, der zaubern soll. Ein Hinweis, der die eigene
+  Hauptaussage relativiert, braucht einen engen, kuratierten Auslöser (hier: nur echte Nachbar-Klassen).
+- **Messwerte aus dem Trainingsdatensatz sind notwendig, nicht hinreichend.** „eye/göz" erfüllte die
+  Kuratierungsregel (Top-3 98 %, Top-1 90 %) und fiel im Menschen-Review durch (3/4 sauber, 0/1
+  unordentlich). Ein Review-Befund am Produkt sticht die Offline-Messung.
+- **Ein Toast ist eine Meldung, kein Knopf.** Der neu eingeführte Toast lag genau über der Kachel
+  „Gestern gemalt" und schluckte den Tipp — `pointer-events: none` gehört an jede transiente Einblendung.
+
+## Tests & Werkzeuge
+- **Suiten aus einer Repo-Kopie außerhalb von iCloud laufen lassen** (`rsync` → `/tmp/kalemo-run`) löst
+  zwei Probleme auf einmal: der fileproviderd/fseventsd-Sturm entfällt, und man darf **während** eines
+  laufenden Gates weiter am Repo arbeiten — die Suite serviert den Schnappschuss, nicht den Arbeitsbaum.
+  Damit fällt die alte Regel „keine JS-Edits während Suiten laufen" weg.
+- **Zeitmessungen im Test immer auf den Produkt-Zeitpunkt beziehen, nicht auf den Teststart.** Der
+  12-s-Deckel zählt ab dem Erkennen; gemessen ab `wait_state` fehlten 2 s und der Test war falsch rot.
+  `round.recognizedAt` aus dem Zustand lesen.
+- **`__feedStrokes` wartet nach dem letzten Strich noch `gapMs`** — wer die Stift-Pause misst, muss das
+  herausrechnen, sonst misst er 0,5 s statt 1,2 s.
+- **Tests, die den alten Vertrag festschreiben, gehören mit dem Fix umgeschrieben, nicht gelöscht.**
+  Fünf Suiten prüften „5 Leuchtspuren, kein Held". Sie prüfen jetzt „Textreihe je Wort, Held nie aus den
+  nächsten Plänen" — derselbe Schutz, neuer Vertrag.
