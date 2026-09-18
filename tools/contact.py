@@ -79,11 +79,12 @@ with sync_playwright() as p:
                 pg.wait_for_function(f'() => {{ const s = window.__state(); return s.round && s.round.target === {json.dumps(wid)}; }}', timeout=60000)
                 pg.evaluate('(st) => window.__feedStrokes(st, {timing: "real", ptMs: 8, gapMs: 120})', FIX[wid][0])
                 pg.wait_for_function('() => { const s = window.__state(); return s.round && s.round.finishing; }', timeout=60000)
-                pg.evaluate('(st) => window.__feedStrokes(st, {timing: "real", ptMs: 16, gapMs: 600})',
+                # nicht awaiten — sonst ist die ganze Zeichnung schon fertig, bevor der erste Abzug entsteht
+                pg.evaluate('(st) => { window.__feedStrokes(st, {timing: "real", ptMs: 16, gapMs: 600}); return 1; }',
                             [[[30, 120, 210], [40 + 18 * k, 40 + 18 * k, 40 + 18 * k]] for k in range(10)])
                 frames, labels = [], []
                 for k in range(12):
-                    frames.append(pg.screenshot()); labels.append(f'+{k * 1.2:.1f} s nach dem Treffer')
+                    frames.append(pg.screenshot()); labels.append(f'+{k * 1.2:.1f} s nach dem Erkennen')
                     pg.wait_for_timeout(1200)
                 print(sheet(frames, labels, os.path.join(OUT, f'sheet-hit12-{label}.png'), cols=4, scale=0.34 if label == 'desktop' else 0.28))
                 c.close()
@@ -118,7 +119,7 @@ with sync_playwright() as p:
             for label, kw in (('desktop', DESK), ('phone', PHONE)):
                 c = b.new_context(**kw); pg = c.new_page()
                 pg.goto(BASE + '/?test=1')
-                pg.wait_for_function('() => { const s = window.__state && window.__state(); return s && s.ready; }', timeout=90000)
+                pg.wait_for_function('() => window.__kalemo && window.__kalemo.ready', timeout=90000)
                 pg.wait_for_timeout(600)
                 frames, labels = [], []
                 for k in range(12):

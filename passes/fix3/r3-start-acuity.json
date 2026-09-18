@@ -1,0 +1,59 @@
+{
+  "url": "http://127.0.0.1:8815/?test=1",
+  "label": "r3-start",
+  "checkedAt": "2026-09-18T14:21:12.908Z",
+  "threshold": 0.15,
+  "minCells": 2,
+  "desktop": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix3/r3-start-desktop.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "360×225",
+      "overall": 1.6428,
+      "cells": [
+        0.0002,
+        1.6001,
+        0.0007,
+        0.0082,
+        13.1757,
+        0,
+        0,
+        0,
+        0
+      ],
+      "aliveCells": [
+        "oben-mitte",
+        "mitte-mitte"
+      ],
+      "aliveCount": 2
+    }
+  },
+  "mobile": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix3/r3-start-mobile.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "97×211",
+      "overall": 3.6662,
+      "cells": [
+        0.0994,
+        9.424,
+        0.1004,
+        6.1439,
+        11.0589,
+        6.3391,
+        0,
+        0,
+        0
+      ],
+      "aliveCells": [
+        "oben-mitte",
+        "mitte-links",
+        "mitte-mitte",
+        "mitte-rechts"
+      ],
+      "aliveCount": 4
+    }
+  },
+  "flags": [],
+  "motionVerdict": "LEBENDIG"
+}

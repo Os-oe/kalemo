@@ -143,3 +143,27 @@ Motion-Gate: start 2/9 · starttile 2/9 · round 7/9 · help 6/9 · article 6/9 
 5. help Desktop: Beispiel-Kacheln entstehen nacheinander (Replay), lesbares Fahrrad zuerst — kein Befund.
 6. calib / weak / duelopts: Texte in einer Zeile pro Aufgabe, Knöpfe ≥ 44 px, keine Überlappung — abgenommen.
 Urteil Iteration 1 visuell: alle geänderten Screens ≥ 3 Runden, letzte Runde ohne STILLSTAND.
+
+## Iteration 3 · Runde 1 (Szenen start · hit · card · dayend, Desktop 1440×900 + Handy 390×844)
+Motion-Gate: alle vier LEBENDIG, 0 JS-Fehler (`passes/fix3/r1-*`).
+1. **Treffer-Karte Desktop jetzt hochkant** — die Zeichnung füllt die Karte (96 % der Breite), die Sprachen stehen darunter. Der Review-Befund „quer und fast leer" ist weg.
+2. **Echter Fund:** auf 700–760 px hohen Fenstern schrumpft die Karte im zentrierten Overlay und bekommt einen **eigenen Scrollbereich** (16–26 px) — der „Weiter"-Knopf wäre angeschnitten. → Zeichnung von `52vh` auf `46vh` begrenzt; bei 1280×700 / 1440×720 / 1280×800 / 1440×900 jetzt `scrollHeight == clientHeight`, Füllgrad 77–96 %.
+3. Teilen-Karte im Blatt: Zeilen, Haken/Kreuz und Sekunden sauber ausgerichtet, Papier bleibt hell — kein Wollknäuel mehr.
+4. Startseite 1440×900: Logo, Demo-Karte, Sprachwahl, Hauptknopf, Zweitknöpfe **und** Fußzeile im ersten Bild.
+5. Wenn ein Spieler jedes Wort sofort trifft, lauten alle fünf Zeilen „sofort erkannt" — durch die unterschiedlichen Sekunden trotzdem lesbar. Bewusst so gelassen: eine erfundene Variante wäre keine Wahrheit mehr.
+
+## Iteration 3 · Runde 2 (start · hit · card · duelopts)
+Motion-Gate: LEBENDIG, 0 JS-Fehler (`passes/fix3/r2-*`).
+1. Treffer-Karte 1440×900 unverändert groß (Breite begrenzt, nicht die Höhe) — der 46vh-Deckel greift nur auf flachen Fenstern.
+2. Teilen-Blatt am Handy: Karte vollständig sichtbar, „Bild speichern" / „Text kopieren" / „Schließen" ohne Überlappung.
+3. Zwischen Zeichnung und Sprachzeilen sitzt die Kachel „+1 Bildwörterbuch" — genug Luft, keine Kollision.
+4. Duell-Optionen unverändert.
+5. Keine neuen Befunde → weiter zu Runde 3.
+
+## Iteration 3 · Runde 3 (start · hit · card · landing)
+Motion-Gate: LEBENDIG, 0 JS-Fehler (`passes/fix3/r3-*`).
+1. **Empfänger-Landeseite bietet beide Wege**: „Schau zu …" als Hauptknopf, darunter „Erst Tagesskizze #4 (2 Min) — dann das Duell" (R3-P3-3). Am Handy bricht der zweite Knopf auf zwei Zeilen um — lesbar, kein Überlauf.
+2. Attract-Kontaktbogen über 25 s (`sheet-attract-desktop.png`): **drei** Motive im Wechsel (mantar → futbol topu → ampul), Malen füllt den größten Teil jeder Schleife, die Belohnungs-Karte steht nur kurz.
+3. Fertigmal-Kontaktbogen (`sheet-hit12-phone.png`): nach dem Treffer bleibt die Uhr bei 19, die Blase sagt „Buldum! Salyangoz! · Ich weiß es! Mal ruhig fertig …", die Zeichnung wächst über **9 Sekunden** weiter, die Karte kommt danach mit der vollständigen Zeichnung.
+4. Teilen-Karte in beiden Fassungen abgenommen (`card3-mit-held.png`, `card3-ohne-held.png`) — mit Held ist die Zeichnung der Blickfang, ohne Held tragen Zitat + Zeilen + Schlusszeile.
+5. Kein STILLSTAND, keine offenen Befunde → Iteration 3 visuell abgenommen.

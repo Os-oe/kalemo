@@ -170,7 +170,7 @@ with server(8796) as base, sync_playwright() as p:
 
     # ---------------- R3-P2-3 Treffer-Karte am Desktop ----------------
     def p2_3():
-        for vw, vh, tall in ((1440, 900, True), (1280, 800, True), (1366, 657, False)):
+        for vw, vh, tall in ((1440, 900, True), (1280, 800, True), (1280, 700, True), (1366, 657, False)):
             c, pg, errs = fresh(viewport={'width': vw, 'height': vh})
             try:
                 pg.goto(base + '/?test=1&scene=hit&word=cat&k=0')
@@ -179,14 +179,16 @@ with server(8796) as base, sync_playwright() as p:
                   const k = document.querySelector('#round-overlay .card').getBoundingClientRect();
                   const l = document.querySelector('#round-overlay .langs').getBoundingClientRect();
                   const cs = getComputedStyle(document.querySelector('#round-overlay .card'));
+                  const el = document.querySelector('#round-overlay .card');
                   return { aw: Math.round(a.width), ah: Math.round(a.height), ab: Math.round(a.bottom), kw: Math.round(k.width), kh: Math.round(k.height),
-                    kt: Math.round(k.top), kb: Math.round(k.bottom), lt: Math.round(l.top), ih: innerHeight, cols: cs.gridTemplateColumns }; }''')
+                    kt: Math.round(k.top), kb: Math.round(k.bottom), lt: Math.round(l.top), ih: innerHeight, cols: cs.gridTemplateColumns,
+                    over: el.scrollHeight - el.clientHeight }; }''')
                 fill = m['aw'] / m['kw']
                 if tall:
                     S.check(f'R3-P2-3 {vw}×{vh}: hochkant (Karte ≤ 600 px), Sprachen unter der Zeichnung, Füllgrad {fill:.0%} ≥ 70 %', m['kw'] <= 600 and fill >= 0.7 and m['lt'] >= m['ab'] - 4, m)
                 else:
                     S.check(f'R3-P2-3 {vw}×{vh}: flaches Fenster bleibt zweispaltig, Zeichnung groß ({m["aw"]} px)', m['kw'] > 700 and m['aw'] >= 455 and m['lt'] < m['ab'], m)
-                S.check(f'R3-P2-3 {vw}×{vh}: Karte vollständig im ersten Bild', m['kt'] >= 0 and m['kb'] <= m['ih'], m)
+                S.check(f'R3-P2-3 {vw}×{vh}: Karte vollständig im ersten Bild, kein eigener Scrollbereich (acuity Runde 1)', m['kt'] >= 0 and m['kb'] <= m['ih'] and m['over'] == 0, m)
             finally:
                 c.close()
 

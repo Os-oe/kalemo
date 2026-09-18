@@ -1,0 +1,65 @@
+{
+  "url": "http://127.0.0.1:8815/?test=1&scene=card",
+  "label": "r2-card",
+  "checkedAt": "2026-09-18T14:14:51.289Z",
+  "threshold": 0.15,
+  "minCells": 2,
+  "desktop": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix3/r2-card-desktop.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "360×225",
+      "overall": 2.399,
+      "cells": [
+        0.2714,
+        6.2986,
+        0.3634,
+        0.0767,
+        10.075,
+        0.0884,
+        0.0503,
+        4.2722,
+        0.0949
+      ],
+      "aliveCells": [
+        "oben-links",
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-mitte",
+        "unten-mitte"
+      ],
+      "aliveCount": 5
+    }
+  },
+  "mobile": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix3/r2-card-mobile.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "97×211",
+      "overall": 6.1583,
+      "cells": [
+        10.2005,
+        8.2138,
+        4.1243,
+        12.1811,
+        15.2134,
+        5.0753,
+        0.0377,
+        0.1958,
+        0
+      ],
+      "aliveCells": [
+        "oben-links",
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-links",
+        "mitte-mitte",
+        "mitte-rechts",
+        "unten-mitte"
+      ],
+      "aliveCount": 7
+    }
+  },
+  "flags": [],
+  "motionVerdict": "LEBENDIG"
+}

@@ -194,7 +194,9 @@ body[data-mode="air"] .stage canvas.ink, body[data-mode="air"] .stage canvas.fx 
    Zeilen und dazwischen viel Nichts. Jetzt hochkant wie am Handy (Karte bis 560 px, Zeichnung groß, Sprachen darunter). */
 @media (min-width: 900px) and (min-height: 700px) {
   .card.hit { width: min(560px, 100%); }
-  .card.hit canvas.alive { width: min(100%, calc(52vh * 4 / 3)); }
+  /* 46vh: darüber schrumpft die Karte auf 700–820 px hohen Fenstern und der „Weiter"-Knopf rutscht in einen
+     eigenen Scrollbereich (acuity Runde 1). Ab ~1000 px Höhe begrenzt ohnehin die Kartenbreite. */
+  .card.hit canvas.alive { width: min(100%, calc(46vh * 4 / 3)); }
 }
 /* Nur auf flachen Fenstern (< 700 px Höhe) zweispaltig — sonst passt die hochkante Karte nicht ins erste Bild
    (Iteration 2, R2-P2-1: Zeichnung links groß, Wörter rechts) */

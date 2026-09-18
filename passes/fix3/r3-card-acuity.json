@@ -1,0 +1,66 @@
+{
+  "url": "http://127.0.0.1:8815/?test=1&scene=card",
+  "label": "r3-card",
+  "checkedAt": "2026-09-18T14:21:40.930Z",
+  "threshold": 0.15,
+  "minCells": 2,
+  "desktop": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix3/r3-card-desktop.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "360×225",
+      "overall": 2.2881,
+      "cells": [
+        0.4443,
+        5.9074,
+        0.4602,
+        0.2718,
+        9.3783,
+        0.1515,
+        0.075,
+        3.8216,
+        0.083
+      ],
+      "aliveCells": [
+        "oben-links",
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-links",
+        "mitte-mitte",
+        "mitte-rechts",
+        "unten-mitte"
+      ],
+      "aliveCount": 7
+    }
+  },
+  "mobile": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix3/r3-card-mobile.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "97×211",
+      "overall": 5.6162,
+      "cells": [
+        9.171,
+        7.6165,
+        4.2906,
+        11.0638,
+        13.4058,
+        4.8106,
+        0.0071,
+        0.0124,
+        0
+      ],
+      "aliveCells": [
+        "oben-links",
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-links",
+        "mitte-mitte",
+        "mitte-rechts"
+      ],
+      "aliveCount": 6
+    }
+  },
+  "flags": [],
+  "motionVerdict": "LEBENDIG"
+}

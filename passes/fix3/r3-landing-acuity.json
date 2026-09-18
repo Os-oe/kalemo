@@ -1,0 +1,60 @@
+{
+  "url": "http://127.0.0.1:8815/?demo=1&scene=landing&nomusic=1",
+  "label": "r3-landing",
+  "checkedAt": "2026-09-18T14:21:55.370Z",
+  "threshold": 0.15,
+  "minCells": 2,
+  "desktop": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix3/r3-landing-desktop.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "360×225",
+      "overall": 0.4929,
+      "cells": [
+        0.0034,
+        0.201,
+        0,
+        0,
+        4.2293,
+        0.0026,
+        0,
+        0,
+        0
+      ],
+      "aliveCells": [
+        "oben-mitte",
+        "mitte-mitte"
+      ],
+      "aliveCount": 2
+    }
+  },
+  "mobile": {
+    "screenshot": "/Users/Osman/Desktop/APPS/kalemo/passes/fix3/r3-landing-mobile.png",
+    "consoleErrors": [],
+    "motion": {
+      "grid": "97×211",
+      "overall": 2.2819,
+      "cells": [
+        0.1064,
+        0.4045,
+        1.6323,
+        0.8587,
+        8.3649,
+        9.4219,
+        0,
+        0,
+        0
+      ],
+      "aliveCells": [
+        "oben-mitte",
+        "oben-rechts",
+        "mitte-links",
+        "mitte-mitte",
+        "mitte-rechts"
+      ],
+      "aliveCount": 5
+    }
+  },
+  "flags": [],
+  "motionVerdict": "LEBENDIG"
+}
