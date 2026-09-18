@@ -28,10 +28,13 @@ export function installPlural(app) {
       const left = budget - used;
       if (left < 800) break;
       const last = i === n;
-      sub.textContent = `${t('pluralDraw', { n }, ui)} · ${t('pluralCount', { i, n }, ui)}`;
+      // Fund 18.09.: „i/n" las sich wie „schon geschafft" — jetzt steht dort, was wirklich noch fehlt.
+      sub.textContent = parts === 0
+        ? `${t('pluralDraw', { n }, ui)} · ${t('pluralCount', { i, n }, ui)}`
+        : t('pluralProgress', { done: parts, n, left: n - parts }, ui);
       const out = await app.round.draw({
         id: w.id, durationMs: left, color, totalMs: budget, plural: { i, n }, keep: carry,
-        carryOutside: !last, finishPauseMs: last ? undefined : cfg.pauseMs,
+        carryOutside: !last, finishPauseMs: last ? undefined : cfg.pauseMs, stoppable: parts > 0,
         onRecognized: last ? () => app.voice?.pluralHitAnnounce(w.id, app.round.langOrder(), n) : null,
       });
       lastOut = out; used += out.elapsedMs || 0; tips.push(...out.tips);
@@ -42,7 +45,7 @@ export function installPlural(app) {
       if (!last) {
         budget += cfg.bonusMs; // +8 s je Treffer
         app.stage.addGhost(out.strokes, color);
-        sub.textContent = `${t('pluralCount', { i, n }, ui)}`;
+        sub.textContent = t('pluralProgress', { done: parts, n, left: n - parts }, ui);
         app.sfx?.play('hit');
       }
     }

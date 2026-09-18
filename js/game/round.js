@@ -67,6 +67,13 @@ export class RoundController {
         t0: performance.now(), endAt: null, deadline: opts.deadline || null, firstStrokeAt: this.stage.active ? 0 : null, finishing: false,
       };
       engine.start(r.t0);
+      // Mehrzahl (Fund 18.09.): ist schon ein Objekt erkannt, kann man die Runde jederzeit beenden —
+      // vorher saß man bis zu 30 s vor einer Bühne, auf der scheinbar nichts passiert.
+      if (opts.stoppable) {
+        const stop = document.getElementById('round-done');
+        stop.hidden = false; stop.textContent = t('stopRound', {}, app.settings.native);
+        stop.onclick = () => { app.sfx?.play('tap'); this._complete(r, 'timeout'); };
+      }
       this.stage.cb.onStrokeEnd = () => { app.sfx?.scribbleStop(); if (r.finishing) this._armFinish(r); else this._classify(true); };
       this.stage.cb.onStrokeStart = (x, y) => {
         app.sfx?.play('penDown');
@@ -172,7 +179,8 @@ export class RoundController {
     // Iteration 2 (Gate-Fund 17.09.): Beim Fertigmalen steht die Anleitung in der Blase; der Nachbar-Hinweis
     // (R2-P3-15) würde sie verdrängen — er gehört auf die Treffer-Karte (out.nearMiss).
     if (!pl || pl.i === pl.n) { const s = document.createElement('small'); s.className = 'bubble-hint'; s.lang = ui; s.textContent = t('finishHint', {}, ui); this.bubble.append(s); }
-    const done = document.getElementById('round-done'); done.hidden = false; done.onclick = () => { app.sfx?.play('tap'); this._complete(r, 'hit', { carry: false }); };
+    const done = document.getElementById('round-done'); done.hidden = false; done.textContent = t('finish', {}, ui);
+    done.onclick = () => { app.sfx?.play('tap'); this._complete(r, 'hit', { carry: false }); };
     app.hooks.finishNow = () => this._complete(r, 'hit');
     r.capT = setTimeout(() => this._complete(r, 'hit', { carry: !!r.opts.carryOutside }), r.opts.finishCapMs ?? FINISH.capMs);
     if (!this.stage.active) this._armFinish(r);
